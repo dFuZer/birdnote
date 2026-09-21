@@ -245,7 +245,7 @@ internal val CHORD_QUALITIES_BY_DIFFICULTY = mapOf(
 
 internal fun previewRootStep(clef: Clef): Int = when (clef) {
     Clef.SOL -> 32 // G4, a 7th stays on the top line
-    Clef.FA -> 20 // B2
+    Clef.FA -> 19 // A2; B2 cannot spell augmented (needs F double-sharp)
 }
 
 internal val BASS_RANGES = mapOf(

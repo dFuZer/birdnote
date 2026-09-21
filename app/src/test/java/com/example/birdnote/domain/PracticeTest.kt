@@ -201,21 +201,45 @@ class PracticeTest {
     }
 
     @Test
-    fun generatedChordsStayInRangeAvoidQualityRepeatsAndFitTheStaff() {
-        val config = ChordConfig(MAX_DIFFICULTY, ClefMode.SOL)
-        val random = Random(21)
-        var previous: PracticeChord? = null
-        val range = chordPitchRange(Clef.SOL)
-        repeat(200) {
-            val chord = generateChord(config, previous, random)
-            assertTrue(chord.root.diatonicStep in range)
-            assertTrue(chord.notes.last().pitch.diatonicStep in range)
-            assertEquals(Clef.SOL, chord.clef)
-            assertTrue(chord.quality in chordQualitiesFor(MAX_DIFFICULTY))
-            if (previous != null) {
-                assertTrue(chord.quality != previous!!.quality)
+    fun chordPreviewSpellsTheLabeledQualityOnEveryClef() {
+        ClefMode.entries.forEach { mode ->
+            (MIN_DIFFICULTY..MAX_DIFFICULTY).forEach { difficulty ->
+                val preview = previewChords(ChordConfig(difficulty, mode))
+                assertEquals(chordQualitiesFor(difficulty), preview.map { it.quality })
+                preview.forEach { chord ->
+                    assertEquals(chord.quality.semitoneIntervals, intervalPattern(chord))
+                    chord.notes.forEach { note ->
+                        assertTrue(note.pitch.staffStep(note.clef) in 0..8)
+                    }
+                }
+                if (mode != ClefMode.SOL_FA) {
+                    val root = previewRootStep(mode.clefs().single())
+                    assertTrue(preview.all { it.root.diatonicStep == root })
+                }
             }
-            previous = chord
+        }
+    }
+
+    @Test
+    fun generatedChordsStayInRangeAvoidQualityRepeatsAndFitTheStaff() {
+        listOf(ClefMode.SOL, ClefMode.FA).forEach { mode ->
+            val config = ChordConfig(MAX_DIFFICULTY, mode)
+            val random = Random(21)
+            var previous: PracticeChord? = null
+            val clef = mode.clefs().single()
+            val range = chordPitchRange(clef)
+            repeat(200) {
+                val chord = generateChord(config, previous, random)
+                assertTrue(chord.root.diatonicStep in range)
+                assertTrue(chord.notes.last().pitch.diatonicStep in range)
+                assertEquals(clef, chord.clef)
+                assertTrue(chord.quality in chordQualitiesFor(MAX_DIFFICULTY))
+                assertEquals(chord.quality.semitoneIntervals, intervalPattern(chord))
+                if (previous != null) {
+                    assertTrue(chord.quality != previous!!.quality)
+                }
+                previous = chord
+            }
         }
     }
 
@@ -228,6 +252,7 @@ class PracticeTest {
             val chord = generateChord(config, previous, random)
             val expected = if (index % 2 == 0) Clef.SOL else Clef.FA
             assertEquals(expected, chord.clef)
+            assertEquals(chord.quality.semitoneIntervals, intervalPattern(chord))
             previous = chord
         }
     }
@@ -242,4 +267,9 @@ class PracticeTest {
         assertTrue(isQueueAdvance(queue, advanced))
         assertEquals(queue.drop(1), advanced.dropLast(1))
     }
+}
+
+private fun intervalPattern(chord: PracticeChord): List<Int> {
+    val root = chord.notes.first().chromaticSemitone()
+    return chord.notes.map { it.chromaticSemitone() - root }
 }
