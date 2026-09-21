@@ -1,0 +1,45 @@
+<resources>
+    <string name="app_name">BirdNote</string>
+    <string name="train">S\'entraîner</string>
+    <string name="my_scores">Mes scores</string>
+    <string name="leaderboard">Classement</string>
+    <string name="settings">Paramètres</string>
+    <string name="note_names">Nom des notes</string>
+    <string name="training_title">On fait quoi ?</string>
+    <string name="notes">Notes</string>
+    <string name="intervals">Intervalles</string>
+    <string name="chords">Accords</string>
+    <string name="rhythms">Rythmes</string>
+    <string name="back">Retour</string>
+    <string name="difficulty">Difficulté</string>
+    <string name="clef">Clé</string>
+    <string name="clef_sol">Sol</string>
+    <string name="clef_fa">Fa</string>
+    <string name="clef_sol_fa">Sol + Fa</string>
+    <string name="lets_go">C\'est parti !</string>
+    <string name="stop">Arrêter</string>
+    <string name="time_remaining">Temps restant</string>
+    <string name="bravo">Bravo !</string>
+    <string name="your_score">ton score :</string>
+    <plurals name="score_notes">
+        <item quantity="one">%d note</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
+    <plurals name="score_intervals">
+        <item quantity="one">%d intervalle</item>
+        <item quantity="other">%d intervalles</item>
+    </plurals>
+    <plurals name="score_chords">
+        <item quantity="one">%d accord</item>
+        <item quantity="other">%d accords</item>
+    </plurals>
+    <string name="restart">Recommencer</string>
+    <string name="menu">Menu</string>
+    <string name="note_do">Do</string>
+    <string name="note_re">Ré</string>
+    <string name="note_mi">Mi</string>
+    <string name="note_fa">Fa</string>
+    <string name="note_sol">Sol</string>
+    <string name="note_la">La</string>
+    <string name="note_si">Si</string>
+</resources>

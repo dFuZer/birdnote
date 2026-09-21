@@ -1,0 +1,42 @@
+---
+description: Prefer simple, readable architecture; add layers only when needed
+alwaysApply: true
+---
+
+# Simplicity first
+
+Write the smallest amount of clear code that solves the current need. Follow Kotlin and Compose best practices, but never add architecture for its own sake.
+
+## Default shape
+
+Keep a flat, boring layout until a second real use appears:
+
+- `domain/` — pure Kotlin (notes, clefs, quizzes). No Android, no Compose.
+- `ui/` — screens, staff drawing, theme. Composables take state in and events out.
+- One `ViewModel` per screen that owns state. Skip it for static UI.
+
+Do not introduce UseCases, Repositories, interfaces, DI frameworks, mappers, or extra modules until there are two real implementations or a real persistence/network boundary.
+
+## Rules
+
+- Solve today's feature. Do not generalize for hypothetical drills, users, or backends.
+- Prefer a function or data class over a new type hierarchy.
+- One implementation → use the concrete type. Extract an interface only when a second implementation exists.
+- Duplicate twice if that is clearer than a premature abstraction; extract on the third copy.
+- Domain logic stays unit-testable without Robolectric or Compose.
+- UI does not compute pitches, clefs, or scoring; it renders results from domain.
+- Names describe what the code does (`pitchAt`, `QuizScreen`), not patterns (`NoteManager`, `QuizFactoryProvider`).
+
+```kotlin
+// ❌ BAD — layers with one implementation
+class IdentifyNoteUseCase(private val repo: NoteRepository) {
+    operator fun invoke() = repo.nextNote()
+}
+
+// ✅ GOOD — domain function, ViewModel calls it
+fun nextQuestion(clef: Clef): StaffQuestion
+class QuizViewModel : ViewModel() {
+    var question by mutableStateOf(nextQuestion(Clef.Treble))
+        private set
+}
+```
