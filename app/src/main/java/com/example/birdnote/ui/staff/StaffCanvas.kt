@@ -1,9 +1,10 @@
 package com.example.birdnote.ui.staff
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -13,9 +14,12 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntSize
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import com.example.birdnote.domain.Accidental
@@ -30,6 +34,7 @@ import com.example.birdnote.domain.staffStep
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.theme.LightBlue
 import com.example.birdnote.ui.theme.NoteZoneHighlight
+import kotlin.math.ceil
 
 data class StaffChord(
     val notes: List<StaffNote>,
@@ -51,57 +56,113 @@ data class StaffRenderModel(
     val ranges: Map<Clef, IntRange> = emptyMap(),
 )
 
+private class StaffPainters(
+    val trebleClef: Painter,
+    val bassClef: Painter,
+    val note: Painter,
+    val sharp: Painter,
+    val flat: Painter,
+    val natural: Painter,
+)
+
 @Composable
 fun StaffCanvas(
     model: StaffRenderModel,
     modifier: Modifier = Modifier,
-    slotShift: Float = 0f,
+    slide: StaffSlide<*>? = null,
     visibleSlotCount: Int? = null,
     noteAreaExtraLeftPaddingInLineSpaces: Float = 0f,
     extendStaffLinesToEnd: Boolean = false,
     compactVertical: Boolean = false,
 ) {
-    val staffColor = Color.Black
-    val highlightColor = Color.Black
-    val rangeColor = NoteZoneHighlight
     val trebleClef = rememberStaffSvgPainter("key-sol.svg", width = 38, height = 109)
     val bassClef = rememberStaffSvgPainter("key-fa.svg", width = 49, height = 57)
-    val notePainter = rememberStaffSvgPainter("note.svg", width = 20, height = 64)
-    val sharpPainter = rememberStaffSvgPainter(
+    val note = rememberStaffSvgPainter("note.svg", width = 20, height = 64)
+    val sharp = rememberStaffSvgPainter(
         LayoutTuning.Staff.sharpAsset,
         width = LayoutTuning.Staff.accidentalRasterWidth,
         height = LayoutTuning.Staff.accidentalRasterHeight,
     )
-    val flatPainter = rememberStaffSvgPainter(
+    val flat = rememberStaffSvgPainter(
         LayoutTuning.Staff.flatAsset,
         width = LayoutTuning.Staff.accidentalRasterWidth,
         height = LayoutTuning.Staff.accidentalRasterHeight,
     )
-    val naturalPainter = rememberStaffSvgPainter(
+    val natural = rememberStaffSvgPainter(
         LayoutTuning.Staff.naturalAsset,
         width = LayoutTuning.Staff.accidentalRasterWidth,
         height = LayoutTuning.Staff.accidentalRasterHeight,
     )
-    Canvas(modifier = modifier) {
-        drawScore(
-            model = model,
-            slotShift = slotShift,
-            staffColor = staffColor,
-            staffLineColor = Color.Black,
-            highlightColor = highlightColor,
-            rangeColor = rangeColor,
-            trebleClef = trebleClef,
-            bassClef = bassClef,
-            notePainter = notePainter,
-            sharpPainter = sharpPainter,
-            flatPainter = flatPainter,
-            naturalPainter = naturalPainter,
-            visibleSlotCount = visibleSlotCount,
-            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
-            extendStaffLinesToEnd = extendStaffLinesToEnd,
-            compactVertical = compactVertical,
-        )
+    val painters = remember(trebleClef, bassClef, note, sharp, flat, natural) {
+        StaffPainters(trebleClef, bassClef, note, sharp, flat, natural)
     }
+    Spacer(
+        modifier = modifier.drawWithCache {
+            val geometry = staffGeometry(
+                size = size,
+                model = model,
+                visibleSlotCount = visibleSlotCount,
+                noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+                compactVertical = compactVertical,
+            )
+            val chordDraws = cacheChordDraws(model, geometry)
+            val highlights = highlightRects(model.highlightIndex, chordDraws, geometry.lineSpacing)
+            val rangeLayer = obtainGraphicsLayer().apply {
+                record {
+                    drawRanges(model, geometry)
+                }
+            }
+            val staffLayer = obtainGraphicsLayer().apply {
+                record {
+                    drawStaff(geometry, painters, extendStaffLinesToEnd)
+                }
+            }
+            val notesSize = IntSize(
+                width = ceil(
+                    maxOf(
+                        size.width,
+                        geometry.notesStartX + (model.chords.size + 1) * geometry.slotWidth,
+                    ),
+                ).toInt(),
+                height = ceil(size.height).toInt(),
+            )
+            val notesLayer = obtainGraphicsLayer().apply {
+                record(size = notesSize) {
+                    chordDraws.forEach { chordDraw ->
+                        drawChord(
+                            layout = chordDraw.layout,
+                            bottomLineY = chordDraw.bottomLineY,
+                            lineSpacing = geometry.lineSpacing,
+                            color = Color.Black,
+                            painters = painters,
+                        )
+                    }
+                }
+            }
+            onDrawBehind {
+                val offsetX = -(slide?.shift ?: 0f) * geometry.slotWidth
+                drawLayer(rangeLayer)
+                clipRect(left = geometry.clefRight) {
+                    translate(left = offsetX) {
+                        highlights.forEach { highlight ->
+                            drawRoundRect(
+                                color = LightBlue,
+                                topLeft = highlight.topLeft,
+                                size = highlight.size,
+                                cornerRadius = CornerRadius(highlight.radius, highlight.radius),
+                            )
+                        }
+                    }
+                }
+                drawLayer(staffLayer)
+                clipRect(left = geometry.clefRight) {
+                    translate(left = offsetX) {
+                        drawLayer(notesLayer)
+                    }
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -124,24 +185,33 @@ private fun rememberStaffSvgPainter(
 private const val STAFF_STEPS = 8
 private const val MAX_LEDGER_STEPS = 4
 
-private fun DrawScope.drawScore(
+private class StaffGeometry(
+    val clefs: List<Clef>,
+    val bottomLineYs: List<Float>,
+    val paddingX: Float,
+    val staffLineWidth: Float,
+    val lineSpacing: Float,
+    val clefRight: Float,
+    val notesStartX: Float,
+    val usableWidth: Float,
+    val slotWidth: Float,
+) {
+    fun slotCenterX(index: Int): Float = notesStartX + (index + 0.5f) * slotWidth
+}
+
+private class HighlightRect(
+    val topLeft: Offset,
+    val size: Size,
+    val radius: Float,
+)
+
+private fun staffGeometry(
+    size: Size,
     model: StaffRenderModel,
-    slotShift: Float,
-    staffColor: Color,
-    staffLineColor: Color,
-    highlightColor: Color,
-    rangeColor: Color,
-    trebleClef: Painter,
-    bassClef: Painter,
-    notePainter: Painter,
-    sharpPainter: Painter,
-    flatPainter: Painter,
-    naturalPainter: Painter,
     visibleSlotCount: Int?,
     noteAreaExtraLeftPaddingInLineSpaces: Float,
-    extendStaffLinesToEnd: Boolean,
     compactVertical: Boolean,
-) {
+): StaffGeometry {
     val clefs = when (model.clefMode) {
         ClefMode.SOL -> listOf(Clef.SOL)
         ClefMode.FA -> listOf(Clef.FA)
@@ -186,75 +256,103 @@ private fun DrawScope.drawScore(
     val notesStartX = clefRight +
         lineSpacing * noteAreaExtraLeftPaddingInLineSpaces
     val usableWidth = size.width - notesStartX - paddingX
-    val slotWidth = usableWidth / slotCount
-
-    clefs.forEachIndexed { staffIndex, clef ->
+    val bottomLineYs = clefs.indices.map { staffIndex ->
         val blockTop = paddingY + staffIndex * (blockHeight + gap)
         val blockCenterY = blockTop + blockHeight / 2f
-        val bottomLineY = if (compactVertical) {
+        if (compactVertical) {
             blockTop + blockHeight - ledgerBelow * (lineSpacing / 2f)
         } else {
             blockCenterY + 2f * lineSpacing
         }
-        model.ranges[clef]?.let { range ->
-            drawRange(
-                range = range,
-                clef = clef,
-                left = notesStartX,
-                width = usableWidth,
-                bottomLineY = bottomLineY,
-                lineSpacing = lineSpacing,
-                color = rangeColor,
-            )
-        }
-        model.highlightIndex?.let { highlightIndex ->
-            val current = model.chords.getOrNull(highlightIndex)
-            if (current != null && current.notes.any { it.clef == clef }) {
-                val x = notesStartX + (highlightIndex - slotShift + 0.5f) * slotWidth
-                clipRect(left = clefRight, top = 0f, right = size.width, bottom = size.height) {
-                    drawCurrentChordHighlight(
-                        chord = current,
-                        x = x,
-                        bottomLineY = bottomLineY,
-                        lineSpacing = lineSpacing,
-                        color = LightBlue,
-                    )
-                }
-            }
-        }
-        drawStaffLines(
-            left = paddingX,
-            right = if (extendStaffLinesToEnd) size.width else size.width - paddingX,
-            bottomLineY = bottomLineY,
-            lineSpacing = lineSpacing,
-            strokeWidth = staffLineWidth,
-            color = staffLineColor,
-        )
-        drawClef(
-            clef = clef,
-            left = paddingX,
-            bottomLineY = bottomLineY,
-            lineSpacing = lineSpacing,
-            painter = if (clef == Clef.SOL) trebleClef else bassClef,
-        )
-        clipRect(left = clefRight, top = 0f, right = size.width, bottom = size.height) {
+    }
+    return StaffGeometry(
+        clefs = clefs,
+        bottomLineYs = bottomLineYs,
+        paddingX = paddingX,
+        staffLineWidth = staffLineWidth,
+        lineSpacing = lineSpacing,
+        clefRight = clefRight,
+        notesStartX = notesStartX,
+        usableWidth = usableWidth,
+        slotWidth = usableWidth / slotCount,
+    )
+}
+
+private class CachedChordDraw(
+    val index: Int,
+    val bottomLineY: Float,
+    val layout: ChordLayout,
+)
+
+private fun cacheChordDraws(
+    model: StaffRenderModel,
+    geometry: StaffGeometry,
+): List<CachedChordDraw> {
+    val metrics = staffLayoutMetrics()
+    return buildList {
+        geometry.clefs.forEachIndexed { staffIndex, clef ->
+            val bottomLineY = geometry.bottomLineYs[staffIndex]
             model.chords.forEachIndexed { index, chord ->
-                val x = notesStartX + (index - slotShift + 0.5f) * slotWidth
-                val highlighted = index == model.highlightIndex
-                drawChord(
-                    chord = chord,
-                    x = x,
-                    clef = clef,
-                    bottomLineY = bottomLineY,
-                    lineSpacing = lineSpacing,
-                    color = if (highlighted) highlightColor else staffColor,
-                    notePainter = notePainter,
-                    sharpPainter = sharpPainter,
-                    flatPainter = flatPainter,
-                    naturalPainter = naturalPainter,
+                val onStaff = chord.notes.filter { it.clef == clef }
+                if (onStaff.isEmpty()) return@forEachIndexed
+                add(
+                    CachedChordDraw(
+                        index = index,
+                        bottomLineY = bottomLineY,
+                        layout = layoutChord(
+                            onStaff,
+                            geometry.slotCenterX(index),
+                            geometry.lineSpacing,
+                            bottomLineY,
+                            metrics,
+                        ),
+                    ),
                 )
             }
         }
+    }
+}
+
+private fun DrawScope.drawStaff(
+    geometry: StaffGeometry,
+    painters: StaffPainters,
+    extendStaffLinesToEnd: Boolean,
+) {
+    geometry.clefs.forEachIndexed { staffIndex, clef ->
+        val bottomLineY = geometry.bottomLineYs[staffIndex]
+        drawStaffLines(
+            left = geometry.paddingX,
+            right = if (extendStaffLinesToEnd) size.width else size.width - geometry.paddingX,
+            bottomLineY = bottomLineY,
+            lineSpacing = geometry.lineSpacing,
+            strokeWidth = geometry.staffLineWidth,
+            color = Color.Black,
+        )
+        drawClef(
+            clef = clef,
+            left = geometry.paddingX,
+            bottomLineY = bottomLineY,
+            lineSpacing = geometry.lineSpacing,
+            painter = if (clef == Clef.SOL) painters.trebleClef else painters.bassClef,
+        )
+    }
+}
+
+private fun DrawScope.drawRanges(
+    model: StaffRenderModel,
+    geometry: StaffGeometry,
+) {
+    geometry.clefs.forEachIndexed { staffIndex, clef ->
+        val range = model.ranges[clef] ?: return@forEachIndexed
+        drawRange(
+            range = range,
+            clef = clef,
+            left = geometry.notesStartX,
+            width = geometry.usableWidth,
+            bottomLineY = geometry.bottomLineYs[staffIndex],
+            lineSpacing = geometry.lineSpacing,
+            color = NoteZoneHighlight,
+        )
     }
 }
 
@@ -295,49 +393,42 @@ private fun DrawScope.drawRange(
     )
 }
 
-private fun DrawScope.drawCurrentChordHighlight(
-    chord: StaffChord,
-    x: Float,
-    bottomLineY: Float,
+private fun highlightRects(
+    highlightIndex: Int?,
+    chordDraws: List<CachedChordDraw>,
     lineSpacing: Float,
-    color: Color,
-) {
-    val layout = layoutChord(chord.notes, x, lineSpacing, bottomLineY, staffLayoutMetrics())
-    if (layout.heads.isEmpty()) return
+): List<HighlightRect> {
+    if (highlightIndex == null) return emptyList()
     val tuning = LayoutTuning.Staff
     val padding = lineSpacing * tuning.currentNoteHighlightPaddingInLineSpaces
-    val staffTop = bottomLineY - 4f * lineSpacing
-    val left = layout.bounds.left
-    val right = layout.bounds.right
-    val top = minOf(layout.bounds.top, staffTop)
-    val bottom = maxOf(layout.bounds.bottom, bottomLineY)
     val radius = lineSpacing * tuning.currentNoteHighlightCornerRadiusInLineSpaces
-    drawRoundRect(
-        color = color,
-        topLeft = Offset(left - padding, top - padding),
-        size = Size((right - left) + padding * 2f, (bottom - top) + padding * 2f),
-        cornerRadius = CornerRadius(radius, radius),
-    )
+    return chordDraws.mapNotNull { chordDraw ->
+        if (chordDraw.index != highlightIndex) return@mapNotNull null
+        val layout = chordDraw.layout
+        if (layout.heads.isEmpty()) return@mapNotNull null
+        val staffTop = chordDraw.bottomLineY - 4f * lineSpacing
+        val left = layout.bounds.left
+        val right = layout.bounds.right
+        val top = minOf(layout.bounds.top, staffTop)
+        val bottom = maxOf(layout.bounds.bottom, chordDraw.bottomLineY)
+        HighlightRect(
+            topLeft = Offset(left - padding, top - padding),
+            size = Size((right - left) + padding * 2f, (bottom - top) + padding * 2f),
+            radius = radius,
+        )
+    }
 }
 
 private fun rangeStaffStep(diatonicStep: Int, clef: Clef): Int =
     Pitch(diatonicStep).staffStep(clef)
 
 private fun DrawScope.drawChord(
-    chord: StaffChord,
-    x: Float,
-    clef: Clef,
+    layout: ChordLayout,
     bottomLineY: Float,
     lineSpacing: Float,
     color: Color,
-    notePainter: Painter,
-    sharpPainter: Painter,
-    flatPainter: Painter,
-    naturalPainter: Painter,
+    painters: StaffPainters,
 ) {
-    val onStaff = chord.notes.filter { it.clef == clef }
-    if (onStaff.isEmpty()) return
-    val layout = layoutChord(onStaff, x, lineSpacing, bottomLineY, staffLayoutMetrics())
     val ledgerHalf = lineSpacing * LayoutTuning.Staff.ledgerHalfWidthInLineSpaces
     val ledgerLeft = layout.heads.minOf { it.x } - ledgerHalf
     val ledgerRight = layout.heads.maxOf { it.x } + ledgerHalf
@@ -358,7 +449,7 @@ private fun DrawScope.drawChord(
             stemDown = head.stemDown,
             bottomLineY = bottomLineY,
             lineSpacing = lineSpacing,
-            painter = notePainter,
+            painter = painters.note,
         )
     } else {
         val stem = layout.stem
@@ -384,16 +475,16 @@ private fun DrawScope.drawChord(
     }
     layout.accidentals.forEach { accidental ->
         val (painter, glyph) = when (accidental.accidental) {
-            Accidental.SHARP -> sharpPainter to AccidentalGlyph(
+            Accidental.SHARP -> painters.sharp to AccidentalGlyph(
                 widthInLineSpaces = LayoutTuning.Staff.sharpWidthInLineSpaces,
                 heightInLineSpaces = LayoutTuning.Staff.sharpHeightInLineSpaces,
             )
-            Accidental.FLAT -> flatPainter to AccidentalGlyph(
+            Accidental.FLAT -> painters.flat to AccidentalGlyph(
                 widthInLineSpaces = LayoutTuning.Staff.flatWidthInLineSpaces,
                 heightInLineSpaces = LayoutTuning.Staff.flatHeightInLineSpaces,
                 centerYOffsetInLineSpaces = LayoutTuning.Staff.flatCenterYOffsetInLineSpaces,
             )
-            Accidental.NATURAL -> naturalPainter to AccidentalGlyph(
+            Accidental.NATURAL -> painters.natural to AccidentalGlyph(
                 widthInLineSpaces = LayoutTuning.Staff.naturalWidthInLineSpaces,
                 heightInLineSpaces = LayoutTuning.Staff.naturalHeightInLineSpaces,
             )

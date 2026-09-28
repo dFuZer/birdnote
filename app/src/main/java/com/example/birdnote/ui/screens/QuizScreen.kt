@@ -127,6 +127,14 @@ fun QuizScreen(
         followTimeMillis = tuning.noteFollowTimeMillis,
         minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
     )
+    val staffModel = remember(slide.notes, slide.highlightIndex, clefMode, difficulty) {
+        StaffRenderModel(
+            clefMode = clefMode,
+            chords = slide.notes.asChords(),
+            difficulty = difficulty,
+            highlightIndex = slide.highlightIndex,
+        )
+    }
 
     Column(
         modifier = modifier
@@ -151,13 +159,8 @@ fun QuizScreen(
                 .weight(1f),
         ) {
             StaffCanvas(
-                model = StaffRenderModel(
-                    clefMode = clefMode,
-                    chords = slide.notes.asChords(),
-                    difficulty = difficulty,
-                    highlightIndex = slide.highlightIndex,
-                ),
-                slotShift = slide.shift,
+                model = staffModel,
+                slide = slide,
                 visibleSlotCount = visibleCount,
                 extendStaffLinesToEnd = true,
                 modifier = Modifier
@@ -228,6 +231,14 @@ fun IntervalQuizScreen(
         followTimeMillis = tuning.noteFollowTimeMillis,
         minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
     )
+    val staffModel = remember(slide.notes, slide.highlightIndex, difficulty) {
+        StaffRenderModel(
+            clefMode = ClefMode.SOL,
+            chords = slide.notes.map { it.asChord() },
+            difficulty = difficulty,
+            highlightIndex = slide.highlightIndex,
+        )
+    }
 
     Column(
         modifier = modifier
@@ -252,13 +263,8 @@ fun IntervalQuizScreen(
                 .weight(1f),
         ) {
             StaffCanvas(
-                model = StaffRenderModel(
-                    clefMode = ClefMode.SOL,
-                    chords = slide.notes.map { it.asChord() },
-                    difficulty = difficulty,
-                    highlightIndex = slide.highlightIndex,
-                ),
-                slotShift = slide.shift,
+                model = staffModel,
+                slide = slide,
                 visibleSlotCount = visibleCount,
                 extendStaffLinesToEnd = true,
                 modifier = Modifier
@@ -331,6 +337,14 @@ fun ChordQuizScreen(
         followTimeMillis = tuning.noteFollowTimeMillis,
         minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
     )
+    val staffModel = remember(slide.notes, slide.highlightIndex, clefMode, difficulty) {
+        StaffRenderModel(
+            clefMode = clefMode,
+            chords = slide.notes.map { it.asChord() },
+            difficulty = difficulty,
+            highlightIndex = slide.highlightIndex,
+        )
+    }
 
     Column(
         modifier = modifier
@@ -355,13 +369,8 @@ fun ChordQuizScreen(
                 .weight(1f),
         ) {
             StaffCanvas(
-                model = StaffRenderModel(
-                    clefMode = clefMode,
-                    chords = slide.notes.map { it.asChord() },
-                    difficulty = difficulty,
-                    highlightIndex = slide.highlightIndex,
-                ),
-                slotShift = slide.shift,
+                model = staffModel,
+                slide = slide,
                 visibleSlotCount = visibleCount,
                 extendStaffLinesToEnd = true,
                 modifier = Modifier

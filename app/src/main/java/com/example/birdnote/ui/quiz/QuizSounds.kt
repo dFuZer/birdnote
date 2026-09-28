@@ -6,12 +6,19 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.SoundPool
+import android.os.Handler
+import android.os.Looper
 import com.example.birdnote.domain.Pitch
 import com.example.birdnote.domain.mixPcm
 import com.example.birdnote.domain.parseWavPcm
 import com.example.birdnote.domain.pianoAssetPath
 import com.example.birdnote.domain.pitchShift
 import com.example.birdnote.domain.semitones
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 class QuizSounds(assets: AssetManager) {
     private val audioAttributes = AudioAttributes.Builder()
@@ -19,50 +26,88 @@ class QuizSounds(assets: AssetManager) {
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build()
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val worker = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "QuizSounds")
+    }
+    private val playGeneration = AtomicInteger()
+    private val released = AtomicBoolean(false)
+
     private val pool = SoundPool.Builder()
         .setMaxStreams(1)
         .setAudioAttributes(audioAttributes)
         .build()
-
     private val descriptors = mutableListOf<AssetFileDescriptor>()
-    private val notes = mutableMapOf<Int, ShortArray>()
-    private var sampleRate = 44_100
+    private val notes = ConcurrentHashMap<Int, Map<Int, ShortArray>>()
+    @Volatile private var sampleRate = DEFAULT_SAMPLE_RATE
+    @Volatile private var wrongId: Int? = null
+
+    // Created, written, played, and released only on the main thread.
     private var track: AudioTrack? = null
-    private var wrongId: Int? = null
 
     init {
-        (MIN_QUIZ_STEP..MAX_QUIZ_STEP).forEach { step ->
-            loadNote(assets, step)
-        }
-        wrongId = loadWrong(assets)
+        worker.execute { load(assets) }
     }
 
     fun play(feedback: AnswerFeedback) {
-        if (feedback.correct) {
-            playNotes(feedback.tones)
-        } else {
-            stopNotes()
-            val soundId = wrongId ?: return
-            pool.play(soundId, 1f, 1f, 1, 0, 1f)
+        if (worker.isShutdown || released.get()) return
+        val generation = playGeneration.incrementAndGet()
+        worker.execute {
+            if (playGeneration.get() != generation || released.get()) return@execute
+            if (feedback.correct) {
+                val mixed = mixTones(feedback.tones) ?: return@execute
+                mainHandler.post {
+                    if (playGeneration.get() != generation || released.get()) return@post
+                    playPcm(mixed)
+                }
+            } else {
+                mainHandler.post {
+                    if (playGeneration.get() != generation || released.get()) return@post
+                    stopNotes()
+                    wrongId?.let { pool.play(it, 1f, 1f, 1, 0, 1f) }
+                }
+            }
         }
     }
 
     fun release() {
-        stopNotes()
-        pool.release()
-        descriptors.forEach { descriptor -> descriptor.close() }
-        descriptors.clear()
-        notes.clear()
-        wrongId = null
+        released.set(true)
+        playGeneration.incrementAndGet()
+        worker.execute {
+            descriptors.forEach { descriptor -> descriptor.close() }
+            descriptors.clear()
+            notes.clear()
+            wrongId = null
+        }
+        worker.shutdown()
+        mainHandler.post { cleanupTrackAndPool() }
+        runCatching { worker.awaitTermination(2, TimeUnit.SECONDS) }
     }
 
-    private fun playNotes(tones: List<SoundTone>) {
-        val voices = tones.mapNotNull { tone ->
-            val samples = notes[tone.diatonicStep] ?: return@mapNotNull null
-            pitchShift(samples, tone.accidental.semitones)
+    private fun load(assets: AssetManager) {
+        if (released.get()) return
+        (MIN_QUIZ_STEP..MAX_QUIZ_STEP).forEach { step ->
+            if (released.get()) return
+            val bytes = runCatching {
+                assets.open(Pitch(step).pianoAssetPath()).use { it.readBytes() }
+            }.getOrNull() ?: return@forEach
+            val pcm = runCatching { parseWavPcm(bytes) }.getOrNull() ?: return@forEach
+            sampleRate = pcm.sampleRate
+            notes[step] = SHIFTS.associateWith { shift -> pitchShift(pcm.samples, shift) }
         }
-        if (voices.isEmpty()) return
-        val mixed = mixPcm(voices)
+        if (released.get()) return
+        wrongId = loadWrong(assets)
+    }
+
+    private fun mixTones(tones: List<SoundTone>): ShortArray? {
+        val voices = tones.mapNotNull { tone ->
+            notes[tone.diatonicStep]?.get(tone.accidental.semitones)
+        }
+        if (voices.isEmpty()) return null
+        return mixPcm(voices)
+    }
+
+    private fun playPcm(mixed: ShortArray) {
         stopNotes()
         val minBytes = AudioTrack.getMinBufferSize(
             sampleRate,
@@ -95,13 +140,9 @@ class QuizSounds(assets: AssetManager) {
         current.release()
     }
 
-    private fun loadNote(assets: AssetManager, step: Int) {
-        val bytes = runCatching {
-            assets.open(Pitch(step).pianoAssetPath()).use { it.readBytes() }
-        }.getOrNull() ?: return
-        val pcm = runCatching { parseWavPcm(bytes) }.getOrNull() ?: return
-        sampleRate = pcm.sampleRate
-        notes[step] = pcm.samples
+    private fun cleanupTrackAndPool() {
+        stopNotes()
+        pool.release()
     }
 
     private fun loadWrong(assets: AssetManager): Int? {
@@ -113,6 +154,8 @@ class QuizSounds(assets: AssetManager) {
     private companion object {
         const val MIN_QUIZ_STEP = 14
         const val MAX_QUIZ_STEP = 42
+        const val DEFAULT_SAMPLE_RATE = 44_100
         const val WRONG_ASSET = "notes/wrong.mp3"
+        val SHIFTS = listOf(-1, 0, 1)
     }
 }
