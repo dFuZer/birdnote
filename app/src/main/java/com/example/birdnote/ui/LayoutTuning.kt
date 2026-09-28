@@ -104,7 +104,7 @@ object LayoutTuning {
 
     object Staff {
         // Canvas painters do not expose a measured output size to Coil.
-        const val canvasSvgRasterScale = 8
+        const val canvasSvgRasterScale = 2
 
         const val horizontalPadding = 0.1f
         const val verticalPadding = 0.08f

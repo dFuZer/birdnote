@@ -25,7 +25,7 @@ android {
         release {
             signingConfig = signingConfigs.getByName("debug")
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-svg:3.3.0")
+    implementation(libs.jorbis)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))

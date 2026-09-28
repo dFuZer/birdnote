@@ -59,6 +59,7 @@ import com.example.birdnote.ui.quiz.ChordQuizViewModel
 import com.example.birdnote.ui.quiz.IntervalQuizViewModel
 import com.example.birdnote.ui.quiz.QuizSounds
 import com.example.birdnote.ui.quiz.QuizViewModel
+import com.example.birdnote.ui.quiz.SOUNDS_ENABLED
 import com.example.birdnote.ui.staff.StaffCanvas
 import com.example.birdnote.ui.staff.StaffRenderModel
 import com.example.birdnote.ui.staff.asChord
@@ -77,11 +78,7 @@ fun QuizRoute(
     viewModel: QuizViewModel = viewModel(factory = QuizViewModel.factory(config)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val sounds = remember(context) { QuizSounds(context.assets) }
-    DisposableEffect(sounds) {
-        onDispose { sounds.release() }
-    }
+    val sounds = rememberQuizSounds()
     var didNavigate by remember { mutableStateOf(false) }
     LaunchedEffect(state.finished) {
         if (state.finished && !didNavigate) {
@@ -89,8 +86,10 @@ fun QuizRoute(
             onFinished(state.score)
         }
     }
-    LaunchedEffect(state.answerFeedback?.id) {
-        state.answerFeedback?.let(sounds::play)
+    if (sounds != null) {
+        LaunchedEffect(state.answerFeedback?.id) {
+            state.answerFeedback?.let(sounds::play)
+        }
     }
     QuizScreen(
         notes = state.notes,
@@ -127,12 +126,11 @@ fun QuizScreen(
         followTimeMillis = tuning.noteFollowTimeMillis,
         minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
     )
-    val staffModel = remember(slide.notes, slide.highlightIndex, clefMode, difficulty) {
+    val staffModel = remember(slide.notes, clefMode, difficulty) {
         StaffRenderModel(
             clefMode = clefMode,
             chords = slide.notes.asChords(),
             difficulty = difficulty,
-            highlightIndex = slide.highlightIndex,
         )
     }
 
@@ -185,11 +183,7 @@ fun IntervalQuizRoute(
     viewModel: IntervalQuizViewModel = viewModel(factory = IntervalQuizViewModel.factory(config)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val sounds = remember(context) { QuizSounds(context.assets) }
-    DisposableEffect(sounds) {
-        onDispose { sounds.release() }
-    }
+    val sounds = rememberQuizSounds()
     var didNavigate by remember { mutableStateOf(false) }
     LaunchedEffect(state.finished) {
         if (state.finished && !didNavigate) {
@@ -197,8 +191,10 @@ fun IntervalQuizRoute(
             onFinished(state.score)
         }
     }
-    LaunchedEffect(state.answerFeedback?.id) {
-        state.answerFeedback?.let(sounds::play)
+    if (sounds != null) {
+        LaunchedEffect(state.answerFeedback?.id) {
+            state.answerFeedback?.let(sounds::play)
+        }
     }
     IntervalQuizScreen(
         intervals = state.intervals,
@@ -231,12 +227,11 @@ fun IntervalQuizScreen(
         followTimeMillis = tuning.noteFollowTimeMillis,
         minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
     )
-    val staffModel = remember(slide.notes, slide.highlightIndex, difficulty) {
+    val staffModel = remember(slide.notes, difficulty) {
         StaffRenderModel(
             clefMode = ClefMode.SOL,
             chords = slide.notes.map { it.asChord() },
             difficulty = difficulty,
-            highlightIndex = slide.highlightIndex,
         )
     }
 
@@ -289,11 +284,7 @@ fun ChordQuizRoute(
     viewModel: ChordQuizViewModel = viewModel(factory = ChordQuizViewModel.factory(config)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val sounds = remember(context) { QuizSounds(context.assets) }
-    DisposableEffect(sounds) {
-        onDispose { sounds.release() }
-    }
+    val sounds = rememberQuizSounds()
     var didNavigate by remember { mutableStateOf(false) }
     LaunchedEffect(state.finished) {
         if (state.finished && !didNavigate) {
@@ -301,8 +292,10 @@ fun ChordQuizRoute(
             onFinished(state.score)
         }
     }
-    LaunchedEffect(state.answerFeedback?.id) {
-        state.answerFeedback?.let(sounds::play)
+    if (sounds != null) {
+        LaunchedEffect(state.answerFeedback?.id) {
+            state.answerFeedback?.let(sounds::play)
+        }
     }
     ChordQuizScreen(
         chords = state.chords,
@@ -337,12 +330,11 @@ fun ChordQuizScreen(
         followTimeMillis = tuning.noteFollowTimeMillis,
         minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
     )
-    val staffModel = remember(slide.notes, slide.highlightIndex, clefMode, difficulty) {
+    val staffModel = remember(slide.notes, clefMode, difficulty) {
         StaffRenderModel(
             clefMode = clefMode,
             chords = slide.notes.map { it.asChord() },
             difficulty = difficulty,
-            highlightIndex = slide.highlightIndex,
         )
     }
 
@@ -589,6 +581,17 @@ private fun ChordAnswerGrid(
             }
         }
     }
+}
+
+@Composable
+private fun rememberQuizSounds(): QuizSounds? {
+    if (!SOUNDS_ENABLED) return null
+    val context = LocalContext.current
+    val sounds = remember(context) { QuizSounds(context.assets) }
+    DisposableEffect(sounds) {
+        onDispose { sounds.release() }
+    }
+    return sounds
 }
 
 private fun chordAnswerColumns(count: Int): Int {

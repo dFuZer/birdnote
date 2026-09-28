@@ -291,7 +291,7 @@ fun Pitch.pianoAssetPath(): String {
         NoteName.LA -> "A"
         NoteName.SI -> "B"
     }
-    return "notes/${octave}$letter.wav"
+    return "notes/${octave}$letter.ogg"
 }
 
 private const val TREBLE_BOTTOM_LINE_STEP = 30 // E4, with C0 = 0

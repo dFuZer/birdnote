@@ -23,11 +23,11 @@ class MusicTest {
 
     @Test
     fun pianoAssetPathUsesScientificPitchNames() {
-        assertEquals("notes/2C.wav", Pitch(14).pianoAssetPath())
-        assertEquals("notes/3A.wav", Pitch(26).pianoAssetPath())
-        assertEquals("notes/4C.wav", Pitch(28).pianoAssetPath())
-        assertEquals("notes/4G.wav", Pitch(32).pianoAssetPath())
-        assertEquals("notes/6C.wav", Pitch(42).pianoAssetPath())
+        assertEquals("notes/2C.ogg", Pitch(14).pianoAssetPath())
+        assertEquals("notes/3A.ogg", Pitch(26).pianoAssetPath())
+        assertEquals("notes/4C.ogg", Pitch(28).pianoAssetPath())
+        assertEquals("notes/4G.ogg", Pitch(32).pianoAssetPath())
+        assertEquals("notes/6C.ogg", Pitch(42).pianoAssetPath())
     }
 
     @Test

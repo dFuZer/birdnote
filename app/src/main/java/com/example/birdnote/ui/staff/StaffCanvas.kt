@@ -1,7 +1,11 @@
 package com.example.birdnote.ui.staff
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -35,7 +39,9 @@ import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.theme.LightBlue
 import com.example.birdnote.ui.theme.NoteZoneHighlight
 import kotlin.math.ceil
+import kotlin.math.round
 
+@Immutable
 data class StaffChord(
     val notes: List<StaffNote>,
 )
@@ -56,6 +62,7 @@ data class StaffRenderModel(
     val ranges: Map<Clef, IntRange> = emptyMap(),
 )
 
+@Stable
 private class StaffPainters(
     val trebleClef: Painter,
     val bassClef: Painter,
@@ -96,54 +103,185 @@ fun StaffCanvas(
     val painters = remember(trebleClef, bassClef, note, sharp, flat, natural) {
         StaffPainters(trebleClef, bassClef, note, sharp, flat, natural)
     }
+    val highlightIndex = slide?.highlightIndex ?: model.highlightIndex
+    Box(modifier) {
+        StaffRangeLayer(
+            clefMode = model.clefMode,
+            difficulty = model.difficulty,
+            ranges = model.ranges,
+            visibleSlotCount = visibleSlotCount,
+            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+            compactVertical = compactVertical,
+            modifier = Modifier.fillMaxSize(),
+        )
+        StaffHighlights(
+            clefMode = model.clefMode,
+            difficulty = model.difficulty,
+            chords = model.chords,
+            highlightIndex = highlightIndex,
+            visibleSlotCount = visibleSlotCount,
+            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+            compactVertical = compactVertical,
+            slide = slide,
+            modifier = Modifier.fillMaxSize(),
+        )
+        StaffLineLayer(
+            clefMode = model.clefMode,
+            difficulty = model.difficulty,
+            visibleSlotCount = visibleSlotCount,
+            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+            extendStaffLinesToEnd = extendStaffLinesToEnd,
+            compactVertical = compactVertical,
+            painters = painters,
+            modifier = Modifier.fillMaxSize(),
+        )
+        StaffNotesLayer(
+            clefMode = model.clefMode,
+            difficulty = model.difficulty,
+            chords = model.chords,
+            visibleSlotCount = visibleSlotCount,
+            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+            compactVertical = compactVertical,
+            slide = slide,
+            painters = painters,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun StaffRangeLayer(
+    clefMode: ClefMode,
+    difficulty: Int?,
+    ranges: Map<Clef, IntRange>,
+    visibleSlotCount: Int?,
+    noteAreaExtraLeftPaddingInLineSpaces: Float,
+    compactVertical: Boolean,
+    modifier: Modifier = Modifier,
+) {
     Spacer(
         modifier = modifier.drawWithCache {
+            val plate = StaffRenderModel(
+                clefMode = clefMode,
+                chords = emptyList(),
+                difficulty = difficulty,
+                ranges = ranges,
+            )
             val geometry = staffGeometry(
                 size = size,
-                model = model,
+                model = plate,
                 visibleSlotCount = visibleSlotCount,
                 noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
                 compactVertical = compactVertical,
             )
-            val chordDraws = cacheChordDraws(model, geometry)
-            val highlights = highlightRects(model.highlightIndex, chordDraws, geometry.lineSpacing)
             val rangeLayer = obtainGraphicsLayer().apply {
                 record {
-                    drawRanges(model, geometry)
-                }
-            }
-            val staffLayer = obtainGraphicsLayer().apply {
-                record {
-                    drawStaff(geometry, painters, extendStaffLinesToEnd)
-                }
-            }
-            val notesSize = IntSize(
-                width = ceil(
-                    maxOf(
-                        size.width,
-                        geometry.notesStartX + (model.chords.size + 1) * geometry.slotWidth,
-                    ),
-                ).toInt(),
-                height = ceil(size.height).toInt(),
-            )
-            val notesLayer = obtainGraphicsLayer().apply {
-                record(size = notesSize) {
-                    chordDraws.forEach { chordDraw ->
-                        drawChord(
-                            layout = chordDraw.layout,
-                            bottomLineY = chordDraw.bottomLineY,
-                            lineSpacing = geometry.lineSpacing,
-                            color = Color.Black,
-                            painters = painters,
-                        )
-                    }
+                    drawRanges(plate, geometry)
                 }
             }
             onDrawBehind {
-                val offsetX = -(slide?.shift ?: 0f) * geometry.slotWidth
                 drawLayer(rangeLayer)
-                clipRect(left = geometry.clefRight) {
-                    translate(left = offsetX) {
+            }
+        },
+    )
+}
+
+@Composable
+private fun StaffHighlights(
+    clefMode: ClefMode,
+    difficulty: Int?,
+    chords: List<StaffChord>,
+    highlightIndex: Int?,
+    visibleSlotCount: Int?,
+    noteAreaExtraLeftPaddingInLineSpaces: Float,
+    compactVertical: Boolean,
+    slide: StaffSlide<*>?,
+    modifier: Modifier = Modifier,
+) {
+    if (highlightIndex == null) return
+    val chord = chords.getOrNull(highlightIndex)
+    if (slide != null) {
+        if (chord == null) return
+        SlidingHighlight(
+            clefMode = clefMode,
+            difficulty = difficulty,
+            chord = chord,
+            highlightIndex = highlightIndex,
+            visibleSlotCount = visibleSlotCount,
+            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+            compactVertical = compactVertical,
+            slide = slide,
+            modifier = modifier,
+        )
+        return
+    }
+    if (chord == null) return
+    Spacer(
+        modifier = modifier.drawWithCache {
+            val geometry = staffGeometry(
+                size = size,
+                model = StaffRenderModel(
+                    clefMode = clefMode,
+                    chords = chords,
+                    difficulty = difficulty,
+                ),
+                visibleSlotCount = visibleSlotCount,
+                noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+                compactVertical = compactVertical,
+            )
+            val highlights = highlightRects(
+                highlightIndex,
+                layoutSlot(chord, highlightIndex, geometry),
+                geometry.lineSpacing,
+            )
+            onDrawBehind {
+                highlights.forEach { highlight ->
+                    drawRoundRect(
+                        color = LightBlue,
+                        topLeft = highlight.topLeft,
+                        size = highlight.size,
+                        cornerRadius = CornerRadius(highlight.radius, highlight.radius),
+                    )
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun SlidingHighlight(
+    clefMode: ClefMode,
+    difficulty: Int?,
+    chord: StaffChord,
+    highlightIndex: Int,
+    visibleSlotCount: Int?,
+    noteAreaExtraLeftPaddingInLineSpaces: Float,
+    compactVertical: Boolean,
+    slide: StaffSlide<*>,
+    modifier: Modifier = Modifier,
+) {
+    Spacer(
+        modifier = modifier.drawWithCache {
+            val geometry = staffGeometry(
+                size = size,
+                model = StaffRenderModel(
+                    clefMode = clefMode,
+                    chords = emptyList(),
+                    difficulty = difficulty,
+                ),
+                visibleSlotCount = visibleSlotCount,
+                noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+                compactVertical = compactVertical,
+            )
+            val highlights = highlightRects(
+                highlightIndex,
+                layoutSlot(chord, highlightIndex, geometry),
+                geometry.lineSpacing,
+            )
+            val clipLeft = staffClipLeft(geometry.clefRight)
+            onDrawBehind {
+                clipRect(left = clipLeft) {
+                    translate(left = slideOffsetPx(slide, geometry.slotWidth)) {
                         highlights.forEach { highlight ->
                             drawRoundRect(
                                 color = LightBlue,
@@ -154,15 +292,154 @@ fun StaffCanvas(
                         }
                     }
                 }
+            }
+        },
+    )
+}
+
+@Composable
+private fun StaffLineLayer(
+    clefMode: ClefMode,
+    difficulty: Int?,
+    visibleSlotCount: Int?,
+    noteAreaExtraLeftPaddingInLineSpaces: Float,
+    extendStaffLinesToEnd: Boolean,
+    compactVertical: Boolean,
+    painters: StaffPainters,
+    modifier: Modifier = Modifier,
+) {
+    Spacer(
+        modifier = modifier.drawWithCache {
+            val plate = StaffRenderModel(
+                clefMode = clefMode,
+                chords = emptyList(),
+                difficulty = difficulty,
+            )
+            val geometry = staffGeometry(
+                size = size,
+                model = plate,
+                visibleSlotCount = visibleSlotCount,
+                noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+                compactVertical = compactVertical,
+            )
+            val staffLayer = obtainGraphicsLayer().apply {
+                record {
+                    drawStaff(geometry, painters, extendStaffLinesToEnd)
+                }
+            }
+            onDrawBehind {
                 drawLayer(staffLayer)
-                clipRect(left = geometry.clefRight) {
-                    translate(left = offsetX) {
-                        drawLayer(notesLayer)
+            }
+        },
+    )
+}
+
+@Composable
+private fun StaffNotesLayer(
+    clefMode: ClefMode,
+    difficulty: Int?,
+    chords: List<StaffChord>,
+    visibleSlotCount: Int?,
+    noteAreaExtraLeftPaddingInLineSpaces: Float,
+    compactVertical: Boolean,
+    slide: StaffSlide<*>?,
+    painters: StaffPainters,
+    modifier: Modifier = Modifier,
+) {
+    Spacer(
+        modifier = modifier.drawWithCache {
+            val plate = StaffRenderModel(
+                clefMode = clefMode,
+                chords = chords,
+                difficulty = difficulty,
+            )
+            val geometry = staffGeometry(
+                size = size,
+                model = plate,
+                visibleSlotCount = visibleSlotCount,
+                noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+                compactVertical = compactVertical,
+            )
+            val chordDraws = cacheChordDraws(plate, geometry)
+            fun DrawScope.drawCachedChords() {
+                chordDraws.forEach { chordDraw ->
+                    drawChord(
+                        layout = chordDraw.layout,
+                        bottomLineY = chordDraw.bottomLineY,
+                        lineSpacing = geometry.lineSpacing,
+                        color = Color.Black,
+                        painters = painters,
+                    )
+                }
+            }
+            val sliding = slide
+            if (sliding == null) {
+                val notesSize = IntSize(
+                    width = ceil(
+                        maxOf(
+                            size.width,
+                            geometry.notesStartX + (chords.size + 1) * geometry.slotWidth,
+                        ),
+                    ).toInt(),
+                    height = ceil(size.height).toInt(),
+                )
+                val notesLayer = obtainGraphicsLayer().apply {
+                    clip = false
+                    record(size = notesSize) {
+                        drawCachedChords()
+                    }
+                }
+                onDrawBehind {
+                    drawLayer(notesLayer)
+                }
+            } else {
+                val clipLeft = staffClipLeft(geometry.clefRight)
+                onDrawBehind {
+                    clipRect(left = clipLeft) {
+                        translate(left = slideOffsetPx(sliding, geometry.slotWidth)) {
+                            drawCachedChords()
+                        }
                     }
                 }
             }
         },
     )
+}
+
+/** Horizontal offset shared by the sliding highlight and the sliding notes. */
+private fun slideOffsetPx(slide: StaffSlide<*>, slotWidth: Float): Float =
+    -(slide.shift - slide.origin) * slotWidth
+
+/** Clip edge on a device pixel, so a note leaving the clef is cut on a pixel boundary. */
+private fun staffClipLeft(clefRight: Float): Float = round(clefRight)
+
+private fun layoutSlot(
+    chord: StaffChord,
+    absoluteIndex: Int,
+    geometry: StaffGeometry,
+): List<CachedChordDraw> {
+    val metrics = staffLayoutMetrics()
+    val x = geometry.slotCenterX(absoluteIndex)
+    return buildList {
+        geometry.clefs.forEachIndexed { staffIndex, clef ->
+            val onStaff = chord.notes.filter { it.clef == clef }
+            if (onStaff.isEmpty()) return@forEachIndexed
+            val bottomLineY = geometry.bottomLineYs[staffIndex]
+            add(
+                CachedChordDraw(
+                    index = absoluteIndex,
+                    bottomLineY = bottomLineY,
+                    layout = layoutChord(
+                        onStaff,
+                        x,
+                        geometry.lineSpacing,
+                        bottomLineY,
+                        metrics,
+                    ),
+                ),
+            )
+        }
+    }
 }
 
 @Composable

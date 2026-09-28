@@ -9,8 +9,8 @@ import android.media.SoundPool
 import android.os.Handler
 import android.os.Looper
 import com.example.birdnote.domain.Pitch
+import com.example.birdnote.domain.decodeVorbisPcm
 import com.example.birdnote.domain.mixPcm
-import com.example.birdnote.domain.parseWavPcm
 import com.example.birdnote.domain.pianoAssetPath
 import com.example.birdnote.domain.pitchShift
 import com.example.birdnote.domain.semitones
@@ -19,6 +19,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+
+/**
+ * Master switch for quiz audio. Flip this while comparing lag.
+ *
+ * When false, quiz routes never construct [QuizSounds], so there is no worker
+ * thread, [SoundPool], Vorbis decode, PCM cache, or [AudioTrack].
+ */
+const val SOUNDS_ENABLED = false
 
 class QuizSounds(assets: AssetManager) {
     private val audioAttributes = AudioAttributes.Builder()
@@ -86,17 +94,16 @@ class QuizSounds(assets: AssetManager) {
 
     private fun load(assets: AssetManager) {
         if (released.get()) return
-        (MIN_QUIZ_STEP..MAX_QUIZ_STEP).forEach { step ->
+        // SoundPool loads asynchronously, so start the error sound before the notes.
+        wrongId = loadWrong(assets)
+        for (step in MIN_QUIZ_STEP..MAX_QUIZ_STEP) {
             if (released.get()) return
-            val bytes = runCatching {
-                assets.open(Pitch(step).pianoAssetPath()).use { it.readBytes() }
-            }.getOrNull() ?: return@forEach
-            val pcm = runCatching { parseWavPcm(bytes) }.getOrNull() ?: return@forEach
+            val pcm = runCatching {
+                assets.open(Pitch(step).pianoAssetPath()).use { decodeVorbisPcm(it.readBytes()) }
+            }.getOrNull() ?: continue
             sampleRate = pcm.sampleRate
             notes[step] = SHIFTS.associateWith { shift -> pitchShift(pcm.samples, shift) }
         }
-        if (released.get()) return
-        wrongId = loadWrong(assets)
     }
 
     private fun mixTones(tones: List<SoundTone>): ShortArray? {

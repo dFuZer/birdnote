@@ -26,14 +26,41 @@ class PcmTest {
     }
 
     @Test
-    fun convertedPianoAssetIsMonoPcm() {
-        val file = listOf(
-            java.io.File("assets/notes/4C.wav"),
-            java.io.File("../assets/notes/4C.wav"),
-        ).first { it.exists() }
-        val parsed = parseWavPcm(file.readBytes())
-        assertEquals(44_100, parsed.sampleRate)
-        assertTrue(parsed.samples.isNotEmpty())
+    fun shippedNotesAreTheQuizVorbisSet() {
+        val root = listOf(
+            java.io.File("assets"),
+            java.io.File("../assets"),
+        ).first { it.isDirectory }
+        val notes = java.io.File(root, "notes")
+        val expected = (14..42).map { step ->
+            java.io.File(Pitch(step).pianoAssetPath()).name
+        }.toSet() + "wrong.mp3"
+        assertEquals(expected, notes.list()?.toSet())
+        for (step in 14..42) {
+            val file = java.io.File(root, Pitch(step).pianoAssetPath())
+            val header = file.inputStream().use { it.readNBytes(96) }
+            assertEquals("OggS", header.decodeToString(0, 4))
+            assertTrue(String(header, Charsets.ISO_8859_1).contains("vorbis"))
+            assertTrue("${file.name} is ${file.length()} bytes", file.length() < 64 * 1024)
+        }
+    }
+
+    @Test
+    fun decodeVorbisPcmReadsEveryQuizNoteQuickly() {
+        val root = listOf(
+            java.io.File("assets"),
+            java.io.File("../assets"),
+        ).first { it.isDirectory }
+        val started = System.nanoTime()
+        for (step in 14..42) {
+            val file = java.io.File(root, Pitch(step).pianoAssetPath())
+            val pcm = decodeVorbisPcm(file.readBytes())
+            assertEquals(44_100, pcm.sampleRate)
+            assertTrue(pcm.samples.size > 44_100 / 4)
+            assertTrue(pcm.samples.any { sample -> sample != 0.toShort() })
+        }
+        val millis = (System.nanoTime() - started) / 1_000_000
+        assertTrue("decoded 29 notes in ${millis}ms", millis < 1_500)
     }
 
     @Test
