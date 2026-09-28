@@ -71,6 +71,43 @@ class StaffSlideTest {
         assertEquals(0.0125f, next, 0.0001f)
     }
 
+    @Test
+    fun motionBlurMatchesFrameTravel() {
+        assertEquals(
+            0f,
+            motionBlurSigmaPx(
+                travelSlots = 0.01f,
+                slotWidth = 80f,
+                minTravelPx = 1f,
+                sigmaPerTravelPx = 0.85f,
+                maxSigmaPx = 40f,
+            ),
+            0f,
+        )
+        assertEquals(
+            6.8f,
+            motionBlurSigmaPx(
+                travelSlots = -0.1f,
+                slotWidth = 80f,
+                minTravelPx = 1f,
+                sigmaPerTravelPx = 0.85f,
+                maxSigmaPx = 40f,
+            ),
+            0.001f,
+        )
+        assertEquals(
+            40f,
+            motionBlurSigmaPx(
+                travelSlots = 2f,
+                slotWidth = 80f,
+                minTravelPx = 1f,
+                sigmaPerTravelPx = 0.85f,
+                maxSigmaPx = 40f,
+            ),
+            0.001f,
+        )
+    }
+
     private fun displayedSlot(absoluteIndex: Int, shift: Float, origin: Int): Float =
         (absoluteIndex - origin) - slideOffsetSlots(shift, origin)
 }

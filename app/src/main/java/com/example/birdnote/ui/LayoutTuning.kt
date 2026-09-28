@@ -92,7 +92,7 @@ object LayoutTuning {
         const val intervalAnswerColumns = 4
         const val chordAnswerMaxRows = 2
         const val answerDisabledAlpha = 0.55f
-        const val noteFollowTimeMillis = 2000
+        const val noteFollowTimeMillis = 1500
         const val noteFollowMinSpeedSlotsPerSecond = 0.05f
     }
 
@@ -156,6 +156,13 @@ object LayoutTuning {
         const val accidentalToHeadGapInLineSpaces = 0.18f
         const val accidentalSameColumnMinSteps = 5
         const val accidentalFlatExtraSteps = 1
+
+        // Horizontal smear while a belt is sliding. Sigma is this fraction of the
+        // distance traveled in the last frame; slower motion stays sharp.
+        const val motionBlurMinTravelPx = 1f
+        const val motionBlurSigmaPerTravelPx = 0.625f
+        const val motionBlurPadSlots = 1.5f
+        const val motionBlurTailSigmas = 3f
 
         // SVG clef bounds, relative to one staff-line spacing.
         const val trebleClefXInLineSpaces = 0.15f

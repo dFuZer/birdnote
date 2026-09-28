@@ -8,21 +8,27 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.CacheDrawScope
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
@@ -38,8 +44,10 @@ import com.example.birdnote.domain.staffStep
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.theme.LightBlue
 import com.example.birdnote.ui.theme.NoteZoneHighlight
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.round
+import kotlin.math.roundToInt
 
 @Immutable
 data class StaffChord(
@@ -278,19 +286,30 @@ private fun SlidingHighlight(
                 layoutSlot(chord, highlightIndex, geometry),
                 geometry.lineSpacing,
             )
+            val contentRight = highlights.maxOfOrNull { it.topLeft.x + it.size.width }
+            if (contentRight == null) {
+                return@drawWithCache onDrawBehind {}
+            }
+            val blurPadPx = motionBlurPadPx(geometry.slotWidth)
+            val slidingLayer = recordSlidingLayer(
+                blurPadPx = blurPadPx,
+                contentWidth = maxOf(size.width, contentRight),
+                contentHeight = size.height,
+            ) {
+                highlights.forEach { highlight ->
+                    drawRoundRect(
+                        color = LightBlue,
+                        topLeft = highlight.topLeft,
+                        size = highlight.size,
+                        cornerRadius = CornerRadius(highlight.radius, highlight.radius),
+                    )
+                }
+            }
+            val smear = motionBlurSmearLayer()
             val clipLeft = staffClipLeft(geometry.clefRight)
             onDrawBehind {
                 clipRect(left = clipLeft) {
-                    translate(left = slideOffsetPx(slide, geometry.slotWidth)) {
-                        highlights.forEach { highlight ->
-                            drawRoundRect(
-                                color = LightBlue,
-                                topLeft = highlight.topLeft,
-                                size = highlight.size,
-                                cornerRadius = CornerRadius(highlight.radius, highlight.radius),
-                            )
-                        }
-                    }
+                    drawSlidingLayer(slidingLayer, smear, slide, geometry.slotWidth)
                 }
             }
         },
@@ -393,12 +412,22 @@ private fun StaffNotesLayer(
                     drawLayer(notesLayer)
                 }
             } else {
+                val blurPadPx = motionBlurPadPx(geometry.slotWidth)
+                val slidingLayer = recordSlidingLayer(
+                    blurPadPx = blurPadPx,
+                    contentWidth = maxOf(
+                        size.width,
+                        geometry.notesStartX + (chords.size + 1) * geometry.slotWidth,
+                    ),
+                    contentHeight = size.height,
+                ) {
+                    drawCachedChords()
+                }
+                val smear = motionBlurSmearLayer()
                 val clipLeft = staffClipLeft(geometry.clefRight)
                 onDrawBehind {
                     clipRect(left = clipLeft) {
-                        translate(left = slideOffsetPx(sliding, geometry.slotWidth)) {
-                            drawCachedChords()
-                        }
+                        drawSlidingLayer(slidingLayer, smear, sliding, geometry.slotWidth)
                     }
                 }
             }
@@ -409,6 +438,125 @@ private fun StaffNotesLayer(
 /** Horizontal offset shared by the sliding highlight and the sliding notes. */
 private fun slideOffsetPx(slide: StaffSlide<*>, slotWidth: Float): Float =
     -(slide.shift - slide.origin) * slotWidth
+
+/** Vertical radius has to be positive; this leaves the smear horizontal. */
+private const val MOTION_BLUR_CROSS_AXIS_SIGMA = 0.01f
+
+private val horizontalMotionBlurSupported: Boolean =
+    BlurEffect(radiusX = 1f, radiusY = 1f).isSupported()
+
+private class SlidingLayer(
+    val layer: GraphicsLayer,
+    val size: IntSize,
+    val blurPadPx: Int,
+)
+
+private fun motionBlurPadPx(slotWidth: Float): Int =
+    ceil(slotWidth * LayoutTuning.Staff.motionBlurPadSlots).toInt().coerceAtLeast(1)
+
+private fun CacheDrawScope.motionBlurSmearLayer(): GraphicsLayer? =
+    if (horizontalMotionBlurSupported) {
+        null
+    } else {
+        obtainGraphicsLayer().apply { clip = false }
+    }
+
+private fun CacheDrawScope.recordSlidingLayer(
+    blurPadPx: Int,
+    contentWidth: Float,
+    contentHeight: Float,
+    drawContent: DrawScope.() -> Unit,
+): SlidingLayer {
+    val layerSize = IntSize(
+        width = ceil(contentWidth + blurPadPx * 2f).toInt().coerceAtLeast(1),
+        height = ceil(contentHeight).toInt().coerceAtLeast(1),
+    )
+    val layer = obtainGraphicsLayer().apply {
+        clip = false
+        record(size = layerSize) {
+            translate(left = blurPadPx.toFloat()) {
+                drawContent()
+            }
+        }
+    }
+    return SlidingLayer(layer, layerSize, blurPadPx)
+}
+
+/**
+ * Draws a cached staff picture at the slide position, smearing it along the
+ * last frame of travel. Notes, stems, and accidentals share one picture, so
+ * they blur together.
+ */
+private fun DrawScope.drawSlidingLayer(
+    sliding: SlidingLayer,
+    smear: GraphicsLayer?,
+    slide: StaffSlide<*>,
+    slotWidth: Float,
+) {
+    val tuning = LayoutTuning.Staff
+    val sigma = motionBlurSigmaPx(
+        travelSlots = slide.travelSlots,
+        slotWidth = slotWidth,
+        minTravelPx = tuning.motionBlurMinTravelPx,
+        sigmaPerTravelPx = tuning.motionBlurSigmaPerTravelPx,
+        maxSigmaPx = sliding.blurPadPx / tuning.motionBlurTailSigmas,
+    )
+    val layer = sliding.layer
+    translate(left = slideOffsetPx(slide, slotWidth) - sliding.blurPadPx) {
+        when {
+            sigma > 0f && horizontalMotionBlurSupported -> {
+                layer.renderEffect = BlurEffect(
+                    radiusX = sigma,
+                    radiusY = MOTION_BLUR_CROSS_AXIS_SIGMA,
+                    edgeTreatment = TileMode.Decal,
+                )
+                drawLayer(layer)
+            }
+            sigma > 0f && smear != null -> {
+                layer.renderEffect = null
+                drawSampledMotionBlur(
+                    scratch = smear,
+                    source = layer,
+                    layerSize = sliding.size,
+                    blurPadPx = sliding.blurPadPx,
+                    travelPx = slide.travelSlots * slotWidth,
+                )
+            }
+            else -> {
+                layer.renderEffect = null
+                drawLayer(layer)
+            }
+        }
+    }
+}
+
+/** Box-filter smear for devices without [BlurEffect]. Samples add up to the original ink. */
+private fun DrawScope.drawSampledMotionBlur(
+    scratch: GraphicsLayer,
+    source: GraphicsLayer,
+    layerSize: IntSize,
+    blurPadPx: Int,
+    travelPx: Float,
+) {
+    val span = travelPx.coerceIn(-blurPadPx * 2f, blurPadPx * 2f)
+    val samples = (abs(span) / 2f).roundToInt().coerceIn(3, 8)
+    source.renderEffect = null
+    source.blendMode = BlendMode.Plus
+    source.alpha = 1f / samples
+    source.topLeft = IntOffset.Zero
+    val start = -span / 2f
+    val step = span / samples
+    scratch.record(size = layerSize) {
+        repeat(samples) { index ->
+            translate(left = start + (index + 0.5f) * step) {
+                drawLayer(source)
+            }
+        }
+    }
+    drawLayer(scratch)
+    source.alpha = 1f
+    source.blendMode = BlendMode.SrcOver
+}
 
 /** Clip edge on a device pixel, so a note leaving the clef is cut on a pixel boundary. */
 private fun staffClipLeft(clefRight: Float): Float = round(clefRight)

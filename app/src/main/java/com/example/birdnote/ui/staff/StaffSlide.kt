@@ -37,6 +37,13 @@ class StaffSlide<T> {
     var shift: Float by mutableFloatStateOf(0f)
         private set
 
+    /**
+     * Slots moved on the last animation frame. Zero while the belt is resting.
+     * Read it only while drawing; the sign is the direction of travel.
+     */
+    var travelSlots: Float by mutableFloatStateOf(0f)
+        private set
+
     internal fun publish(belt: List<T>, targetShift: Float, newOrigin: Int) {
         notes = belt.toList()
         origin = newOrigin
@@ -44,9 +51,28 @@ class StaffSlide<T> {
         highlightIndex = local.coerceIn(0, (belt.size - 1).coerceAtLeast(0))
     }
 
-    internal fun moveTo(shift: Float) {
-        this.shift = shift
+    internal fun moveTo(shift: Float, travelSlots: Float = 0f) {
+        if (this.shift != shift) this.shift = shift
+        if (this.travelSlots != travelSlots) this.travelSlots = travelSlots
     }
+}
+
+/**
+ * Horizontal blur sigma, in pixels, for one frame of travel.
+ * Slow motion stays sharp. The result never exceeds [maxSigmaPx], which keeps
+ * the smear inside the padded note layer.
+ */
+internal fun motionBlurSigmaPx(
+    travelSlots: Float,
+    slotWidth: Float,
+    minTravelPx: Float,
+    sigmaPerTravelPx: Float,
+    maxSigmaPx: Float,
+): Float {
+    if (maxSigmaPx <= 0f) return 0f
+    val travelPx = abs(travelSlots) * slotWidth
+    if (travelPx < minTravelPx) return 0f
+    return (travelPx * sigmaPerTravelPx).coerceAtMost(maxSigmaPx)
 }
 
 /** Slots the belt is shifted left of absolute index 0. */
@@ -145,16 +171,18 @@ fun <T> rememberStaffSlide(
                     }
                     val dt = ((time - lastTime) / 1_000_000_000f).coerceIn(0f, 0.05f)
                     lastTime = time
+                    val previous = slide.shift
                     val next = advanceShift(
-                        slide.shift,
+                        previous,
                         targetShift,
                         tauSeconds,
                         minSpeedSlotsPerSecond,
                         dt,
                     )
-                    if (next != slide.shift) slide.moveTo(next)
+                    if (next != previous) slide.moveTo(next, next - previous)
                 }
             }
+            if (slide.travelSlots != 0f) slide.moveTo(slide.shift)
         }
     }
 
