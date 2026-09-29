@@ -8,7 +8,7 @@ BirdNote is a free, offline Android app for anyone who wants to get faster at re
 
 ## Why BirdNote exists
 
-Reading sheet music is a skill of **sight**, not memory tricks. You improve when you look at many notes, intervals, and chords under a little pressure and get immediate feedback. BirdNote is built for that: short rounds that feel like a game, but the content is always honest notation on a staff.
+Reading sheet music is a skill of **sight**, not memory tricks. You improve when you look at many notes, intervals, and chords under a little pressure and get immediate feedback. BirdNote is built for that.
 
 It helps if you:
 
@@ -21,10 +21,10 @@ BirdNote is **not** a sheet-music editor, a full theory course, or a social lead
 
 ## How it works
 
-1. **Pick what to train** — single notes, intervals between two notes, or chord qualities (major, minor, sevenths, and more as you level up).
-2. **Choose difficulty and clef** (where it applies) — the preview shows the range you will read.
-3. **Play a timed round** — notation scrolls across the staff like continuous reading. Tap the right label before time runs out.
-4. **Track yourself** — your best score for each setup is saved on your device so you can beat your own record next time.
+**Pick what to train**: single notes, intervals between two notes, or chord qualities (major, minor, sevenths, and more as you level up).
+**Choose difficulty and clef**: the preview shows the range you will read.
+**Play a timed round**: notation scrolls across the staff like continuous reading. Tap the right label before time runs out.
+**Track yourself**: your best score for each setup is saved on your device so you can beat your own record next time.
 
 Correct answers play the pitches on piano; mistakes cost time and play a clear “wrong” cue, so accuracy matters. The interface is in **French** (solfège note names by default; you can switch to English or German labels for the note drill in settings).
 
