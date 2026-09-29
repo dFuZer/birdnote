@@ -1,34 +1,30 @@
 # BirdNote
 
-BirdNote is an offline Android app for reading music on the staff. You practice in short timed drills: name a note, name an interval, or name a chord quality while the notation scrolls. The score is how many correct answers fit in one round. Personal bests stay on the device.
+**Learn to read notes on the staff by doing it—not by reading about it.**
 
-There is no account and no network. The interface is in French.
+BirdNote is a free, offline Android app for anyone who wants to get faster at recognizing what’s written on a music staff. You see real notation, answer from your gut, hear whether you were right, and try again. No account, no ads, no internet required once installed.
 
-## What you can practice
+## Why BirdNote exists
 
-Open the app, tap **S'entraîner**, and pick a drill.
+Reading sheet music is a skill of **sight**, not memory tricks. You improve when you look at many notes, intervals, and chords under a little pressure and get immediate feedback. BirdNote is built for that: short rounds that feel like a game, but the content is always honest notation on a staff.
 
-| Drill | What you read | What you answer |
-|-------|----------------|-----------------|
-| **Notes** | One note on treble, bass, or both | The note name: Do, Ré, Mi… by default |
-| **Intervalles** | Two notes on the treble staff | The interval: Seconde, Tierce, Quarte… |
-| **Accords** | A stacked chord, current one and the next | The quality: Majeur, Mineur, and more at higher levels |
+It helps if you:
 
-Each drill has four difficulties. Notes and chords also have a clef: **Sol**, **Fa**, or **Sol + Fa** (the two clefs alternate). Intervals always use treble. That is 28 timed configurations, and each one keeps its own best score.
+- Are learning an instrument or voice and want the staff to stop feeling like a foreign language
+- Already play but treble, bass, or both still slow you down
+- Want to drill intervals or chord *quality* by eye, not only by ear
+- Prefer a simple app on your phone over a heavy course or a cluttered “music theory” tool
 
-**Paramètres** changes how note names are written on the note drill only: solfège, English, German, or solfège with Ti. Interval and chord labels stay in French.
+BirdNote is **not** a sheet-music editor, a full theory course, or a social leaderboard. It is deliberate practice: see → answer → hear → next.
 
-## A round
+## How it works
 
-Setup shows a preview of the range you are about to read: a pink band on the staff, and sample notes for that difficulty and clef. **C'est parti !** starts the round.
+1. **Pick what to train** — single notes, intervals between two notes, or chord qualities (major, minor, sevenths, and more as you level up).
+2. **Choose difficulty and clef** (where it applies) — the preview shows the range you will read.
+3. **Play a timed round** — notation scrolls across the staff like continuous reading. Tap the right label before time runs out.
+4. **Track yourself** — your best score for each setup is saved on your device so you can beat your own record next time.
 
-- The round lasts **45 seconds**. A bar shows the time left. There is no numeric countdown.
-- Each correct answer adds **1** to the score.
-- Each wrong answer takes **3 seconds** off the clock and plays an error sound. It does not add a point.
-- A correct answer plays the piano pitch you just read: one note, both notes of the interval, or the chord.
-- The staff slides left to the next item either way. You can stop early with **Arrêter**.
-
-The result is **Bravo !**, the score, then **Recommencer** (same setup) or **Menu**. If the score is strictly higher than the saved best for that configuration, it is stored. **Mes scores** shows those bests: red numbers where you have played, a dash where you have not.
+Correct answers play the pitches on piano; mistakes cost time and play a clear “wrong” cue, so accuracy matters. The interface is in **French** (solfège note names by default; you can switch to English or German labels for the note drill in settings).
 
 ## Technical stack
 
@@ -46,9 +42,7 @@ The project is a single Android application module, `:app`, package `com.example
 | Audio | Short piano samples, decoded with JOrbis. A wrong answer uses a separate clip. |
 | Tests | JUnit 4 for domain and view-model logic. Espresso and Compose UI tests for flows on a device or emulator. |
 
-Pitch, clef, and scoring live in `domain/` as plain Kotlin, so they can be tested without Android or Compose. Screens in `ui/` draw that result and send taps back out. One view model owns each quiz.
-
-## Layout
+Pitch, clef, and scoring live in `domain/` as plain Kotlin, so they can be tested without Android or Compose. Screens in `ui/` render domain results and forward user events. One view model owns each quiz screen.
 
 ```
 app/src/main/java/com/example/birdnote/
@@ -61,7 +55,7 @@ app/src/main/java/com/example/birdnote/
 assets/            illustrations, clef and note artwork, piano samples
 ```
 
-## Build and test
+### Build and test
 
 Install [Android Studio](https://developer.android.com/studio) (or an Android SDK plus JDK 25) and open this directory.
 
@@ -71,8 +65,8 @@ Install [Android Studio](https://developer.android.com/studio) (or an Android SD
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
-`assembleDebug` builds a debug APK. `test` runs the local unit tests. `connectedDebugAndroidTest` needs a running emulator or a device.
+`assembleDebug` builds a debug APK. `test` runs unit tests. `connectedDebugAndroidTest` needs a running emulator or device.
 
 ## More detail
 
-[docs/UTILIZATION_FLOW.md](docs/UTILIZATION_FLOW.md) walks through every screen, the difficulty tables, and what a round looks and sounds like.
+[docs/UTILIZATION_FLOW.md](docs/UTILIZATION_FLOW.md) describes every screen, drill variant, and what a round looks and sounds like.
