@@ -21,10 +21,10 @@ BirdNote is **not** a sheet-music editor, a full theory course, or a social lead
 
 ## How it works
 
-**Pick what to train**: single notes, intervals between two notes, or chord qualities (major, minor, sevenths, and more as you level up).
-**Choose difficulty and clef**: the preview shows the range you will read.
-**Play a timed round**: notation scrolls across the staff like continuous reading. Tap the right label before time runs out.
-**Track yourself**: your best score for each setup is saved on your device so you can beat your own record next time.
+- **Pick what to train**: single notes, intervals between two notes, or chord qualities (major, minor, sevenths, and more as you level up).
+- **Choose difficulty and clef**: the preview shows the range you will read.
+- **Play a timed round**: notation scrolls across the staff like continuous reading. Tap the right label before time runs out.
+- **Track yourself**: your best score for each setup is saved on your device so you can beat your own record next time.
 
 Correct answers play the pitches on piano; mistakes cost time and play a clear “wrong” cue, so accuracy matters. The interface is in **French** (solfège note names by default; you can switch to English or German labels for the note drill in settings).
 
