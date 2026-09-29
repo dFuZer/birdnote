@@ -24,7 +24,6 @@ import kotlinx.coroutines.launch
 data class IntervalQuizUiState(
     val intervals: List<StaffInterval> = emptyList(),
     val score: Int = 0,
-    val remainingMillis: Long = QUIZ_DURATION_SECONDS * 1000L,
     val durationMillis: Long = QUIZ_DURATION_SECONDS * 1000L,
     val answersLocked: Boolean = false,
     val lastFeedbackCorrect: Boolean? = null,
@@ -44,11 +43,13 @@ class IntervalQuizViewModel(
     private val _state = MutableStateFlow(
         IntervalQuizUiState(
             intervals = generateIntervalQueue(config, QUEUE_SIZE, random),
-            remainingMillis = durationMillis,
             durationMillis = durationMillis,
         ),
     )
     val state: StateFlow<IntervalQuizUiState> = _state.asStateFlow()
+
+    private val _remainingMillis = MutableStateFlow(durationMillis)
+    val remainingMillis: StateFlow<Long> = _remainingMillis.asStateFlow()
 
     private var timerJob: Job? = null
 
@@ -57,39 +58,33 @@ class IntervalQuizViewModel(
     }
 
     fun onAnswer(answer: IntervalName) {
-        var shouldStop = false
-        _state.update { current ->
-            if (current.finished || current.answersLocked || current.intervals.isEmpty()) {
-                current
-            } else {
-                val answered = current.intervals.first()
-                val correct = isCorrect(answered, answer)
-                val remaining = if (correct) {
-                    current.remainingMillis
-                } else {
-                    (current.remainingMillis - penaltyMillis).coerceAtLeast(0L)
-                }
-                val finished = remaining <= 0L
-                shouldStop = finished
-                current.copy(
-                    intervals = advanceIntervalQueue(current.intervals, config, random),
-                    score = if (correct) current.score + 1 else current.score,
-                    remainingMillis = remaining,
-                    lastFeedbackCorrect = correct,
-                    answerFeedback = AnswerFeedback(
-                        id = (current.answerFeedback?.id ?: 0) + 1,
-                        correct = correct,
-                        tones = listOf(
-                            SoundTone(answered.lower.diatonicStep),
-                            SoundTone(answered.upper.diatonicStep),
-                        ),
-                    ),
-                    finished = finished,
-                    answersLocked = current.answersLocked || finished,
-                )
-            }
+        val current = _state.value
+        if (current.finished || current.answersLocked || current.intervals.isEmpty()) return
+        val answered = current.intervals.first()
+        val correct = isCorrect(answered, answer)
+        val remaining = if (correct) {
+            _remainingMillis.value
+        } else {
+            (_remainingMillis.value - penaltyMillis).coerceAtLeast(0L)
         }
-        if (shouldStop) timerJob?.cancel()
+        _remainingMillis.value = remaining
+        val finished = remaining <= 0L
+        _state.value = current.copy(
+            intervals = advanceIntervalQueue(current.intervals, config, random),
+            score = if (correct) current.score + 1 else current.score,
+            lastFeedbackCorrect = correct,
+            answerFeedback = AnswerFeedback(
+                id = (current.answerFeedback?.id ?: 0) + 1,
+                correct = correct,
+                tones = listOf(
+                    SoundTone(answered.lower.diatonicStep),
+                    SoundTone(answered.upper.diatonicStep),
+                ),
+            ),
+            finished = finished,
+            answersLocked = current.answersLocked || finished,
+        )
+        if (finished) timerJob?.cancel()
     }
 
     fun stop() {
@@ -106,21 +101,19 @@ class IntervalQuizViewModel(
         timerJob = viewModelScope.launch {
             while (true) {
                 delay(TIMER_TICK_MILLIS)
-                var shouldFinish = false
-                _state.update { current ->
-                    if (current.finished) {
-                        current
-                    } else {
-                        val next = (current.remainingMillis - TIMER_TICK_MILLIS).coerceAtLeast(0L)
-                        shouldFinish = next <= 0L
-                        current.copy(
-                            remainingMillis = next,
-                            finished = shouldFinish,
-                            answersLocked = current.answersLocked || shouldFinish,
-                        )
+                if (_state.value.finished) break
+                val next = (_remainingMillis.value - TIMER_TICK_MILLIS).coerceAtLeast(0L)
+                _remainingMillis.value = next
+                if (next <= 0L) {
+                    _state.update { current ->
+                        if (current.finished) {
+                            current
+                        } else {
+                            current.copy(finished = true, answersLocked = true)
+                        }
                     }
+                    break
                 }
-                if (shouldFinish) break
             }
         }
     }

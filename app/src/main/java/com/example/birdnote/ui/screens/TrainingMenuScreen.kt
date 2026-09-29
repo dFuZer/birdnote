@@ -53,7 +53,6 @@ fun TrainingMenuScreen(
                 MenuButton(text = stringResource(R.string.notes), onClick = onNotesClick)
                 MenuButton(text = stringResource(R.string.intervals), onClick = onIntervalsClick)
                 MenuButton(text = stringResource(R.string.chords), onClick = onChordsClick)
-                MenuButton(text = stringResource(R.string.rhythms), enabled = false)
             }
         }
     }

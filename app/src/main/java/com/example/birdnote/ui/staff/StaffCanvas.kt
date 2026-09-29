@@ -8,27 +8,20 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.CacheDrawScope
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
@@ -36,6 +29,7 @@ import com.example.birdnote.domain.Accidental
 import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.MAX_DIFFICULTY
+import com.example.birdnote.domain.MIN_DIFFICULTY
 import com.example.birdnote.domain.Pitch
 import com.example.birdnote.domain.PracticeChord
 import com.example.birdnote.domain.StaffInterval
@@ -44,10 +38,8 @@ import com.example.birdnote.domain.staffStep
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.theme.LightBlue
 import com.example.birdnote.ui.theme.NoteZoneHighlight
-import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.round
-import kotlin.math.roundToInt
 
 @Immutable
 data class StaffChord(
@@ -84,11 +76,12 @@ private class StaffPainters(
 fun StaffCanvas(
     model: StaffRenderModel,
     modifier: Modifier = Modifier,
-    slide: StaffSlide<*>? = null,
     visibleSlotCount: Int? = null,
     noteAreaExtraLeftPaddingInLineSpaces: Float = 0f,
     extendStaffLinesToEnd: Boolean = false,
     compactVertical: Boolean = false,
+    staffScaleOverride: Float? = null,
+    centerVertically: Boolean = false,
 ) {
     val trebleClef = rememberStaffSvgPainter("key-sol.svg", width = 38, height = 109)
     val bassClef = rememberStaffSvgPainter("key-fa.svg", width = 49, height = 57)
@@ -111,7 +104,6 @@ fun StaffCanvas(
     val painters = remember(trebleClef, bassClef, note, sharp, flat, natural) {
         StaffPainters(trebleClef, bassClef, note, sharp, flat, natural)
     }
-    val highlightIndex = slide?.highlightIndex ?: model.highlightIndex
     Box(modifier) {
         StaffRangeLayer(
             clefMode = model.clefMode,
@@ -120,17 +112,20 @@ fun StaffCanvas(
             visibleSlotCount = visibleSlotCount,
             noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
             compactVertical = compactVertical,
+            staffScaleOverride = staffScaleOverride,
+            centerVertically = centerVertically,
             modifier = Modifier.fillMaxSize(),
         )
         StaffHighlights(
             clefMode = model.clefMode,
             difficulty = model.difficulty,
             chords = model.chords,
-            highlightIndex = highlightIndex,
+            highlightIndex = model.highlightIndex,
             visibleSlotCount = visibleSlotCount,
             noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
             compactVertical = compactVertical,
-            slide = slide,
+            staffScaleOverride = staffScaleOverride,
+            centerVertically = centerVertically,
             modifier = Modifier.fillMaxSize(),
         )
         StaffLineLayer(
@@ -140,6 +135,8 @@ fun StaffCanvas(
             noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
             extendStaffLinesToEnd = extendStaffLinesToEnd,
             compactVertical = compactVertical,
+            staffScaleOverride = staffScaleOverride,
+            centerVertically = centerVertically,
             painters = painters,
             modifier = Modifier.fillMaxSize(),
         )
@@ -150,7 +147,8 @@ fun StaffCanvas(
             visibleSlotCount = visibleSlotCount,
             noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
             compactVertical = compactVertical,
-            slide = slide,
+            staffScaleOverride = staffScaleOverride,
+            centerVertically = centerVertically,
             painters = painters,
             modifier = Modifier.fillMaxSize(),
         )
@@ -165,6 +163,8 @@ private fun StaffRangeLayer(
     visibleSlotCount: Int?,
     noteAreaExtraLeftPaddingInLineSpaces: Float,
     compactVertical: Boolean,
+    staffScaleOverride: Float?,
+    centerVertically: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Spacer(
@@ -181,6 +181,8 @@ private fun StaffRangeLayer(
                 visibleSlotCount = visibleSlotCount,
                 noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
                 compactVertical = compactVertical,
+                staffScaleOverride = staffScaleOverride,
+                centerVertically = centerVertically,
             )
             val rangeLayer = obtainGraphicsLayer().apply {
                 record {
@@ -203,27 +205,12 @@ private fun StaffHighlights(
     visibleSlotCount: Int?,
     noteAreaExtraLeftPaddingInLineSpaces: Float,
     compactVertical: Boolean,
-    slide: StaffSlide<*>?,
+    staffScaleOverride: Float?,
+    centerVertically: Boolean,
     modifier: Modifier = Modifier,
 ) {
     if (highlightIndex == null) return
-    val chord = chords.getOrNull(highlightIndex)
-    if (slide != null) {
-        if (chord == null) return
-        SlidingHighlight(
-            clefMode = clefMode,
-            difficulty = difficulty,
-            chord = chord,
-            highlightIndex = highlightIndex,
-            visibleSlotCount = visibleSlotCount,
-            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
-            compactVertical = compactVertical,
-            slide = slide,
-            modifier = modifier,
-        )
-        return
-    }
-    if (chord == null) return
+    val chord = chords.getOrNull(highlightIndex) ?: return
     Spacer(
         modifier = modifier.drawWithCache {
             val geometry = staffGeometry(
@@ -236,6 +223,8 @@ private fun StaffHighlights(
                 visibleSlotCount = visibleSlotCount,
                 noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
                 compactVertical = compactVertical,
+                staffScaleOverride = staffScaleOverride,
+                centerVertically = centerVertically,
             )
             val highlights = highlightRects(
                 highlightIndex,
@@ -250,66 +239,6 @@ private fun StaffHighlights(
                         size = highlight.size,
                         cornerRadius = CornerRadius(highlight.radius, highlight.radius),
                     )
-                }
-            }
-        },
-    )
-}
-
-@Composable
-private fun SlidingHighlight(
-    clefMode: ClefMode,
-    difficulty: Int?,
-    chord: StaffChord,
-    highlightIndex: Int,
-    visibleSlotCount: Int?,
-    noteAreaExtraLeftPaddingInLineSpaces: Float,
-    compactVertical: Boolean,
-    slide: StaffSlide<*>,
-    modifier: Modifier = Modifier,
-) {
-    Spacer(
-        modifier = modifier.drawWithCache {
-            val geometry = staffGeometry(
-                size = size,
-                model = StaffRenderModel(
-                    clefMode = clefMode,
-                    chords = emptyList(),
-                    difficulty = difficulty,
-                ),
-                visibleSlotCount = visibleSlotCount,
-                noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
-                compactVertical = compactVertical,
-            )
-            val highlights = highlightRects(
-                highlightIndex,
-                layoutSlot(chord, highlightIndex, geometry),
-                geometry.lineSpacing,
-            )
-            val contentRight = highlights.maxOfOrNull { it.topLeft.x + it.size.width }
-            if (contentRight == null) {
-                return@drawWithCache onDrawBehind {}
-            }
-            val blurPadPx = motionBlurPadPx(geometry.slotWidth)
-            val slidingLayer = recordSlidingLayer(
-                blurPadPx = blurPadPx,
-                contentWidth = maxOf(size.width, contentRight),
-                contentHeight = size.height,
-            ) {
-                highlights.forEach { highlight ->
-                    drawRoundRect(
-                        color = LightBlue,
-                        topLeft = highlight.topLeft,
-                        size = highlight.size,
-                        cornerRadius = CornerRadius(highlight.radius, highlight.radius),
-                    )
-                }
-            }
-            val smear = motionBlurSmearLayer()
-            val clipLeft = staffClipLeft(geometry.clefRight)
-            onDrawBehind {
-                clipRect(left = clipLeft) {
-                    drawSlidingLayer(slidingLayer, smear, slide, geometry.slotWidth)
                 }
             }
         },
@@ -324,6 +253,8 @@ private fun StaffLineLayer(
     noteAreaExtraLeftPaddingInLineSpaces: Float,
     extendStaffLinesToEnd: Boolean,
     compactVertical: Boolean,
+    staffScaleOverride: Float?,
+    centerVertically: Boolean,
     painters: StaffPainters,
     modifier: Modifier = Modifier,
 ) {
@@ -340,6 +271,8 @@ private fun StaffLineLayer(
                 visibleSlotCount = visibleSlotCount,
                 noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
                 compactVertical = compactVertical,
+                staffScaleOverride = staffScaleOverride,
+                centerVertically = centerVertically,
             )
             val staffLayer = obtainGraphicsLayer().apply {
                 record {
@@ -361,7 +294,8 @@ private fun StaffNotesLayer(
     visibleSlotCount: Int?,
     noteAreaExtraLeftPaddingInLineSpaces: Float,
     compactVertical: Boolean,
-    slide: StaffSlide<*>?,
+    staffScaleOverride: Float?,
+    centerVertically: Boolean,
     painters: StaffPainters,
     modifier: Modifier = Modifier,
 ) {
@@ -378,6 +312,8 @@ private fun StaffNotesLayer(
                 visibleSlotCount = visibleSlotCount,
                 noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
                 compactVertical = compactVertical,
+                staffScaleOverride = staffScaleOverride,
+                centerVertically = centerVertically,
             )
             val chordDraws = cacheChordDraws(plate, geometry)
             fun DrawScope.drawCachedChords() {
@@ -391,175 +327,30 @@ private fun StaffNotesLayer(
                     )
                 }
             }
-            val sliding = slide
-            if (sliding == null) {
-                val notesSize = IntSize(
-                    width = ceil(
-                        maxOf(
-                            size.width,
-                            geometry.notesStartX + (chords.size + 1) * geometry.slotWidth,
-                        ),
-                    ).toInt(),
-                    height = ceil(size.height).toInt(),
-                )
-                val notesLayer = obtainGraphicsLayer().apply {
-                    clip = false
-                    record(size = notesSize) {
-                        drawCachedChords()
-                    }
-                }
-                onDrawBehind {
-                    drawLayer(notesLayer)
-                }
-            } else {
-                val blurPadPx = motionBlurPadPx(geometry.slotWidth)
-                val slidingLayer = recordSlidingLayer(
-                    blurPadPx = blurPadPx,
-                    contentWidth = maxOf(
+            val notesSize = IntSize(
+                width = ceil(
+                    maxOf(
                         size.width,
                         geometry.notesStartX + (chords.size + 1) * geometry.slotWidth,
                     ),
-                    contentHeight = size.height,
-                ) {
+                ).toInt(),
+                height = ceil(size.height).toInt(),
+            )
+            val notesLayer = obtainGraphicsLayer().apply {
+                clip = false
+                record(size = notesSize) {
                     drawCachedChords()
                 }
-                val smear = motionBlurSmearLayer()
-                val clipLeft = staffClipLeft(geometry.clefRight)
-                onDrawBehind {
-                    clipRect(left = clipLeft) {
-                        drawSlidingLayer(slidingLayer, smear, sliding, geometry.slotWidth)
-                    }
-                }
+            }
+            onDrawBehind {
+                drawLayer(notesLayer)
             }
         },
     )
 }
 
-/** Horizontal offset shared by the sliding highlight and the sliding notes. */
-private fun slideOffsetPx(slide: StaffSlide<*>, slotWidth: Float): Float =
-    -(slide.shift - slide.origin) * slotWidth
-
-/** Vertical radius has to be positive; this leaves the smear horizontal. */
-private const val MOTION_BLUR_CROSS_AXIS_SIGMA = 0.01f
-
-private val horizontalMotionBlurSupported: Boolean =
-    BlurEffect(radiusX = 1f, radiusY = 1f).isSupported()
-
-private class SlidingLayer(
-    val layer: GraphicsLayer,
-    val size: IntSize,
-    val blurPadPx: Int,
-)
-
-private fun motionBlurPadPx(slotWidth: Float): Int =
-    ceil(slotWidth * LayoutTuning.Staff.motionBlurPadSlots).toInt().coerceAtLeast(1)
-
-private fun CacheDrawScope.motionBlurSmearLayer(): GraphicsLayer? =
-    if (horizontalMotionBlurSupported) {
-        null
-    } else {
-        obtainGraphicsLayer().apply { clip = false }
-    }
-
-private fun CacheDrawScope.recordSlidingLayer(
-    blurPadPx: Int,
-    contentWidth: Float,
-    contentHeight: Float,
-    drawContent: DrawScope.() -> Unit,
-): SlidingLayer {
-    val layerSize = IntSize(
-        width = ceil(contentWidth + blurPadPx * 2f).toInt().coerceAtLeast(1),
-        height = ceil(contentHeight).toInt().coerceAtLeast(1),
-    )
-    val layer = obtainGraphicsLayer().apply {
-        clip = false
-        record(size = layerSize) {
-            translate(left = blurPadPx.toFloat()) {
-                drawContent()
-            }
-        }
-    }
-    return SlidingLayer(layer, layerSize, blurPadPx)
-}
-
-/**
- * Draws a cached staff picture at the slide position, smearing it along the
- * last frame of travel. Notes, stems, and accidentals share one picture, so
- * they blur together.
- */
-private fun DrawScope.drawSlidingLayer(
-    sliding: SlidingLayer,
-    smear: GraphicsLayer?,
-    slide: StaffSlide<*>,
-    slotWidth: Float,
-) {
-    val tuning = LayoutTuning.Staff
-    val sigma = motionBlurSigmaPx(
-        travelSlots = slide.travelSlots,
-        slotWidth = slotWidth,
-        minTravelPx = tuning.motionBlurMinTravelPx,
-        sigmaPerTravelPx = tuning.motionBlurSigmaPerTravelPx,
-        maxSigmaPx = sliding.blurPadPx / tuning.motionBlurTailSigmas,
-    )
-    val layer = sliding.layer
-    translate(left = slideOffsetPx(slide, slotWidth) - sliding.blurPadPx) {
-        when {
-            sigma > 0f && horizontalMotionBlurSupported -> {
-                layer.renderEffect = BlurEffect(
-                    radiusX = sigma,
-                    radiusY = MOTION_BLUR_CROSS_AXIS_SIGMA,
-                    edgeTreatment = TileMode.Decal,
-                )
-                drawLayer(layer)
-            }
-            sigma > 0f && smear != null -> {
-                layer.renderEffect = null
-                drawSampledMotionBlur(
-                    scratch = smear,
-                    source = layer,
-                    layerSize = sliding.size,
-                    blurPadPx = sliding.blurPadPx,
-                    travelPx = slide.travelSlots * slotWidth,
-                )
-            }
-            else -> {
-                layer.renderEffect = null
-                drawLayer(layer)
-            }
-        }
-    }
-}
-
-/** Box-filter smear for devices without [BlurEffect]. Samples add up to the original ink. */
-private fun DrawScope.drawSampledMotionBlur(
-    scratch: GraphicsLayer,
-    source: GraphicsLayer,
-    layerSize: IntSize,
-    blurPadPx: Int,
-    travelPx: Float,
-) {
-    val span = travelPx.coerceIn(-blurPadPx * 2f, blurPadPx * 2f)
-    val samples = (abs(span) / 2f).roundToInt().coerceIn(3, 8)
-    source.renderEffect = null
-    source.blendMode = BlendMode.Plus
-    source.alpha = 1f / samples
-    source.topLeft = IntOffset.Zero
-    val start = -span / 2f
-    val step = span / samples
-    scratch.record(size = layerSize) {
-        repeat(samples) { index ->
-            translate(left = start + (index + 0.5f) * step) {
-                drawLayer(source)
-            }
-        }
-    }
-    drawLayer(scratch)
-    source.alpha = 1f
-    source.blendMode = BlendMode.SrcOver
-}
-
 /** Clip edge on a device pixel, so a note leaving the clef is cut on a pixel boundary. */
-private fun staffClipLeft(clefRight: Float): Float = round(clefRight)
+internal fun staffClipLeft(clefRight: Float): Float = round(clefRight)
 
 private fun layoutSlot(
     chord: StaffChord,
@@ -610,7 +401,7 @@ private fun rememberStaffSvgPainter(
 private const val STAFF_STEPS = 8
 private const val MAX_LEDGER_STEPS = 4
 
-private class StaffGeometry(
+internal class StaffGeometry(
     val clefs: List<Clef>,
     val bottomLineYs: List<Float>,
     val paddingX: Float,
@@ -624,18 +415,52 @@ private class StaffGeometry(
     fun slotCenterX(index: Int): Float = notesStartX + (index + 0.5f) * slotWidth
 }
 
-private class HighlightRect(
+internal class HighlightRect(
     val topLeft: Offset,
     val size: Size,
     val radius: Float,
 )
 
-private fun staffGeometry(
+internal fun chordPreviewStaffScale(
+    difficulty: Int,
+    tileHeightPx: Float,
+    notesSingleStaffHeightPx: Float,
+): Float {
+    if (difficulty >= 3) return LayoutTuning.Setup.chordPreviewReducedElementScale
+    if (difficulty != MIN_DIFFICULTY || tileHeightPx <= 0f) return 1f
+    val unscaled = lineSpacingForHeight(tileHeightPx, compactVertical = true)
+    if (unscaled <= 0f) return 1f
+    return notesSingleStaffLineSpacing(notesSingleStaffHeightPx) / unscaled
+}
+
+internal fun notesSingleStaffLineSpacing(canvasHeightPx: Float): Float {
+    val tuning = LayoutTuning.Staff
+    return lineSpacingForHeight(canvasHeightPx, compactVertical = false) *
+        tuning.doubleStaffScale *
+        tuning.singleStaffToDoubleRatio
+}
+
+internal fun lineSpacingForHeight(canvasHeightPx: Float, compactVertical: Boolean): Float {
+    val tuning = LayoutTuning.Staff
+    val paddingY = canvasHeightPx * if (compactVertical) {
+        tuning.compactVerticalPadding
+    } else {
+        tuning.verticalPadding
+    }
+    val ledgerAbove = if (compactVertical) tuning.compactLedgerStepsAbove else MAX_LEDGER_STEPS
+    val ledgerBelow = if (compactVertical) tuning.compactLedgerStepsBelow else MAX_LEDGER_STEPS
+    val totalSteps = STAFF_STEPS + ledgerAbove + ledgerBelow
+    return ((canvasHeightPx - paddingY * 2) / totalSteps) * 2f
+}
+
+internal fun staffGeometry(
     size: Size,
     model: StaffRenderModel,
     visibleSlotCount: Int?,
     noteAreaExtraLeftPaddingInLineSpaces: Float,
     compactVertical: Boolean,
+    staffScaleOverride: Float? = null,
+    centerVertically: Boolean = false,
 ): StaffGeometry {
     val clefs = when (model.clefMode) {
         ClefMode.SOL -> listOf(Clef.SOL)
@@ -657,12 +482,9 @@ private fun staffGeometry(
     }
     val available = size.height - paddingY * 2 - gap
     val blockHeight = available / clefs.size
-    val ledgerAbove = if (compactVertical) tuning.compactLedgerStepsAbove else MAX_LEDGER_STEPS
     val ledgerBelow = if (compactVertical) tuning.compactLedgerStepsBelow else MAX_LEDGER_STEPS
-    val totalSteps = STAFF_STEPS + ledgerAbove + ledgerBelow
-    val singleStaffLineSpacing =
-        ((size.height - paddingY * 2) / totalSteps) * 2f
-    val staffScale = if (compactVertical) {
+    val singleStaffLineSpacing = lineSpacingForHeight(size.height, compactVertical)
+    val staffScale = staffScaleOverride ?: if (compactVertical) {
         1f
     } else if (clefs.size == 2) {
         if (model.difficulty == MAX_DIFFICULTY) {
@@ -684,7 +506,7 @@ private fun staffGeometry(
     val bottomLineYs = clefs.indices.map { staffIndex ->
         val blockTop = paddingY + staffIndex * (blockHeight + gap)
         val blockCenterY = blockTop + blockHeight / 2f
-        if (compactVertical) {
+        if (compactVertical && !centerVertically) {
             blockTop + blockHeight - ledgerBelow * (lineSpacing / 2f)
         } else {
             blockCenterY + 2f * lineSpacing
@@ -703,13 +525,13 @@ private fun staffGeometry(
     )
 }
 
-private class CachedChordDraw(
+internal class CachedChordDraw(
     val index: Int,
     val bottomLineY: Float,
     val layout: ChordLayout,
 )
 
-private fun cacheChordDraws(
+internal fun cacheChordDraws(
     model: StaffRenderModel,
     geometry: StaffGeometry,
 ): List<CachedChordDraw> {
@@ -818,7 +640,7 @@ private fun DrawScope.drawRange(
     )
 }
 
-private fun highlightRects(
+internal fun highlightRects(
     highlightIndex: Int?,
     chordDraws: List<CachedChordDraw>,
     lineSpacing: Float,

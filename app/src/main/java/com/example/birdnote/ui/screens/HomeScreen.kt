@@ -16,6 +16,7 @@ import com.example.birdnote.ui.LayoutTuning
 @Composable
 fun HomeScreen(
     onTrainClick: () -> Unit,
+    onScoresClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -42,8 +43,7 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 MenuButton(text = stringResource(R.string.train), onClick = onTrainClick)
-                MenuButton(text = stringResource(R.string.my_scores), enabled = false)
-                MenuButton(text = stringResource(R.string.leaderboard), enabled = false)
+                MenuButton(text = stringResource(R.string.my_scores), onClick = onScoresClick)
                 MenuButton(text = stringResource(R.string.settings), onClick = onSettingsClick)
             }
         }

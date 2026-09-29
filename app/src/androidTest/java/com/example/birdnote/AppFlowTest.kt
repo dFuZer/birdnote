@@ -3,7 +3,6 @@ package com.example.birdnote
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -23,11 +22,13 @@ class AppFlowTest {
     @get:Rule(order = 0)
     val clearSettingsRule = object : TestWatcher() {
         override fun starting(description: Description) {
-            InstrumentationRegistry.getInstrumentation().targetContext
-                .getSharedPreferences(SETTINGS_PREFS_NAME, Context.MODE_PRIVATE)
-                .edit()
-                .clear()
-                .commit()
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            listOf(SETTINGS_PREFS_NAME, SCORES_PREFS_NAME).forEach { name ->
+                context.getSharedPreferences(name, Context.MODE_PRIVATE)
+                    .edit()
+                    .clear()
+                    .commit()
+            }
         }
     }
 
@@ -37,9 +38,8 @@ class AppFlowTest {
     @Test
     fun notesTrainingFlowReachesResultsAndCanRestartOrReturnHome() {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.my_scores))
-            .assertIsNotEnabled()
-        composeRule.onNodeWithText(composeRule.activity.getString(R.string.leaderboard))
-            .assertIsNotEnabled()
+            .assertIsEnabled()
+        composeRule.onNodeWithText("Classement").assertDoesNotExist()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.settings))
             .assertIsEnabled()
 
@@ -48,8 +48,7 @@ class AppFlowTest {
             .assertIsEnabled()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.chords))
             .assertIsEnabled()
-        composeRule.onNodeWithText(composeRule.activity.getString(R.string.rhythms))
-            .assertIsNotEnabled()
+        composeRule.onNodeWithText("Rythmes").assertDoesNotExist()
 
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.notes)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.lets_go)).performClick()
@@ -131,5 +130,39 @@ class AppFlowTest {
         }
         composeRule.onNodeWithText(NoteName.DO.label(NoteNaming.ENGLISH)).assertIsDisplayed()
         composeRule.onNodeWithText(NoteName.SI.label(NoteNaming.ENGLISH)).assertIsDisplayed()
+    }
+
+    @Test
+    fun bestScoreIsSavedForTheClefAndDifficultyJustPlayed() {
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.train)).performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.notes)).performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.lets_go)).performClick()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(composeRule.activity.getString(R.string.stop))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.stop)).performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.menu)).performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.my_scores)).performClick()
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_fa)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol_fa)).assertIsDisplayed()
+        composeRule.onNodeWithText("0").assertIsDisplayed()
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.intervals)).performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.score_best)).assertIsDisplayed()
+        composeRule.onNodeWithText("0").assertDoesNotExist()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol)).assertDoesNotExist()
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.chords)).performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol)).assertIsDisplayed()
+        composeRule.onNodeWithText("0").assertDoesNotExist()
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.notes)).performClick()
+        composeRule.onNodeWithText("0").assertIsDisplayed()
     }
 }

@@ -71,6 +71,7 @@ object LayoutTuning {
         val previewInnerPadding = 10.dp
         const val previewNoteAreaExtraLeftPaddingInLineSpaces = 1.0f
         const val chordPreviewMaxRows = 2
+        const val chordPreviewReducedElementScale = 0.70f
         val chordPreviewLabelGap = 2.dp
         val startButtonBottomMargin = 12.dp
     }
@@ -100,6 +101,19 @@ object LayoutTuning {
         val contentPadding = 20.dp
         val scoreBottomSpacing = 22.dp
         val buttonGap = 7.dp
+    }
+
+    object Scores {
+        val titleBottomSpacing = 8.dp
+        val sectionGap = 10.dp
+        val modeButtonGap = 8.dp
+        val tableCornerRadius = 8.dp
+        val tablePadding = 8.dp
+        val tableMaxWidth = 560.dp
+        val rowVerticalPadding = 4.dp
+        val labelEndPadding = 8.dp
+        const val clefColumnWeight = 1.6f
+        const val scoreColumnWeight = 1f
     }
 
     object Staff {
@@ -156,13 +170,6 @@ object LayoutTuning {
         const val accidentalToHeadGapInLineSpaces = 0.18f
         const val accidentalSameColumnMinSteps = 5
         const val accidentalFlatExtraSteps = 1
-
-        // Horizontal smear while a belt is sliding. Sigma is this fraction of the
-        // distance traveled in the last frame; slower motion stays sharp.
-        const val motionBlurMinTravelPx = 1f
-        const val motionBlurSigmaPerTravelPx = 0.625f
-        const val motionBlurPadSlots = 1.5f
-        const val motionBlurTailSigmas = 3f
 
         // SVG clef bounds, relative to one staff-line spacing.
         const val trebleClefXInLineSpaces = 0.15f

@@ -60,6 +60,40 @@ class StaffSlideTest {
     }
 
     @Test
+    fun shiftAtMatchesFineStepsOfTheFollowCurve() {
+        val start = -3.5f
+        val target = 2f
+        val followTimeSeconds = 1.5f
+        val minSpeed = 0.05f
+        val dt = 0.0002f
+        var integrated = start
+        var elapsed = 0f
+        while (elapsed < 12f) {
+            assertEquals(
+                integrated,
+                shiftAt(elapsed, start, target, followTimeSeconds, minSpeed),
+                0.01f,
+            )
+            integrated = advanceShift(integrated, target, followTimeSeconds, minSpeed, dt)
+            elapsed += dt
+        }
+        assertEquals(target, integrated, 0f)
+        assertEquals(target, shiftAt(elapsed, start, target, followTimeSeconds, minSpeed), 0f)
+    }
+
+    @Test
+    fun shiftAtMovesOnTheFirstSample() {
+        val moved = shiftAt(
+            elapsedSeconds = 1f / 60f,
+            startShift = spawnShift(8),
+            targetShift = 0f,
+            followTimeSeconds = 1.5f,
+            minSpeedSlotsPerSecond = 0.05f,
+        )
+        assertTrue(moved > spawnShift(8))
+    }
+
+    @Test
     fun followSpeedUsesTheMinimumWhenClose() {
         val next = advanceShift(
             shift = 0f,
@@ -69,43 +103,6 @@ class StaffSlideTest {
             dtSeconds = 0.25f,
         )
         assertEquals(0.0125f, next, 0.0001f)
-    }
-
-    @Test
-    fun motionBlurMatchesFrameTravel() {
-        assertEquals(
-            0f,
-            motionBlurSigmaPx(
-                travelSlots = 0.01f,
-                slotWidth = 80f,
-                minTravelPx = 1f,
-                sigmaPerTravelPx = 0.85f,
-                maxSigmaPx = 40f,
-            ),
-            0f,
-        )
-        assertEquals(
-            6.8f,
-            motionBlurSigmaPx(
-                travelSlots = -0.1f,
-                slotWidth = 80f,
-                minTravelPx = 1f,
-                sigmaPerTravelPx = 0.85f,
-                maxSigmaPx = 40f,
-            ),
-            0.001f,
-        )
-        assertEquals(
-            40f,
-            motionBlurSigmaPx(
-                travelSlots = 2f,
-                slotWidth = 80f,
-                minTravelPx = 1f,
-                sigmaPerTravelPx = 0.85f,
-                maxSigmaPx = 40f,
-            ),
-            0.001f,
-        )
     }
 
     private fun displayedSlot(absoluteIndex: Int, shift: Float, origin: Int): Float =

@@ -66,7 +66,7 @@ class QuizViewModelTest {
             assertEquals(0, viewModel.state.value.score)
             assertEquals(
                 (QUIZ_DURATION_SECONDS - MISTAKE_TIME_PENALTY_SECONDS) * 1000L,
-                viewModel.state.value.remainingMillis,
+                viewModel.remainingMillis.value,
             )
             assertFalse(viewModel.state.value.answersLocked)
             assertNotEquals(first, viewModel.state.value.notes.first())
@@ -87,7 +87,21 @@ class QuizViewModelTest {
             advanceTimeBy(3_000)
             runCurrent()
             assertTrue(viewModel.state.value.finished)
-            assertEquals(0L, viewModel.state.value.remainingMillis)
+            assertEquals(0L, viewModel.remainingMillis.value)
+        } finally {
+            viewModel.stop()
+        }
+    }
+
+    @Test
+    fun timerTickLeavesTheBoardUnchanged() = runTest(testDispatcher) {
+        val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL), Random(5))
+        try {
+            val before = viewModel.state.value
+            advanceTimeBy(50)
+            runCurrent()
+            assertEquals(before, viewModel.state.value)
+            assertEquals(before.durationMillis - 50L, viewModel.remainingMillis.value)
         } finally {
             viewModel.stop()
         }
@@ -105,7 +119,7 @@ class QuizViewModelTest {
             val wrong = NoteName.entries.first { !isCorrect(first, it) }
             viewModel.onAnswer(wrong)
             assertTrue(viewModel.state.value.finished)
-            assertEquals(0L, viewModel.state.value.remainingMillis)
+            assertEquals(0L, viewModel.remainingMillis.value)
             assertTrue(viewModel.state.value.answersLocked)
         } finally {
             viewModel.stop()

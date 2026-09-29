@@ -6,8 +6,6 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.SoundPool
-import android.os.Handler
-import android.os.Looper
 import com.example.birdnote.domain.Pitch
 import com.example.birdnote.domain.decodeVorbisPcm
 import com.example.birdnote.domain.mixPcm
@@ -26,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * When false, quiz routes never construct [QuizSounds], so there is no worker
  * thread, [SoundPool], Vorbis decode, PCM cache, or [AudioTrack].
  */
-const val SOUNDS_ENABLED = false
+const val SOUNDS_ENABLED = true
 
 class QuizSounds(assets: AssetManager) {
     private val audioAttributes = AudioAttributes.Builder()
@@ -34,23 +32,19 @@ class QuizSounds(assets: AssetManager) {
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build()
 
-    private val mainHandler = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "QuizSounds")
     }
     private val playGeneration = AtomicInteger()
     private val released = AtomicBoolean(false)
 
-    private val pool = SoundPool.Builder()
-        .setMaxStreams(1)
-        .setAudioAttributes(audioAttributes)
-        .build()
     private val descriptors = mutableListOf<AssetFileDescriptor>()
     private val notes = ConcurrentHashMap<Int, Map<Int, ShortArray>>()
-    @Volatile private var sampleRate = DEFAULT_SAMPLE_RATE
-    @Volatile private var wrongId: Int? = null
+    private var sampleRate = DEFAULT_SAMPLE_RATE
+    private var wrongId: Int? = null
+    private var pool: SoundPool? = null
 
-    // Created, written, played, and released only on the main thread.
+    // Created, written, played, and released only on the worker thread.
     private var track: AudioTrack? = null
 
     init {
@@ -64,16 +58,12 @@ class QuizSounds(assets: AssetManager) {
             if (playGeneration.get() != generation || released.get()) return@execute
             if (feedback.correct) {
                 val mixed = mixTones(feedback.tones) ?: return@execute
-                mainHandler.post {
-                    if (playGeneration.get() != generation || released.get()) return@post
-                    playPcm(mixed)
-                }
+                if (playGeneration.get() != generation || released.get()) return@execute
+                playPcm(mixed)
             } else {
-                mainHandler.post {
-                    if (playGeneration.get() != generation || released.get()) return@post
-                    stopNotes()
-                    wrongId?.let { pool.play(it, 1f, 1f, 1, 0, 1f) }
-                }
+                if (playGeneration.get() != generation || released.get()) return@execute
+                stopNotes()
+                wrongId?.let { id -> pool?.play(id, 1f, 1f, 1, 0, 1f) }
             }
         }
     }
@@ -82,18 +72,24 @@ class QuizSounds(assets: AssetManager) {
         released.set(true)
         playGeneration.incrementAndGet()
         worker.execute {
+            stopNotes()
             descriptors.forEach { descriptor -> descriptor.close() }
             descriptors.clear()
             notes.clear()
             wrongId = null
+            pool?.release()
+            pool = null
         }
         worker.shutdown()
-        mainHandler.post { cleanupTrackAndPool() }
         runCatching { worker.awaitTermination(2, TimeUnit.SECONDS) }
     }
 
     private fun load(assets: AssetManager) {
         if (released.get()) return
+        pool = SoundPool.Builder()
+            .setMaxStreams(1)
+            .setAudioAttributes(audioAttributes)
+            .build()
         // SoundPool loads asynchronously, so start the error sound before the notes.
         wrongId = loadWrong(assets)
         for (step in MIN_QUIZ_STEP..MAX_QUIZ_STEP) {
@@ -147,15 +143,10 @@ class QuizSounds(assets: AssetManager) {
         current.release()
     }
 
-    private fun cleanupTrackAndPool() {
-        stopNotes()
-        pool.release()
-    }
-
     private fun loadWrong(assets: AssetManager): Int? {
         val descriptor = runCatching { assets.openFd(WRONG_ASSET) }.getOrNull() ?: return null
         descriptors += descriptor
-        return pool.load(descriptor, 1)
+        return pool?.load(descriptor, 1)
     }
 
     private companion object {

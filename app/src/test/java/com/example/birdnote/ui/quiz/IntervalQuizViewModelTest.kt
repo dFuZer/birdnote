@@ -65,7 +65,7 @@ class IntervalQuizViewModelTest {
             assertEquals(0, viewModel.state.value.score)
             assertEquals(
                 (QUIZ_DURATION_SECONDS - MISTAKE_TIME_PENALTY_SECONDS) * 1000L,
-                viewModel.state.value.remainingMillis,
+                viewModel.remainingMillis.value,
             )
             assertNotEquals(first, viewModel.state.value.intervals.first())
         } finally {
@@ -82,9 +82,15 @@ class IntervalQuizViewModelTest {
         )
         try {
             assertFalse(viewModel.state.value.finished)
-            advanceTimeBy(3_000)
+            val before = viewModel.state.value
+            advanceTimeBy(50)
+            runCurrent()
+            assertEquals(before, viewModel.state.value)
+            assertEquals(before.durationMillis - 50L, viewModel.remainingMillis.value)
+            advanceTimeBy(2_950)
             runCurrent()
             assertTrue(viewModel.state.value.finished)
+            assertEquals(0L, viewModel.remainingMillis.value)
         } finally {
             viewModel.stop()
         }

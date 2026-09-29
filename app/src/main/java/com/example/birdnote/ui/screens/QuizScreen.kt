@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.StateFlow
 import com.example.birdnote.R
 import com.example.birdnote.domain.CHORD_VISIBLE_SLOTS
 import com.example.birdnote.domain.ClefMode
@@ -60,11 +61,8 @@ import com.example.birdnote.ui.quiz.IntervalQuizViewModel
 import com.example.birdnote.ui.quiz.QuizSounds
 import com.example.birdnote.ui.quiz.QuizViewModel
 import com.example.birdnote.ui.quiz.SOUNDS_ENABLED
-import com.example.birdnote.ui.staff.StaffCanvas
-import com.example.birdnote.ui.staff.StaffRenderModel
+import com.example.birdnote.ui.staff.StaffSurface
 import com.example.birdnote.ui.staff.asChord
-import com.example.birdnote.ui.staff.asChords
-import com.example.birdnote.ui.staff.rememberStaffSlide
 import com.example.birdnote.ui.theme.DarkBlue
 import com.example.birdnote.ui.theme.LightBlue
 import com.example.birdnote.ui.theme.Neutral
@@ -93,7 +91,7 @@ fun QuizRoute(
     }
     QuizScreen(
         notes = state.notes,
-        remainingMillis = state.remainingMillis,
+        remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
         clefMode = config.clefMode,
@@ -108,7 +106,7 @@ fun QuizRoute(
 @Composable
 fun QuizScreen(
     notes: List<StaffNote>,
-    remainingMillis: Long,
+    remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
     clefMode: ClefMode,
@@ -120,19 +118,6 @@ fun QuizScreen(
 ) {
     val tuning = LayoutTuning.Quiz
     val visibleCount = clefMode.queueSize()
-    val slide = rememberStaffSlide(
-        notes = notes,
-        visibleCount = visibleCount,
-        followTimeMillis = tuning.noteFollowTimeMillis,
-        minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-    )
-    val staffModel = remember(slide.notes, clefMode, difficulty) {
-        StaffRenderModel(
-            clefMode = clefMode,
-            chords = slide.notes.asChords(),
-            difficulty = difficulty,
-        )
-    }
 
     Column(
         modifier = modifier
@@ -156,11 +141,14 @@ fun QuizScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            StaffCanvas(
-                model = staffModel,
-                slide = slide,
-                visibleSlotCount = visibleCount,
-                extendStaffLinesToEnd = true,
+            StaffSurface(
+                notes = notes,
+                toChords = { queued -> queued.map { it.asChord() } },
+                clefMode = clefMode,
+                difficulty = difficulty,
+                visibleCount = visibleCount,
+                followTimeMillis = tuning.noteFollowTimeMillis,
+                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(tuning.staffInnerPadding),
@@ -198,7 +186,7 @@ fun IntervalQuizRoute(
     }
     IntervalQuizScreen(
         intervals = state.intervals,
-        remainingMillis = state.remainingMillis,
+        remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
         difficulty = config.difficulty,
@@ -211,7 +199,7 @@ fun IntervalQuizRoute(
 @Composable
 fun IntervalQuizScreen(
     intervals: List<StaffInterval>,
-    remainingMillis: Long,
+    remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
     difficulty: Int,
@@ -221,19 +209,6 @@ fun IntervalQuizScreen(
 ) {
     val tuning = LayoutTuning.Quiz
     val visibleCount = QUEUE_SIZE
-    val slide = rememberStaffSlide(
-        notes = intervals,
-        visibleCount = visibleCount,
-        followTimeMillis = tuning.noteFollowTimeMillis,
-        minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-    )
-    val staffModel = remember(slide.notes, difficulty) {
-        StaffRenderModel(
-            clefMode = ClefMode.SOL,
-            chords = slide.notes.map { it.asChord() },
-            difficulty = difficulty,
-        )
-    }
 
     Column(
         modifier = modifier
@@ -257,11 +232,14 @@ fun IntervalQuizScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            StaffCanvas(
-                model = staffModel,
-                slide = slide,
-                visibleSlotCount = visibleCount,
-                extendStaffLinesToEnd = true,
+            StaffSurface(
+                notes = intervals,
+                toChords = { queued -> queued.map { it.asChord() } },
+                clefMode = ClefMode.SOL,
+                difficulty = difficulty,
+                visibleCount = visibleCount,
+                followTimeMillis = tuning.noteFollowTimeMillis,
+                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(tuning.staffInnerPadding),
@@ -299,7 +277,7 @@ fun ChordQuizRoute(
     }
     ChordQuizScreen(
         chords = state.chords,
-        remainingMillis = state.remainingMillis,
+        remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
         difficulty = config.difficulty,
@@ -313,7 +291,7 @@ fun ChordQuizRoute(
 @Composable
 fun ChordQuizScreen(
     chords: List<PracticeChord>,
-    remainingMillis: Long,
+    remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
     difficulty: Int,
@@ -324,19 +302,6 @@ fun ChordQuizScreen(
 ) {
     val tuning = LayoutTuning.Quiz
     val visibleCount = CHORD_VISIBLE_SLOTS
-    val slide = rememberStaffSlide(
-        notes = chords,
-        visibleCount = visibleCount,
-        followTimeMillis = tuning.noteFollowTimeMillis,
-        minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-    )
-    val staffModel = remember(slide.notes, clefMode, difficulty) {
-        StaffRenderModel(
-            clefMode = clefMode,
-            chords = slide.notes.map { it.asChord() },
-            difficulty = difficulty,
-        )
-    }
 
     Column(
         modifier = modifier
@@ -360,11 +325,14 @@ fun ChordQuizScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            StaffCanvas(
-                model = staffModel,
-                slide = slide,
-                visibleSlotCount = visibleCount,
-                extendStaffLinesToEnd = true,
+            StaffSurface(
+                notes = chords,
+                toChords = { queued -> queued.map { it.asChord() } },
+                clefMode = clefMode,
+                difficulty = difficulty,
+                visibleCount = visibleCount,
+                followTimeMillis = tuning.noteFollowTimeMillis,
+                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(tuning.staffInnerPadding),
@@ -381,10 +349,11 @@ fun ChordQuizScreen(
 
 @Composable
 private fun QuizTopBar(
-    remainingMillis: Long,
+    remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     onStop: () -> Unit,
 ) {
+    val remaining by remainingMillis.collectAsStateWithLifecycle()
     val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Quiz
     Row(
@@ -412,7 +381,7 @@ private fun QuizTopBar(
         val remainingFraction = if (durationMillis <= 0L) {
             0f
         } else {
-            (remainingMillis.toFloat() / durationMillis.toFloat()).coerceIn(0f, 1f)
+            (remaining.toFloat() / durationMillis.toFloat()).coerceIn(0f, 1f)
         }
         Spacer(Modifier.width(tuning.progressBarGap))
         Box(

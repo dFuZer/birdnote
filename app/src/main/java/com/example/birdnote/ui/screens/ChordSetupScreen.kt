@@ -26,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.staff.StaffCanvas
 import com.example.birdnote.ui.staff.StaffRenderModel
 import com.example.birdnote.ui.staff.asChord
+import com.example.birdnote.ui.staff.chordPreviewStaffScale
 import com.example.birdnote.ui.theme.DarkBlue
 import com.example.birdnote.ui.theme.Neutral
 
@@ -78,6 +80,9 @@ fun ChordSetupScreen(
                     bottom = tuning.contentBottomPadding,
                 ),
         ) {
+            val notesSingleStaffHeightPx = with(LocalDensity.current) {
+                (maxHeight - tuning.previewInnerPadding * 2).toPx()
+            }
             Row(
                 modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(tuning.columnsGap),
@@ -162,6 +167,8 @@ fun ChordSetupScreen(
                                 row.forEach { chord ->
                                     ChordPreviewTile(
                                         chord = chord,
+                                        difficulty = difficulty,
+                                        notesSingleStaffHeightPx = notesSingleStaffHeightPx,
                                         modifier = Modifier
                                             .weight(1f)
                                             .fillMaxHeight(),
@@ -189,27 +196,41 @@ fun ChordSetupScreen(
 @Composable
 private fun ChordPreviewTile(
     chord: PracticeChord,
+    difficulty: Int,
+    notesSingleStaffHeightPx: Float,
     modifier: Modifier = Modifier,
 ) {
     val tuning = LayoutTuning.Setup
+    val density = LocalDensity.current
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(tuning.chordPreviewLabelGap),
     ) {
-        StaffCanvas(
-            model = StaffRenderModel(
-                clefMode = chord.clef.toMode(),
-                chords = listOf(chord.asChord()),
-            ),
-            visibleSlotCount = 1,
-            compactVertical = true,
-            noteAreaExtraLeftPaddingInLineSpaces =
-                tuning.previewNoteAreaExtraLeftPaddingInLineSpaces,
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-        )
+        ) {
+            val tileHeightPx = with(density) { maxHeight.toPx() }
+            StaffCanvas(
+                model = StaffRenderModel(
+                    clefMode = chord.clef.toMode(),
+                    chords = listOf(chord.asChord()),
+                ),
+                visibleSlotCount = 1,
+                compactVertical = true,
+                staffScaleOverride = chordPreviewStaffScale(
+                    difficulty = difficulty,
+                    tileHeightPx = tileHeightPx,
+                    notesSingleStaffHeightPx = notesSingleStaffHeightPx,
+                ),
+                centerVertically = difficulty == MIN_DIFFICULTY,
+                noteAreaExtraLeftPaddingInLineSpaces =
+                    tuning.previewNoteAreaExtraLeftPaddingInLineSpaces,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         Text(
             text = chord.quality.label(),
             style = MaterialTheme.typography.labelSmall,

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.example.birdnote.ScoreStore
 import com.example.birdnote.SettingsStore
 import com.example.birdnote.ui.navigation.BirdNoteNavHost
 import com.example.birdnote.ui.theme.LightBlue
@@ -19,6 +20,7 @@ fun BirdNoteApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val settingsStore = remember { SettingsStore(context) }
+    val scoreStore = remember { ScoreStore(context) }
     val noteNaming by settingsStore.noteNaming.collectAsStateWithLifecycle()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -28,6 +30,7 @@ fun BirdNoteApp() {
             navController = navController,
             noteNaming = noteNaming,
             onNoteNamingChange = settingsStore::setNoteNaming,
+            scoreStore = scoreStore,
             modifier = Modifier.padding(innerPadding),
         )
     }

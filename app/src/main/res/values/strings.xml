@@ -2,15 +2,15 @@
     <string name="app_name">BirdNote</string>
     <string name="train">S\'entraîner</string>
     <string name="my_scores">Mes scores</string>
-    <string name="leaderboard">Classement</string>
     <string name="settings">Paramètres</string>
     <string name="note_names">Nom des notes</string>
     <string name="training_title">On fait quoi ?</string>
     <string name="notes">Notes</string>
     <string name="intervals">Intervalles</string>
     <string name="chords">Accords</string>
-    <string name="rhythms">Rythmes</string>
     <string name="back">Retour</string>
+    <string name="score_best">Meilleur</string>
+    <string name="score_empty">—</string>
     <string name="difficulty">Difficulté</string>
     <string name="clef">Clé</string>
     <string name="clef_sol">Sol</string>
