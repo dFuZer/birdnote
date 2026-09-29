@@ -2,6 +2,8 @@
 
 **Learn to read notes on the staff by doing it—not by reading about it.**
 
+https://github.com/user-attachments/assets/08a00675-d9c5-49a8-b191-7b77cd708e72
+
 BirdNote is a free, offline Android app for anyone who wants to get faster at recognizing what’s written on a music staff. You see real notation, answer from your gut, hear whether you were right, and try again. No account, no ads, no internet required once installed.
 
 ## Why BirdNote exists
