@@ -1,6 +1,6 @@
 # BirdNote
 
-**Learn to read notes on the staff by doing it—not by reading about it.**
+**Learn to read notes on the staff by doing it.**
 
 https://github.com/user-attachments/assets/08a00675-d9c5-49a8-b191-7b77cd708e72
 
