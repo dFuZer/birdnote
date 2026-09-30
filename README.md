@@ -68,7 +68,3 @@ Install [Android Studio](https://developer.android.com/studio) (or an Android SD
 ```
 
 `assembleDebug` builds a debug APK. `test` runs unit tests. `connectedDebugAndroidTest` needs a running emulator or device.
-
-## More detail
-
-[docs/UTILIZATION_FLOW.md](docs/UTILIZATION_FLOW.md) describes every screen, drill variant, and what a round looks and sounds like.
