@@ -5,6 +5,7 @@ import com.example.birdnote.domain.IntervalName
 import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
 import com.example.birdnote.domain.isCorrect
+import com.example.birdnote.domain.label
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,6 +45,7 @@ class IntervalQuizViewModelTest {
             viewModel.onAnswer(first.name)
             assertTrue(viewModel.state.value.lastFeedbackCorrect == true)
             assertEquals(1, viewModel.state.value.score)
+            assertEquals(null, viewModel.state.value.missHint)
             assertEquals(
                 listOf(first.lower.diatonicStep, first.upper.diatonicStep),
                 viewModel.state.value.answerFeedback?.diatonicSteps,
@@ -62,6 +64,7 @@ class IntervalQuizViewModelTest {
             val wrong = IntervalName.entries.first { !isCorrect(first, it) }
             viewModel.onAnswer(wrong)
             assertEquals(false, viewModel.state.value.lastFeedbackCorrect)
+            assertEquals(first.name.label(), viewModel.state.value.missHint?.label)
             assertEquals(0, viewModel.state.value.score)
             assertEquals(
                 (QUIZ_DURATION_SECONDS - MISTAKE_TIME_PENALTY_SECONDS) * 1000L,

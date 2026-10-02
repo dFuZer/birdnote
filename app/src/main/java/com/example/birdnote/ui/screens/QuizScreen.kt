@@ -1,5 +1,7 @@
 package com.example.birdnote.ui.screens
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -58,6 +64,7 @@ import com.example.birdnote.domain.queueSize
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.quiz.ChordQuizViewModel
 import com.example.birdnote.ui.quiz.IntervalQuizViewModel
+import com.example.birdnote.ui.quiz.MissHint
 import com.example.birdnote.ui.quiz.QuizSounds
 import com.example.birdnote.ui.quiz.QuizViewModel
 import com.example.birdnote.ui.quiz.SOUNDS_ENABLED
@@ -73,7 +80,7 @@ fun QuizRoute(
     noteNaming: NoteNaming,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuizViewModel = viewModel(factory = QuizViewModel.factory(config)),
+    viewModel: QuizViewModel = viewModel(factory = QuizViewModel.factory(config, noteNaming)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sounds = rememberQuizSounds()
@@ -94,6 +101,7 @@ fun QuizRoute(
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
+        missHint = state.missHint,
         clefMode = config.clefMode,
         difficulty = config.difficulty,
         noteNaming = noteNaming,
@@ -109,6 +117,7 @@ fun QuizScreen(
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
+    missHint: MissHint?,
     clefMode: ClefMode,
     difficulty: Int,
     noteNaming: NoteNaming,
@@ -119,46 +128,57 @@ fun QuizScreen(
     val tuning = LayoutTuning.Quiz
     val visibleCount = clefMode.queueSize()
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(LightBlue)
-            .padding(
-                horizontal = tuning.horizontalPadding,
-                vertical = tuning.verticalPadding,
-            ),
+            .background(LightBlue),
     ) {
-        QuizTopBar(
-            remainingMillis = remainingMillis,
-            durationMillis = durationMillis,
-            onStop = onStop,
-        )
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        Card(
-            shape = RoundedCornerShape(tuning.staffCornerRadius),
-            colors = CardDefaults.cardColors(containerColor = Neutral),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+                .fillMaxSize()
+                .padding(
+                    horizontal = tuning.horizontalPadding,
+                    vertical = tuning.verticalPadding,
+                ),
         ) {
-            StaffSurface(
-                notes = notes,
-                toChords = { queued -> queued.map { it.asChord() } },
-                clefMode = clefMode,
-                difficulty = difficulty,
-                visibleCount = visibleCount,
-                followTimeMillis = tuning.noteFollowTimeMillis,
-                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
+            QuizTopBar(
+                remainingMillis = remainingMillis,
+                durationMillis = durationMillis,
+                onStop = onStop,
+            )
+            Spacer(Modifier.height(tuning.staffVerticalGap))
+            Card(
+                shape = RoundedCornerShape(tuning.staffCornerRadius),
+                colors = CardDefaults.cardColors(containerColor = Neutral),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(tuning.staffInnerPadding),
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                StaffSurface(
+                    notes = notes,
+                    toChords = { queued -> queued.map { it.asChord() } },
+                    clefMode = clefMode,
+                    difficulty = difficulty,
+                    visibleCount = visibleCount,
+                    followTimeMillis = tuning.noteFollowTimeMillis,
+                    minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(tuning.staffInnerPadding),
+                )
+            }
+            Spacer(Modifier.height(tuning.staffVerticalGap))
+            AnswerRow(
+                answersLocked = answersLocked,
+                noteNaming = noteNaming,
+                onAnswer = onAnswer,
             )
         }
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        AnswerRow(
-            answersLocked = answersLocked,
-            noteNaming = noteNaming,
-            onAnswer = onAnswer,
+        MissBubble(
+            hint = missHint,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = answerBlockHeight(1)),
         )
     }
 }
@@ -189,6 +209,7 @@ fun IntervalQuizRoute(
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
+        missHint = state.missHint,
         difficulty = config.difficulty,
         onAnswer = viewModel::onAnswer,
         onStop = viewModel::stop,
@@ -202,6 +223,7 @@ fun IntervalQuizScreen(
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
+    missHint: MissHint?,
     difficulty: Int,
     onAnswer: (IntervalName) -> Unit,
     onStop: () -> Unit,
@@ -209,47 +231,59 @@ fun IntervalQuizScreen(
 ) {
     val tuning = LayoutTuning.Quiz
     val visibleCount = QUEUE_SIZE
+    val answerRows = answerRows(intervalNamesFor(difficulty).size, tuning.intervalAnswerColumns)
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(LightBlue)
-            .padding(
-                horizontal = tuning.horizontalPadding,
-                vertical = tuning.verticalPadding,
-            ),
+            .background(LightBlue),
     ) {
-        QuizTopBar(
-            remainingMillis = remainingMillis,
-            durationMillis = durationMillis,
-            onStop = onStop,
-        )
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        Card(
-            shape = RoundedCornerShape(tuning.staffCornerRadius),
-            colors = CardDefaults.cardColors(containerColor = Neutral),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+                .fillMaxSize()
+                .padding(
+                    horizontal = tuning.horizontalPadding,
+                    vertical = tuning.verticalPadding,
+                ),
         ) {
-            StaffSurface(
-                notes = intervals,
-                toChords = { queued -> queued.map { it.asChord() } },
-                clefMode = ClefMode.SOL,
-                difficulty = difficulty,
-                visibleCount = visibleCount,
-                followTimeMillis = tuning.noteFollowTimeMillis,
-                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
+            QuizTopBar(
+                remainingMillis = remainingMillis,
+                durationMillis = durationMillis,
+                onStop = onStop,
+            )
+            Spacer(Modifier.height(tuning.staffVerticalGap))
+            Card(
+                shape = RoundedCornerShape(tuning.staffCornerRadius),
+                colors = CardDefaults.cardColors(containerColor = Neutral),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(tuning.staffInnerPadding),
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                StaffSurface(
+                    notes = intervals,
+                    toChords = { queued -> queued.map { it.asChord() } },
+                    clefMode = ClefMode.SOL,
+                    difficulty = difficulty,
+                    visibleCount = visibleCount,
+                    followTimeMillis = tuning.noteFollowTimeMillis,
+                    minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(tuning.staffInnerPadding),
+                )
+            }
+            Spacer(Modifier.height(tuning.staffVerticalGap))
+            IntervalAnswerGrid(
+                difficulty = difficulty,
+                answersLocked = answersLocked,
+                onAnswer = onAnswer,
             )
         }
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        IntervalAnswerGrid(
-            difficulty = difficulty,
-            answersLocked = answersLocked,
-            onAnswer = onAnswer,
+        MissBubble(
+            hint = missHint,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = answerBlockHeight(answerRows)),
         )
     }
 }
@@ -280,6 +314,7 @@ fun ChordQuizRoute(
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
+        missHint = state.missHint,
         difficulty = config.difficulty,
         clefMode = config.clefMode,
         onAnswer = viewModel::onAnswer,
@@ -294,6 +329,7 @@ fun ChordQuizScreen(
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
+    missHint: MissHint?,
     difficulty: Int,
     clefMode: ClefMode,
     onAnswer: (ChordQuality) -> Unit,
@@ -302,49 +338,102 @@ fun ChordQuizScreen(
 ) {
     val tuning = LayoutTuning.Quiz
     val visibleCount = CHORD_VISIBLE_SLOTS
+    val chordAnswers = chordQualitiesFor(difficulty)
+    val answerRows = answerRows(chordAnswers.size, chordAnswerColumns(chordAnswers.size))
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(LightBlue)
-            .padding(
-                horizontal = tuning.horizontalPadding,
-                vertical = tuning.verticalPadding,
-            ),
+            .background(LightBlue),
     ) {
-        QuizTopBar(
-            remainingMillis = remainingMillis,
-            durationMillis = durationMillis,
-            onStop = onStop,
-        )
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        Card(
-            shape = RoundedCornerShape(tuning.staffCornerRadius),
-            colors = CardDefaults.cardColors(containerColor = Neutral),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+                .fillMaxSize()
+                .padding(
+                    horizontal = tuning.horizontalPadding,
+                    vertical = tuning.verticalPadding,
+                ),
         ) {
-            StaffSurface(
-                notes = chords,
-                toChords = { queued -> queued.map { it.asChord() } },
-                clefMode = clefMode,
-                difficulty = difficulty,
-                visibleCount = visibleCount,
-                followTimeMillis = tuning.noteFollowTimeMillis,
-                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
+            QuizTopBar(
+                remainingMillis = remainingMillis,
+                durationMillis = durationMillis,
+                onStop = onStop,
+            )
+            Spacer(Modifier.height(tuning.staffVerticalGap))
+            Card(
+                shape = RoundedCornerShape(tuning.staffCornerRadius),
+                colors = CardDefaults.cardColors(containerColor = Neutral),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(tuning.staffInnerPadding),
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                StaffSurface(
+                    notes = chords,
+                    toChords = { queued -> queued.map { it.asChord() } },
+                    clefMode = clefMode,
+                    difficulty = difficulty,
+                    visibleCount = visibleCount,
+                    followTimeMillis = tuning.noteFollowTimeMillis,
+                    minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(tuning.staffInnerPadding),
+                )
+            }
+            Spacer(Modifier.height(tuning.staffVerticalGap))
+            ChordAnswerGrid(
+                difficulty = difficulty,
+                answersLocked = answersLocked,
+                onAnswer = onAnswer,
             )
         }
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        ChordAnswerGrid(
-            difficulty = difficulty,
-            answersLocked = answersLocked,
-            onAnswer = onAnswer,
+        MissBubble(
+            hint = missHint,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = answerBlockHeight(answerRows)),
         )
     }
+}
+
+@Composable
+private fun MissBubble(
+    hint: MissHint?,
+    modifier: Modifier = Modifier,
+) {
+    if (hint == null) return
+    val rise = remember(hint.id) { Animatable(0f) }
+    var visible by remember(hint.id) { mutableStateOf(true) }
+    LaunchedEffect(hint.id) {
+        rise.snapTo(0f)
+        rise.animateTo(1f, tween(MISS_BUBBLE_MILLIS))
+        visible = false
+    }
+    if (!visible) return
+    Text(
+        text = hint.label,
+        color = DarkBlue,
+        style = MaterialTheme.typography.labelLarge,
+        modifier = modifier
+            .offset(y = -(48.dp * rise.value))
+            .graphicsLayer { alpha = 1f - rise.value }
+            .clip(RoundedCornerShape(50))
+            .background(Neutral)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    )
+}
+
+private fun answerBlockHeight(rows: Int): Dp {
+    val tuning = LayoutTuning.Quiz
+    val gaps = (rows - 1).coerceAtLeast(0)
+    return tuning.verticalPadding +
+        tuning.answerButtonHeight * rows +
+        tuning.answerRowGap * gaps
+}
+
+private fun answerRows(count: Int, columns: Int): Int {
+    val width = columns.coerceAtLeast(1)
+    return (count + width - 1) / width
 }
 
 @Composable
@@ -562,6 +651,8 @@ private fun rememberQuizSounds(): QuizSounds? {
     }
     return sounds
 }
+
+private const val MISS_BUBBLE_MILLIS = 1000
 
 private fun chordAnswerColumns(count: Int): Int {
     val maxRows = LayoutTuning.Quiz.chordAnswerMaxRows

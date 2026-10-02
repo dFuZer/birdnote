@@ -12,6 +12,7 @@ import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
 import com.example.birdnote.domain.advanceChordQueue
 import com.example.birdnote.domain.generateChordQueue
 import com.example.birdnote.domain.isCorrect
+import com.example.birdnote.domain.label
 import kotlin.random.Random
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,6 +29,7 @@ data class ChordQuizUiState(
     val answersLocked: Boolean = false,
     val lastFeedbackCorrect: Boolean? = null,
     val answerFeedback: AnswerFeedback? = null,
+    val missHint: MissHint? = null,
     val finished: Boolean = false,
 )
 
@@ -69,17 +71,23 @@ class ChordQuizViewModel(
         }
         _remainingMillis.value = remaining
         val finished = remaining <= 0L
+        val feedbackId = (current.answerFeedback?.id ?: 0) + 1
         _state.value = current.copy(
             chords = advanceChordQueue(current.chords, config, random),
             score = if (correct) current.score + 1 else current.score,
             lastFeedbackCorrect = correct,
             answerFeedback = AnswerFeedback(
-                id = (current.answerFeedback?.id ?: 0) + 1,
+                id = feedbackId,
                 correct = correct,
                 tones = answered.notes.map { note ->
                     SoundTone(note.pitch.diatonicStep, note.accidental)
                 },
             ),
+            missHint = if (correct) {
+                current.missHint
+            } else {
+                MissHint(feedbackId, answered.quality.label())
+            },
             finished = finished,
             answersLocked = current.answersLocked || finished,
         )

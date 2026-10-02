@@ -12,6 +12,7 @@ import com.example.birdnote.domain.StaffInterval
 import com.example.birdnote.domain.advanceIntervalQueue
 import com.example.birdnote.domain.generateIntervalQueue
 import com.example.birdnote.domain.isCorrect
+import com.example.birdnote.domain.label
 import kotlin.random.Random
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,6 +29,7 @@ data class IntervalQuizUiState(
     val answersLocked: Boolean = false,
     val lastFeedbackCorrect: Boolean? = null,
     val answerFeedback: AnswerFeedback? = null,
+    val missHint: MissHint? = null,
     val finished: Boolean = false,
 )
 
@@ -69,18 +71,24 @@ class IntervalQuizViewModel(
         }
         _remainingMillis.value = remaining
         val finished = remaining <= 0L
+        val feedbackId = (current.answerFeedback?.id ?: 0) + 1
         _state.value = current.copy(
             intervals = advanceIntervalQueue(current.intervals, config, random),
             score = if (correct) current.score + 1 else current.score,
             lastFeedbackCorrect = correct,
             answerFeedback = AnswerFeedback(
-                id = (current.answerFeedback?.id ?: 0) + 1,
+                id = feedbackId,
                 correct = correct,
                 tones = listOf(
                     SoundTone(answered.lower.diatonicStep),
                     SoundTone(answered.upper.diatonicStep),
                 ),
             ),
+            missHint = if (correct) {
+                current.missHint
+            } else {
+                MissHint(feedbackId, answered.name.label())
+            },
             finished = finished,
             answersLocked = current.answersLocked || finished,
         )

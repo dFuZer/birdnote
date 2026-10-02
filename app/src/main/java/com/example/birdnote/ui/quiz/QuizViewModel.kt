@@ -6,12 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.birdnote.domain.Accidental
 import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.NoteName
+import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
 import com.example.birdnote.domain.StaffNote
 import com.example.birdnote.domain.advanceQueue
 import com.example.birdnote.domain.generateQueue
 import com.example.birdnote.domain.isCorrect
+import com.example.birdnote.domain.label
 import com.example.birdnote.domain.queueSize
 import kotlin.random.Random
 import kotlinx.coroutines.Job
@@ -36,6 +38,11 @@ data class AnswerFeedback(
         get() = tones.map { it.diatonicStep }
 }
 
+data class MissHint(
+    val id: Int,
+    val label: String,
+)
+
 data class QuizUiState(
     val notes: List<StaffNote> = emptyList(),
     val score: Int = 0,
@@ -43,6 +50,7 @@ data class QuizUiState(
     val answersLocked: Boolean = false,
     val lastFeedbackCorrect: Boolean? = null,
     val answerFeedback: AnswerFeedback? = null,
+    val missHint: MissHint? = null,
     val finished: Boolean = false,
 )
 
@@ -52,6 +60,7 @@ class QuizViewModel(
     private val config: PracticeConfig,
     private val random: Random = Random.Default,
     durationSeconds: Int = QUIZ_DURATION_SECONDS,
+    private val noteNaming: NoteNaming = NoteNaming.SOLFEGE,
 ) : ViewModel() {
 
     private val durationMillis = durationSeconds * 1000L
@@ -86,15 +95,21 @@ class QuizViewModel(
         }
         _remainingMillis.value = remaining
         val finished = remaining <= 0L
+        val feedbackId = (current.answerFeedback?.id ?: 0) + 1
         _state.value = current.copy(
             notes = advanceQueue(current.notes, config, random),
             score = if (correct) current.score + 1 else current.score,
             lastFeedbackCorrect = correct,
             answerFeedback = AnswerFeedback(
-                id = (current.answerFeedback?.id ?: 0) + 1,
+                id = feedbackId,
                 correct = correct,
                 tones = listOf(SoundTone(answered.pitch.diatonicStep)),
             ),
+            missHint = if (correct) {
+                current.missHint
+            } else {
+                MissHint(feedbackId, answered.pitch.noteName.label(noteNaming))
+            },
             finished = finished,
             answersLocked = current.answersLocked || finished,
         )
@@ -133,11 +148,14 @@ class QuizViewModel(
     }
 
     companion object {
-        fun factory(config: PracticeConfig): ViewModelProvider.Factory =
+        fun factory(
+            config: PracticeConfig,
+            noteNaming: NoteNaming = NoteNaming.SOLFEGE,
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return QuizViewModel(config) as T
+                    return QuizViewModel(config, noteNaming = noteNaming) as T
                 }
             }
     }

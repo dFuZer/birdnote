@@ -3,9 +3,11 @@ package com.example.birdnote.ui.quiz
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.NoteName
+import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
 import com.example.birdnote.domain.isCorrect
+import com.example.birdnote.domain.label
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,6 +49,7 @@ class QuizViewModelTest {
             assertEquals(true, viewModel.state.value.answerFeedback?.correct)
             assertEquals(listOf(first.pitch.diatonicStep), viewModel.state.value.answerFeedback?.diatonicSteps)
             assertEquals(1, viewModel.state.value.score)
+            assertEquals(null, viewModel.state.value.missHint)
             assertFalse(viewModel.state.value.answersLocked)
             assertNotEquals(first, viewModel.state.value.notes.first())
         } finally {
@@ -63,6 +66,10 @@ class QuizViewModelTest {
             viewModel.onAnswer(wrong)
             assertEquals(false, viewModel.state.value.lastFeedbackCorrect)
             assertEquals(false, viewModel.state.value.answerFeedback?.correct)
+            assertEquals(
+                first.pitch.noteName.label(NoteNaming.SOLFEGE),
+                viewModel.state.value.missHint?.label,
+            )
             assertEquals(0, viewModel.state.value.score)
             assertEquals(
                 (QUIZ_DURATION_SECONDS - MISTAKE_TIME_PENALTY_SECONDS) * 1000L,
