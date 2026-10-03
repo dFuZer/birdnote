@@ -163,7 +163,6 @@ fun QuizScreen(
                 visibleCount = visibleCount,
                 followTimeMillis = tuning.noteFollowTimeMillis,
                 minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-                brightenToken = brightenTokenOf(answerFeedback),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(tuning.staffInnerPadding),
@@ -261,7 +260,6 @@ fun IntervalQuizScreen(
                 visibleCount = visibleCount,
                 followTimeMillis = tuning.noteFollowTimeMillis,
                 minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-                brightenToken = brightenTokenOf(answerFeedback),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(tuning.staffInnerPadding),
@@ -361,7 +359,6 @@ fun ChordQuizScreen(
                 visibleCount = visibleCount,
                 followTimeMillis = tuning.noteFollowTimeMillis,
                 minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-                brightenToken = brightenTokenOf(answerFeedback),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(tuning.staffInnerPadding),
@@ -676,9 +673,6 @@ private fun <T> rememberShakenButton(feedback: AnswerFeedback?, tapped: T?): Pai
     }
     return shaken
 }
-
-private fun brightenTokenOf(feedback: AnswerFeedback?): Int =
-    feedback?.takeIf { it.correct }?.id ?: 0
 
 private fun chordAnswerColumns(count: Int): Int {
     val maxRows = LayoutTuning.Quiz.chordAnswerMaxRows

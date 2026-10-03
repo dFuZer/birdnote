@@ -9,26 +9,6 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
-/** What [StaffBelt.offer] did with an incoming queue. */
-internal enum class BeltStep {
-    Unchanged,
-    Reset,
-    Advanced,
-}
-
-/**
- * Strength of a correct-answer brighten, from 1 at the tap down to 0.
- * The slide keeps moving for longer than this fade.
- */
-internal fun brightenStrength(elapsedSeconds: Float, durationSeconds: Float): Float {
-    if (durationSeconds <= 0f) return 0f
-    val t = elapsedSeconds / durationSeconds
-    if (t <= 0f) return 1f
-    if (t >= 1f) return 0f
-    val remain = 1f - t
-    return remain * remain
-}
-
 /** Slots the belt is shifted left of absolute index 0. */
 internal fun slideOffsetSlots(shift: Float, origin: Int): Float = shift - origin
 
@@ -120,36 +100,15 @@ internal class StaffBelt<T> {
     var shift: Float = 0f
         private set
 
-    private var brightenAbsoluteIndex: Int? = null
-
-    /**
-     * Local index of the note a correct tap just answered, or null once that
-     * note has scrolled off the belt. Survives later prunes.
-     */
-    fun brightenLocalIndex(): Int? {
-        val absolute = brightenAbsoluteIndex ?: return null
-        val local = absolute - origin
-        if (local !in notes.indices) return null
-        return local
-    }
-
-    /** Marks the note that was current before the latest advance. */
-    fun armBrighten() {
-        val local = highlightIndex - 1
-        brightenAbsoluteIndex = if (local >= 0) origin + local else null
-    }
-
-    fun offer(incoming: List<T>, visibleCount: Int, nowSeconds: Double, frameSeconds: Double): BeltStep {
-        if (incoming == previous) return BeltStep.Unchanged
-        val step = when {
+    fun offer(incoming: List<T>, visibleCount: Int, nowSeconds: Double, frameSeconds: Double) {
+        if (incoming == previous) return
+        when {
             incoming.isEmpty() -> {
                 belt.clear()
                 targetShift = 0f
                 origin = 0
                 shift = 0f
                 moving = false
-                brightenAbsoluteIndex = null
-                BeltStep.Reset
             }
             previous.isEmpty() || !isQueueAdvance(previous, incoming) -> {
                 belt.clear()
@@ -157,22 +116,18 @@ internal class StaffBelt<T> {
                 targetShift = 0f
                 origin = 0
                 begin(spawnShift(visibleCount), nowSeconds, frameSeconds)
-                brightenAbsoluteIndex = null
-                BeltStep.Reset
             }
             else -> {
                 belt.add(incoming.last())
                 targetShift += 1f
                 origin = prune(visibleCount)
                 begin(shift, nowSeconds, frameSeconds)
-                BeltStep.Advanced
             }
         }
         notes = belt.toList()
         val local = (targetShift - origin).roundToInt()
         highlightIndex = local.coerceIn(0, (belt.size - 1).coerceAtLeast(0))
         previous = incoming
-        return step
     }
 
     fun advance(nowSeconds: Double, followTimeSeconds: Float, minSpeedSlotsPerSecond: Float) {

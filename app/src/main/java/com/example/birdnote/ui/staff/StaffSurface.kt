@@ -55,7 +55,6 @@ fun <T> StaffSurface(
     visibleCount: Int,
     followTimeMillis: Int,
     minSpeedSlotsPerSecond: Float,
-    brightenToken: Int,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
@@ -78,7 +77,6 @@ fun <T> StaffSurface(
             visibleCount = visibleCount,
             followTimeMillis = followTimeMillis,
             minSpeedSlotsPerSecond = minSpeedSlotsPerSecond,
-            brightenToken = brightenToken,
         )
     }
     AndroidExternalSurface(
@@ -130,30 +128,24 @@ private class StaffSession<T>(
         visibleCount: Int,
         followTimeMillis: Int,
         minSpeedSlotsPerSecond: Float,
-        brightenToken: Int,
     ) {
         this.clefMode = clefMode
         this.difficulty = difficulty
         this.visibleCount = visibleCount
         this.followTimeMillis = followTimeMillis
         this.minSpeedSlotsPerSecond = minSpeedSlotsPerSecond
-        mailbox.submit(notes, brightenToken)
+        mailbox.submit(notes)
     }
 }
 
-private class StaffFrame<T>(
-    val notes: List<T>,
-    val brightenToken: Int,
-)
-
 private class StaffMailbox<T> {
-    private val pending = ConcurrentLinkedQueue<StaffFrame<T>>()
+    private val pending = ConcurrentLinkedQueue<List<T>>()
 
-    fun submit(notes: List<T>, brightenToken: Int) {
-        pending.add(StaffFrame(notes, brightenToken))
+    fun submit(notes: List<T>) {
+        pending.add(notes)
     }
 
-    fun drainInto(out: MutableList<StaffFrame<T>>) {
+    fun drainInto(out: MutableList<List<T>>) {
         out.clear()
         while (true) {
             out.add(pending.poll() ?: return)
@@ -171,24 +163,20 @@ private class StaffRenderer<T>(
     private val width = AtomicInteger(0)
     private val height = AtomicInteger(0)
     private val belt = StaffBelt<T>()
-    private val pendingFrames = ArrayList<StaffFrame<T>>()
+    private val pendingNotes = ArrayList<List<T>>()
     private val sprites = StaffSprites(session.context)
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val highlightRect = RectF()
     private val destRect = RectF()
-    private val brightenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
 
     private var lastFrameNanos = 0L
-    private var seenBrightenToken = 0
-    private var brightenStartSeconds = 0.0
     private var geometry: StaffGeometry? = null
     private var glyphs: StaffGlyphs? = null
     private var plate: Bitmap? = null
     private var strip: Bitmap? = null
     private var highlights: List<HighlightRect> = emptyList()
-    private var brightenRects: List<HighlightRect> = emptyList()
     private var builtWidth = 0
     private var builtHeight = 0
     private var builtClef: ClefMode? = null
@@ -235,17 +223,10 @@ private class StaffRenderer<T>(
         }
         val nowSeconds = frameTimeNanos / NANOS_PER_SECOND
         lastFrameNanos = frameTimeNanos
-        session.mailbox.drainInto(pendingFrames)
+        session.mailbox.drainInto(pendingNotes)
         val visibleCount = session.visibleCount
-        for (frame in pendingFrames) {
-            val step = belt.offer(frame.notes, visibleCount, nowSeconds, frameSeconds)
-            if (frame.brightenToken != seenBrightenToken) {
-                seenBrightenToken = frame.brightenToken
-                if (frame.brightenToken != 0 && step == BeltStep.Advanced) {
-                    belt.armBrighten()
-                    brightenStartSeconds = nowSeconds
-                }
-            }
+        for (incoming in pendingNotes) {
+            belt.offer(incoming, visibleCount, nowSeconds, frameSeconds)
         }
         belt.advance(
             nowSeconds,
@@ -284,43 +265,9 @@ private class StaffRenderer<T>(
             canvas.translate(offset, 0f)
             canvas.drawBitmap(stripBitmap, 0f, 0f, bitmapPaint)
             canvas.restore()
-            drawBrighten(canvas, offset, clipLeft, surfaceWidth.toFloat(), surfaceHeight.toFloat(), nowSeconds)
         } finally {
             surface.unlockCanvasAndPost(canvas)
         }
-    }
-
-    private fun drawBrighten(
-        canvas: Canvas,
-        offset: Float,
-        clipLeft: Float,
-        surfaceWidth: Float,
-        surfaceHeight: Float,
-        nowSeconds: Double,
-    ) {
-        if (brightenRects.isEmpty()) return
-        val strength = brightenStrength(
-            elapsedSeconds = (nowSeconds - brightenStartSeconds).toFloat(),
-            durationSeconds = LayoutTuning.Quiz.answerBrightenMillis / 1000f,
-        )
-        if (strength <= 0f) return
-        brightenPaint.color = BRIGHTEN
-        brightenPaint.alpha = (strength * LayoutTuning.Quiz.answerBrightenAlpha)
-            .roundToInt()
-            .coerceIn(0, 255)
-        canvas.save()
-        canvas.clipRect(clipLeft, 0f, surfaceWidth, surfaceHeight)
-        canvas.translate(offset, 0f)
-        for (highlight in brightenRects) {
-            highlightRect.set(
-                highlight.topLeft.x,
-                highlight.topLeft.y,
-                highlight.topLeft.x + highlight.size.width,
-                highlight.topLeft.y + highlight.size.height,
-            )
-            canvas.drawRoundRect(highlightRect, highlight.radius, highlight.radius, brightenPaint)
-        }
-        canvas.restore()
     }
 
     private fun ensureCaches(surfaceWidth: Int, surfaceHeight: Int) {
@@ -369,11 +316,6 @@ private class StaffRenderer<T>(
         )
         highlights = highlightRects(
             belt.highlightIndex.takeIf { belt.notes.isNotEmpty() },
-            chordDraws,
-            staff.lineSpacing,
-        )
-        brightenRects = highlightRects(
-            belt.brightenLocalIndex(),
             chordDraws,
             staff.lineSpacing,
         )
@@ -630,7 +572,6 @@ private class StaffRenderer<T>(
 
     private companion object {
         const val LIGHT_BLUE = 0xFF9FDEFD.toInt()
-        const val BRIGHTEN = 0xFFD4F6FF.toInt()
         const val BLACK = 0xFF000000.toInt()
         const val NANOS_PER_SECOND = 1_000_000_000.0
         const val MAX_FIRST_STEP_NANOS = 50_000_000L
