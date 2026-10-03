@@ -14,9 +14,15 @@
     <string name="score_empty">—</string>
     <string name="difficulty">Kesulitan</string>
     <string name="clef">Kunci</string>
+    <string name="clefs">Kunci</string>
     <string name="clef_sol">Sol</string>
     <string name="clef_fa">Fa</string>
+    <string name="clef_alto">Alto</string>
+    <string name="clef_tenor">Tenor</string>
     <string name="clef_sol_fa">Sol + Fa</string>
+    <string name="preferred_clefs_title">Kuncimu</string>
+    <string name="preferred_clefs_hint">Kamu bisa mengubahnya di Pengaturan.</string>
+    <string name="continue_action">Lanjutkan</string>
     <string name="lets_go">Mulai!</string>
     <string name="stop">Berhenti</string>
     <string name="time_remaining">Sisa waktu</string>

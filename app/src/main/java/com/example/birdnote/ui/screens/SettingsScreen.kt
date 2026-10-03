@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.birdnote.R
 import com.example.birdnote.domain.AppLanguage
+import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.scalePreview
 import com.example.birdnote.ui.LayoutTuning
@@ -31,6 +32,8 @@ fun SettingsScreen(
     onNoteNamingChange: (NoteNaming) -> Unit,
     appLanguage: AppLanguage,
     onAppLanguageChange: (AppLanguage) -> Unit,
+    preferredClefs: Set<Clef>,
+    onPreferredClefToggle: (Clef) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -74,6 +77,21 @@ fun SettingsScreen(
                     selected = noteNaming.scalePreview(),
                     options = NoteNaming.entries.map { it.scalePreview() },
                     onSelect = { onNoteNamingChange(NoteNaming.entries[it]) },
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(tuning.menuButtonGap),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = tuning.menuButtonGap),
+            ) {
+                Text(
+                    text = stringResource(R.string.clefs),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DarkBlue,
+                )
+                PreferredClefToggles(
+                    selected = preferredClefs,
+                    onToggle = onPreferredClefToggle,
                 )
             }
         }

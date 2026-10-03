@@ -13,8 +13,10 @@ import com.example.birdnote.R
 import com.example.birdnote.ScoreStore
 import com.example.birdnote.domain.AppLanguage
 import com.example.birdnote.domain.ChordConfig
+import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.IntervalConfig
+import com.example.birdnote.domain.clefModesFor
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.PracticeMode
@@ -70,9 +72,12 @@ fun BirdNoteNavHost(
     onNoteNamingChange: (NoteNaming) -> Unit,
     appLanguage: AppLanguage,
     onAppLanguageChange: (AppLanguage) -> Unit,
+    preferredClefs: Set<Clef>,
+    onPreferredClefToggle: (Clef) -> Unit,
     scoreStore: ScoreStore,
     modifier: Modifier = Modifier,
 ) {
+    val clefModes = clefModesFor(preferredClefs)
     NavHost(
         navController = navController,
         startDestination = Routes.HOME,
@@ -89,6 +94,7 @@ fun BirdNoteNavHost(
             val scores by scoreStore.scores.collectAsStateWithLifecycle()
             ScoresScreen(
                 scores = scores,
+                clefModes = clefModes,
                 onBackClick = { navController.popBackStack() },
             )
         }
@@ -98,6 +104,8 @@ fun BirdNoteNavHost(
                 onNoteNamingChange = onNoteNamingChange,
                 appLanguage = appLanguage,
                 onAppLanguageChange = onAppLanguageChange,
+                preferredClefs = preferredClefs,
+                onPreferredClefToggle = onPreferredClefToggle,
                 onBackClick = { navController.popBackStack() },
             )
         }
@@ -111,6 +119,7 @@ fun BirdNoteNavHost(
         }
         composable(Routes.SETUP) {
             NoteSetupScreen(
+                clefModes = clefModes,
                 onStartClick = { difficulty, clefMode ->
                     navController.navigate(Routes.quiz(difficulty, clefMode))
                 },
@@ -127,6 +136,7 @@ fun BirdNoteNavHost(
         }
         composable(Routes.CHORD_SETUP) {
             ChordSetupScreen(
+                clefModes = clefModes,
                 onStartClick = { difficulty, clefMode ->
                     navController.navigate(Routes.chordQuiz(difficulty, clefMode))
                 },

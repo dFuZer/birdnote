@@ -405,28 +405,12 @@ private class StaffRenderer<T>(
         lineSpacing: Float,
         glyphs: StaffGlyphs,
     ) {
-        val tuning = LayoutTuning.Staff
-        val x: Float
-        val top: Float
-        val glyphWidth: Float
-        val glyphHeight: Float
-        val bitmap: Bitmap
-        when (clef) {
-            Clef.SOL -> {
-                x = left + lineSpacing * tuning.trebleClefXInLineSpaces
-                top = bottomLineY + lineSpacing * tuning.trebleClefTopInLineSpaces
-                glyphWidth = lineSpacing * tuning.trebleClefWidthInLineSpaces
-                glyphHeight = lineSpacing * tuning.trebleClefHeightInLineSpaces
-                bitmap = glyphs.treble
-            }
-            Clef.FA -> {
-                x = left + lineSpacing * tuning.bassClefXInLineSpaces
-                top = bottomLineY + lineSpacing * tuning.bassClefTopInLineSpaces
-                glyphWidth = lineSpacing * tuning.bassClefWidthInLineSpaces
-                glyphHeight = lineSpacing * tuning.bassClefHeightInLineSpaces
-                bitmap = glyphs.bass
-            }
-        }
+        val box = clef.glyphBox()
+        val x = left + lineSpacing * box.xInLineSpaces
+        val top = bottomLineY + lineSpacing * box.topInLineSpaces
+        val glyphWidth = lineSpacing * box.widthInLineSpaces
+        val glyphHeight = lineSpacing * box.heightInLineSpaces
+        val bitmap = glyphs.bitmapFor(clef)
         destRect.set(x, top, x + glyphWidth, top + glyphHeight)
         canvas.drawBitmap(bitmap, null, destRect, bitmapPaint)
     }
@@ -568,6 +552,7 @@ private class StaffRenderer<T>(
         glyphs.natural.recycle()
         glyphs.treble.recycle()
         glyphs.bass.recycle()
+        glyphs.cClef.recycle()
     }
 
     private companion object {
@@ -612,7 +597,14 @@ private class StaffGlyphs(
     val natural: Bitmap,
     val treble: Bitmap,
     val bass: Bitmap,
-)
+    val cClef: Bitmap,
+) {
+    fun bitmapFor(clef: Clef): Bitmap = when (clef) {
+        Clef.SOL -> treble
+        Clef.FA -> bass
+        Clef.ALTO, Clef.TENOR -> cClef
+    }
+}
 
 private class StaffSprites(context: Context) {
     private val loader = ImageLoader.Builder(context)
@@ -655,6 +647,11 @@ private class StaffSprites(context: Context) {
                 "key-fa.svg",
                 spacing * tuning.bassClefWidthInLineSpaces,
                 spacing * tuning.bassClefHeightInLineSpaces,
+            ),
+            cClef = load(
+                "key-ut.svg",
+                spacing * tuning.cClefWidthInLineSpaces,
+                spacing * tuning.cClefHeightInLineSpaces,
             ),
         )
     }

@@ -37,6 +37,7 @@ class AppFlowTest {
 
     @Test
     fun notesTrainingFlowReachesResultsAndCanRestartOrReturnHome() {
+        continueFromClefChoice()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.my_scores))
             .assertIsEnabled()
         composeRule.onNodeWithText("Classement").assertDoesNotExist()
@@ -73,6 +74,7 @@ class AppFlowTest {
 
     @Test
     fun intervalsTrainingFlowReachesResults() {
+        continueFromClefChoice()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.train)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.intervals)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.lets_go)).performClick()
@@ -94,6 +96,7 @@ class AppFlowTest {
 
     @Test
     fun chordsTrainingFlowReachesResults() {
+        continueFromClefChoice()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.train)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.chords)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.lets_go)).performClick()
@@ -115,6 +118,7 @@ class AppFlowTest {
 
     @Test
     fun settingsPersistEnglishNoteNamesOnTheQuiz() {
+        continueFromClefChoice()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.settings)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.note_names))
             .assertIsDisplayed()
@@ -138,6 +142,7 @@ class AppFlowTest {
 
     @Test
     fun bestScoreIsSavedForTheClefAndDifficultyJustPlayed() {
+        continueFromClefChoice()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.train)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.notes)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.lets_go)).performClick()
@@ -154,6 +159,8 @@ class AppFlowTest {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_fa)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_alto)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_tenor)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol_fa)).assertIsDisplayed()
         composeRule.onNodeWithText("0").assertIsDisplayed()
 
@@ -168,5 +175,10 @@ class AppFlowTest {
 
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.notes)).performClick()
         composeRule.onNodeWithText("0").assertIsDisplayed()
+    }
+
+    private fun continueFromClefChoice() {
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.continue_action))
+            .performClick()
     }
 }

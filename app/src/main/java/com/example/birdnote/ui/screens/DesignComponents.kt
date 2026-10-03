@@ -2,9 +2,11 @@ package com.example.birdnote.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.birdnote.R
+import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.theme.DarkBlue
@@ -220,8 +224,74 @@ fun DifficultyButton(
 }
 
 @Composable
+fun PreferredClefToggles(
+    selected: Set<Clef>,
+    onToggle: (Clef) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tuning = LayoutTuning.PreferredClefs
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(tuning.toggleGap),
+    ) {
+        Clef.entries.forEach { clef ->
+            val on = clef in selected
+            ClefToggle(
+                text = clef.label(),
+                selected = on,
+                enabled = !on || selected.size > 1,
+                onClick = { onToggle(clef) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ClefToggle(
+    text: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val commonTuning = LayoutTuning.Common
+    val tuning = LayoutTuning.PreferredClefs
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(commonTuning.buttonCornerRadius),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) Highlight else DarkBlue,
+            contentColor = Neutral,
+            disabledContainerColor = if (selected) Highlight else DisabledGrey,
+            disabledContentColor = Neutral,
+        ),
+        contentPadding = PaddingValues(0.dp),
+        modifier = Modifier
+            .semantics { this.selected = selected }
+            .size(width = tuning.toggleWidth, height = tuning.toggleHeight),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+fun Clef.label(): String = when (this) {
+    Clef.SOL -> stringResource(R.string.clef_sol)
+    Clef.FA -> stringResource(R.string.clef_fa)
+    Clef.ALTO -> stringResource(R.string.clef_alto)
+    Clef.TENOR -> stringResource(R.string.clef_tenor)
+}
+
+@Composable
 fun ClefMode.label(): String = when (this) {
-    ClefMode.SOL -> stringResource(R.string.clef_sol)
-    ClefMode.FA -> stringResource(R.string.clef_fa)
+    ClefMode.SOL -> Clef.SOL.label()
+    ClefMode.FA -> Clef.FA.label()
+    ClefMode.ALTO -> Clef.ALTO.label()
+    ClefMode.TENOR -> Clef.TENOR.label()
     ClefMode.SOL_FA -> stringResource(R.string.clef_sol_fa)
 }

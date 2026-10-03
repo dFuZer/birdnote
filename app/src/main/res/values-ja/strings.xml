@@ -14,9 +14,15 @@
     <string name="score_empty">—</string>
     <string name="difficulty">難易度</string>
     <string name="clef">音部記号</string>
+    <string name="clefs">音部記号</string>
     <string name="clef_sol">ト音</string>
     <string name="clef_fa">ヘ音</string>
+    <string name="clef_alto">アルト</string>
+    <string name="clef_tenor">テノール</string>
     <string name="clef_sol_fa">ト音＋ヘ音</string>
+    <string name="preferred_clefs_title">あなたの音部記号</string>
+    <string name="preferred_clefs_hint">設定で変更できます。</string>
+    <string name="continue_action">続ける</string>
     <string name="lets_go">スタート！</string>
     <string name="stop">停止</string>
     <string name="time_remaining">残り時間</string>

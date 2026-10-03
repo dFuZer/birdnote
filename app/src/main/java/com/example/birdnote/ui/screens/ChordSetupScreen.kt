@@ -40,6 +40,8 @@ import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.MAX_DIFFICULTY
 import com.example.birdnote.domain.MIN_DIFFICULTY
 import com.example.birdnote.domain.PracticeChord
+import com.example.birdnote.domain.clefs
+import com.example.birdnote.domain.openingClefMode
 import com.example.birdnote.domain.previewChords
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.staff.ChordGridTarget
@@ -57,14 +59,18 @@ import com.example.birdnote.ui.theme.Neutral
 fun ChordSetupScreen(
     onStartClick: (difficulty: Int, clefMode: ClefMode) -> Unit,
     onBackClick: () -> Unit,
+    clefModes: List<ClefMode>,
     modifier: Modifier = Modifier,
 ) {
     val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Setup
     var difficulty by rememberSaveable { mutableIntStateOf(MIN_DIFFICULTY) }
-    var clefModeName by rememberSaveable { mutableStateOf(ClefMode.SOL.name) }
+    var clefModeName by rememberSaveable { mutableStateOf(clefModes.first().name) }
     var clefMenuExpanded by rememberSaveable { mutableStateOf(false) }
-    val clefMode = ClefMode.valueOf(clefModeName)
+    val clefMode = openingClefMode(
+        preferred = clefModes.flatMap { it.clefs() }.toSet(),
+        remembered = ClefMode.entries.firstOrNull { it.name == clefModeName },
+    )
     val config = ChordConfig(difficulty, clefMode)
     val preview = previewChords(config)
 
@@ -132,7 +138,7 @@ fun ChordSetupScreen(
                             expanded = clefMenuExpanded,
                             onDismissRequest = { clefMenuExpanded = false },
                         ) {
-                            ClefMode.entries.forEach { mode ->
+                            clefModes.forEach { mode ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(
@@ -277,4 +283,6 @@ private fun ChordPreviewTile(
 private fun Clef.toMode(): ClefMode = when (this) {
     Clef.SOL -> ClefMode.SOL
     Clef.FA -> ClefMode.FA
+    Clef.ALTO -> ClefMode.ALTO
+    Clef.TENOR -> ClefMode.TENOR
 }

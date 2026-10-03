@@ -30,6 +30,7 @@ import com.example.birdnote.domain.MAX_DIFFICULTY
 import com.example.birdnote.domain.MIN_DIFFICULTY
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.clefs
+import com.example.birdnote.domain.openingClefMode
 import com.example.birdnote.domain.pitchRange
 import com.example.birdnote.domain.previewNotes
 import com.example.birdnote.ui.LayoutTuning
@@ -43,14 +44,18 @@ import com.example.birdnote.ui.theme.Neutral
 fun NoteSetupScreen(
     onStartClick: (difficulty: Int, clefMode: ClefMode) -> Unit,
     onBackClick: () -> Unit,
+    clefModes: List<ClefMode>,
     modifier: Modifier = Modifier,
 ) {
     val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Setup
     var difficulty by rememberSaveable { mutableIntStateOf(MIN_DIFFICULTY) }
-    var clefModeName by rememberSaveable { mutableStateOf(ClefMode.SOL.name) }
+    var clefModeName by rememberSaveable { mutableStateOf(clefModes.first().name) }
     var clefMenuExpanded by rememberSaveable { mutableStateOf(false) }
-    val clefMode = ClefMode.valueOf(clefModeName)
+    val clefMode = openingClefMode(
+        preferred = clefModes.flatMap { it.clefs() }.toSet(),
+        remembered = ClefMode.entries.firstOrNull { it.name == clefModeName },
+    )
     val config = PracticeConfig(difficulty, clefMode)
     val preview = StaffRenderModel(
         clefMode = clefMode,
@@ -120,7 +125,7 @@ fun NoteSetupScreen(
                             expanded = clefMenuExpanded,
                             onDismissRequest = { clefMenuExpanded = false },
                         ) {
-                            ClefMode.entries.forEach { mode ->
+                            clefModes.forEach { mode ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(

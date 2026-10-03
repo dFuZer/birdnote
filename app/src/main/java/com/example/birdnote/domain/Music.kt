@@ -18,11 +18,12 @@ enum class NoteNaming {
 }
 
 enum class Clef {
-    SOL, FA
+    SOL, FA, ALTO, TENOR
 }
 
+/** Menu and score-row order: Sol, Fa, Sol + Fa, then Alto and Tenor. */
 enum class ClefMode {
-    SOL, FA, SOL_FA
+    SOL, FA, SOL_FA, ALTO, TENOR
 }
 
 enum class Accidental {
@@ -126,7 +127,46 @@ fun ClefMode.queueSize(): Int = QUEUE_SIZE
 fun ClefMode.clefs(): List<Clef> = when (this) {
     ClefMode.SOL -> listOf(Clef.SOL)
     ClefMode.FA -> listOf(Clef.FA)
+    ClefMode.ALTO -> listOf(Clef.ALTO)
+    ClefMode.TENOR -> listOf(Clef.TENOR)
     ClefMode.SOL_FA -> listOf(Clef.SOL, Clef.FA)
+}
+
+/** Setup and score rows for [preferred]. Sol + Fa is included only when both of those clefs are on. */
+fun clefModesFor(preferred: Set<Clef>): List<ClefMode> {
+    require(preferred.isNotEmpty()) { "At least one clef stays selected" }
+    return ClefMode.entries.filter { mode -> mode.clefs().all { it in preferred } }
+}
+
+/** Turns [clef] on or off. The last selected clef stays on. */
+fun withClefToggled(preferred: Set<Clef>, clef: Clef): Set<Clef> {
+    require(preferred.isNotEmpty()) { "At least one clef stays selected" }
+    return if (clef in preferred) {
+        if (preferred.size == 1) preferred else preferred - clef
+    } else {
+        preferred + clef
+    }
+}
+
+/** A remembered mode is kept only when it is still preferred; otherwise the first preferred mode. */
+fun openingClefMode(preferred: Set<Clef>, remembered: ClefMode? = null): ClefMode {
+    val modes = clefModesFor(preferred)
+    return if (remembered != null && remembered in modes) remembered else modes.first()
+}
+
+fun storedPreferredClefs(value: String?): Set<Clef> {
+    if (value == null) return Clef.entries.toSet()
+    val parsed = value.split(',')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .mapNotNull { token -> Clef.entries.firstOrNull { it.name == token } }
+        .toSet()
+    return parsed.ifEmpty { Clef.entries.toSet() }
+}
+
+fun preferredClefsStorage(clefs: Set<Clef>): String {
+    require(clefs.isNotEmpty()) { "At least one clef stays selected" }
+    return Clef.entries.filter { it in clefs }.joinToString(",") { it.name }
 }
 
 fun Pitch.staffStep(clef: Clef): Int = diatonicStep - clef.bottomLineStep
@@ -135,6 +175,8 @@ val Clef.bottomLineStep: Int
     get() = when (this) {
         Clef.SOL -> TREBLE_BOTTOM_LINE_STEP
         Clef.FA -> BASS_BOTTOM_LINE_STEP
+        Clef.ALTO -> ALTO_BOTTOM_LINE_STEP
+        Clef.TENOR -> TENOR_BOTTOM_LINE_STEP
     }
 
 fun isCorrect(note: StaffNote, answer: NoteName): Boolean = note.pitch.noteName == answer
@@ -273,3 +315,5 @@ fun Pitch.pianoAssetPath(): String {
 
 private const val TREBLE_BOTTOM_LINE_STEP = 30 // E4, with C0 = 0
 private const val BASS_BOTTOM_LINE_STEP = 18 // G2
+private const val ALTO_BOTTOM_LINE_STEP = 24 // F3; C4 sits on the middle line
+private const val TENOR_BOTTOM_LINE_STEP = 22 // D3; C4 sits on the fourth line

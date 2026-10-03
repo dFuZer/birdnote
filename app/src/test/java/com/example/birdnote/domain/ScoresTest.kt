@@ -1,6 +1,7 @@
 package com.example.birdnote.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -57,5 +58,21 @@ class ScoresTest {
         assertEquals("CHORDS:SOL_FA:2", scoreStorageKey(PracticeMode.CHORDS, 2, ClefMode.SOL_FA))
         assertEquals(12, bestScore(mapOf("NOTES:SOL:1" to 12), PracticeMode.NOTES, 1, ClefMode.SOL))
         assertNull(bestScore(emptyMap(), PracticeMode.NOTES, 1, ClefMode.FA))
+        assertEquals("NOTES:ALTO:3", scoreStorageKey(PracticeMode.NOTES, 3, ClefMode.ALTO))
+        assertEquals("CHORDS:TENOR:4", scoreStorageKey(PracticeMode.CHORDS, 4, ClefMode.TENOR))
+    }
+
+    @Test
+    fun hiddenClefDropsFromTheGridAndKeepsItsStoredBest() {
+        val stored = mapOf(scoreStorageKey(PracticeMode.NOTES, 2, ClefMode.ALTO) to 9)
+        val visible = clefModesFor(setOf(Clef.SOL, Clef.FA))
+        val hiddenGrid = scoreGrid(PracticeMode.NOTES, visible)
+        assertFalse(hiddenGrid.any { it.clefMode == ClefMode.ALTO })
+        assertEquals(9, bestScore(stored, PracticeMode.NOTES, 2, ClefMode.ALTO))
+
+        val shown = scoreGrid(PracticeMode.NOTES, clefModesFor(setOf(Clef.SOL, Clef.ALTO)))
+        assertTrue(ScoreCell(2, ClefMode.ALTO) in shown)
+        assertFalse(shown.any { it.clefMode == ClefMode.SOL_FA })
+        assertEquals(9, bestScore(stored, PracticeMode.NOTES, 2, ClefMode.ALTO))
     }
 }

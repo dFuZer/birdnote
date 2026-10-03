@@ -14,9 +14,15 @@
     <string name="score_empty">—</string>
     <string name="difficulty">Difficulty</string>
     <string name="clef">Clef</string>
+    <string name="clefs">Clefs</string>
     <string name="clef_sol">Treble</string>
     <string name="clef_fa">Bass</string>
+    <string name="clef_alto">Alto</string>
+    <string name="clef_tenor">Tenor</string>
     <string name="clef_sol_fa">Treble + Bass</string>
+    <string name="preferred_clefs_title">Your clefs</string>
+    <string name="preferred_clefs_hint">You can change them in Settings.</string>
+    <string name="continue_action">Continue</string>
     <string name="lets_go">Let\'s go!</string>
     <string name="stop">Stop</string>
     <string name="time_remaining">Time remaining</string>
