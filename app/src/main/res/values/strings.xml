@@ -3,6 +3,15 @@
     <string name="train">S\'entraîner</string>
     <string name="my_scores">Mes scores</string>
     <string name="settings">Paramètres</string>
+    <string name="language">Langue</string>
+    <string name="language_name_en">English</string>
+    <string name="language_name_es">Español (Latinoamérica)</string>
+    <string name="language_name_pt">Português (Brasil)</string>
+    <string name="language_name_id">Bahasa Indonesia</string>
+    <string name="language_name_de">Deutsch</string>
+    <string name="language_name_it">Italiano</string>
+    <string name="language_name_ja">日本語</string>
+    <string name="language_name_fr">Français</string>
     <string name="note_names">Nom des notes</string>
     <string name="training_title">On fait quoi ?</string>
     <string name="notes">Notes</string>
@@ -25,6 +34,7 @@
     <string name="lets_go">C\'est parti !</string>
     <string name="stop">Arrêter</string>
     <string name="time_remaining">Temps restant</string>
+    <string name="quiz_score">Score %1$d</string>
     <string name="bravo">Bravo !</string>
     <string name="your_score">ton score :</string>
     <plurals name="score_notes">
@@ -41,6 +51,23 @@
     </plurals>
     <string name="restart">Recommencer</string>
     <string name="menu">Menu</string>
+    <string name="interval_second">Seconde</string>
+    <string name="interval_third">Tierce</string>
+    <string name="interval_fourth">Quarte</string>
+    <string name="interval_fifth">Quinte</string>
+    <string name="interval_sixth">Sixte</string>
+    <string name="interval_seventh">Septième</string>
+    <string name="interval_octave">Octave</string>
+    <string name="interval_ninth">Neuvième</string>
+    <string name="chord_major">Majeur</string>
+    <string name="chord_minor">Mineur</string>
+    <string name="chord_augmented">Augmenté</string>
+    <string name="chord_diminished">Diminué</string>
+    <string name="chord_dominant_7">7e de dominante</string>
+    <string name="chord_major_7">7e majeure</string>
+    <string name="chord_minor_7">7e mineure</string>
+    <string name="chord_half_diminished_7">7e demi-diminuée</string>
+    <string name="chord_diminished_7">7e diminuée</string>
     <string name="note_do">Do</string>
     <string name="note_re">Ré</string>
     <string name="note_mi">Mi</string>

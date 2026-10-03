@@ -1,5 +1,9 @@
 package com.example.birdnote.ui.screens
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,10 +34,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,6 +64,7 @@ import com.example.birdnote.domain.intervalNamesFor
 import com.example.birdnote.domain.label
 import com.example.birdnote.domain.queueSize
 import com.example.birdnote.ui.LayoutTuning
+import com.example.birdnote.ui.quiz.AnswerFeedback
 import com.example.birdnote.ui.quiz.ChordQuizViewModel
 import com.example.birdnote.ui.quiz.IntervalQuizViewModel
 import com.example.birdnote.ui.quiz.QuizSounds
@@ -91,6 +100,8 @@ fun QuizRoute(
     }
     QuizScreen(
         notes = state.notes,
+        score = state.score,
+        answerFeedback = state.answerFeedback,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
@@ -106,6 +117,8 @@ fun QuizRoute(
 @Composable
 fun QuizScreen(
     notes: List<StaffNote>,
+    score: Int,
+    answerFeedback: AnswerFeedback?,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
@@ -129,6 +142,7 @@ fun QuizScreen(
             ),
     ) {
         QuizTopBar(
+            score = score,
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
             onStop = onStop,
@@ -158,6 +172,7 @@ fun QuizScreen(
         AnswerRow(
             answersLocked = answersLocked,
             noteNaming = noteNaming,
+            answerFeedback = answerFeedback,
             onAnswer = onAnswer,
         )
     }
@@ -186,6 +201,8 @@ fun IntervalQuizRoute(
     }
     IntervalQuizScreen(
         intervals = state.intervals,
+        score = state.score,
+        answerFeedback = state.answerFeedback,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
@@ -199,6 +216,8 @@ fun IntervalQuizRoute(
 @Composable
 fun IntervalQuizScreen(
     intervals: List<StaffInterval>,
+    score: Int,
+    answerFeedback: AnswerFeedback?,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
@@ -220,6 +239,7 @@ fun IntervalQuizScreen(
             ),
     ) {
         QuizTopBar(
+            score = score,
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
             onStop = onStop,
@@ -249,6 +269,7 @@ fun IntervalQuizScreen(
         IntervalAnswerGrid(
             difficulty = difficulty,
             answersLocked = answersLocked,
+            answerFeedback = answerFeedback,
             onAnswer = onAnswer,
         )
     }
@@ -277,6 +298,8 @@ fun ChordQuizRoute(
     }
     ChordQuizScreen(
         chords = state.chords,
+        score = state.score,
+        answerFeedback = state.answerFeedback,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
@@ -291,6 +314,8 @@ fun ChordQuizRoute(
 @Composable
 fun ChordQuizScreen(
     chords: List<PracticeChord>,
+    score: Int,
+    answerFeedback: AnswerFeedback?,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     answersLocked: Boolean,
@@ -313,6 +338,7 @@ fun ChordQuizScreen(
             ),
     ) {
         QuizTopBar(
+            score = score,
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
             onStop = onStop,
@@ -342,6 +368,7 @@ fun ChordQuizScreen(
         ChordAnswerGrid(
             difficulty = difficulty,
             answersLocked = answersLocked,
+            answerFeedback = answerFeedback,
             onAnswer = onAnswer,
         )
     }
@@ -349,6 +376,7 @@ fun ChordQuizScreen(
 
 @Composable
 private fun QuizTopBar(
+    score: Int,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
     onStop: () -> Unit,
@@ -399,45 +427,76 @@ private fun QuizTopBar(
                     .background(DarkBlue),
             )
         }
+        Spacer(Modifier.width(tuning.progressBarGap))
+        QuizScore(score)
     }
+}
+
+@Composable
+private fun QuizScore(score: Int) {
+    val scale = remember { Animatable(1f) }
+    var skipInitial by remember { mutableStateOf(true) }
+    LaunchedEffect(score) {
+        if (skipInitial) {
+            skipInitial = false
+            return@LaunchedEffect
+        }
+        scale.snapTo(1f)
+        scale.animateTo(
+            LayoutTuning.Quiz.scorePopScale,
+            tween(durationMillis = SCORE_POP_UP_MILLIS, easing = FastOutSlowInEasing),
+        )
+        scale.animateTo(
+            1f,
+            tween(durationMillis = SCORE_POP_DOWN_MILLIS, easing = FastOutSlowInEasing),
+        )
+    }
+    val label = stringResource(R.string.quiz_score, score)
+    val pop = scale.value
+    Text(
+        text = score.toString(),
+        style = MaterialTheme.typography.titleMedium,
+        color = DarkBlue,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .widthIn(min = LayoutTuning.Quiz.scoreMinWidth)
+            .graphicsLayer {
+                scaleX = pop
+                scaleY = pop
+            }
+            .semantics { contentDescription = label },
+    )
 }
 
 @Composable
 private fun AnswerRow(
     answersLocked: Boolean,
     noteNaming: NoteNaming,
+    answerFeedback: AnswerFeedback?,
     onAnswer: (NoteName) -> Unit,
 ) {
-    val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Quiz
+    var tapped by remember { mutableStateOf<NoteName?>(null) }
+    val shaken = rememberShakenButton(answerFeedback, tapped)
     Row(
         modifier = Modifier.fillMaxWidth(),
     ) {
         NoteName.entries.forEach { name ->
-            Button(
-                onClick = { onAnswer(name) },
-                enabled = !answersLocked,
-                shape = RoundedCornerShape(commonTuning.buttonCornerRadius),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DarkBlue,
-                    contentColor = Neutral,
-                    disabledContainerColor = DarkBlue.copy(alpha = tuning.answerDisabledAlpha),
-                    disabledContentColor = Neutral,
-                ),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    horizontal = tuning.answerContentHorizontalPadding,
-                ),
+            QuizAnswerButton(
+                text = name.label(noteNaming),
+                textStyle = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                answersLocked = answersLocked,
+                shakeToken = shakeToken(shaken, name),
+                onClick = {
+                    tapped = name
+                    onAnswer(name)
+                },
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = tuning.answerHorizontalMargin)
                     .height(tuning.answerButtonHeight),
-            ) {
-                Text(
-                    text = name.label(noteNaming),
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                )
-            }
+            )
         }
     }
 }
@@ -446,12 +505,14 @@ private fun AnswerRow(
 private fun IntervalAnswerGrid(
     difficulty: Int,
     answersLocked: Boolean,
+    answerFeedback: AnswerFeedback?,
     onAnswer: (IntervalName) -> Unit,
 ) {
-    val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Quiz
     val answers = intervalNamesFor(difficulty)
     val columns = tuning.intervalAnswerColumns
+    var tapped by remember { mutableStateOf<IntervalName?>(null) }
+    val shaken = rememberShakenButton(answerFeedback, tapped)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(tuning.answerRowGap),
@@ -459,31 +520,21 @@ private fun IntervalAnswerGrid(
         answers.chunked(columns).forEach { rowItems ->
             Row(modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { name ->
-                    Button(
-                        onClick = { onAnswer(name) },
-                        enabled = !answersLocked,
-                        shape = RoundedCornerShape(commonTuning.buttonCornerRadius),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DarkBlue,
-                            contentColor = Neutral,
-                            disabledContainerColor = DarkBlue.copy(alpha = tuning.answerDisabledAlpha),
-                            disabledContentColor = Neutral,
-                        ),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            horizontal = tuning.answerContentHorizontalPadding,
-                        ),
+                    QuizAnswerButton(
+                        text = name.label(),
+                        textStyle = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        answersLocked = answersLocked,
+                        shakeToken = shakeToken(shaken, name),
+                        onClick = {
+                            tapped = name
+                            onAnswer(name)
+                        },
                         modifier = Modifier
                             .weight(1f)
                             .padding(horizontal = tuning.answerHorizontalMargin)
                             .height(tuning.answerButtonHeight),
-                    ) {
-                        Text(
-                            text = name.label(),
-                            style = MaterialTheme.typography.labelLarge,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                        )
-                    }
+                    )
                 }
                 repeat(columns - rowItems.size) {
                     Spacer(
@@ -501,12 +552,14 @@ private fun IntervalAnswerGrid(
 private fun ChordAnswerGrid(
     difficulty: Int,
     answersLocked: Boolean,
+    answerFeedback: AnswerFeedback?,
     onAnswer: (ChordQuality) -> Unit,
 ) {
-    val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Quiz
     val answers = chordQualitiesFor(difficulty)
     val columns = chordAnswerColumns(answers.size)
+    var tapped by remember { mutableStateOf<ChordQuality?>(null) }
+    val shaken = rememberShakenButton(answerFeedback, tapped)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(tuning.answerRowGap),
@@ -514,31 +567,21 @@ private fun ChordAnswerGrid(
         answers.chunked(columns).forEach { rowItems ->
             Row(modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { quality ->
-                    Button(
-                        onClick = { onAnswer(quality) },
-                        enabled = !answersLocked,
-                        shape = RoundedCornerShape(commonTuning.buttonCornerRadius),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DarkBlue,
-                            contentColor = Neutral,
-                            disabledContainerColor = DarkBlue.copy(alpha = tuning.answerDisabledAlpha),
-                            disabledContentColor = Neutral,
-                        ),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            horizontal = tuning.answerContentHorizontalPadding,
-                        ),
+                    QuizAnswerButton(
+                        text = quality.label(),
+                        textStyle = MaterialTheme.typography.labelSmall,
+                        maxLines = 2,
+                        answersLocked = answersLocked,
+                        shakeToken = shakeToken(shaken, quality),
+                        onClick = {
+                            tapped = quality
+                            onAnswer(quality)
+                        },
                         modifier = Modifier
                             .weight(1f)
                             .padding(horizontal = tuning.answerHorizontalMargin)
                             .height(tuning.answerButtonHeight),
-                    ) {
-                        Text(
-                            text = quality.label(),
-                            style = MaterialTheme.typography.labelSmall,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                        )
-                    }
+                    )
                 }
                 repeat(columns - rowItems.size) {
                     Spacer(
@@ -563,8 +606,80 @@ private fun rememberQuizSounds(): QuizSounds? {
     return sounds
 }
 
+@Composable
+private fun QuizAnswerButton(
+    text: String,
+    textStyle: TextStyle,
+    maxLines: Int,
+    answersLocked: Boolean,
+    shakeToken: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shakeX = rememberShakeTranslation(shakeToken)
+    val commonTuning = LayoutTuning.Common
+    val tuning = LayoutTuning.Quiz
+    Button(
+        onClick = onClick,
+        enabled = !answersLocked,
+        shape = RoundedCornerShape(commonTuning.buttonCornerRadius),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = DarkBlue,
+            contentColor = Neutral,
+            disabledContainerColor = DarkBlue.copy(alpha = tuning.answerDisabledAlpha),
+            disabledContentColor = Neutral,
+        ),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal = tuning.answerContentHorizontalPadding,
+        ),
+        modifier = modifier.graphicsLayer { translationX = shakeX },
+    ) {
+        Text(
+            text = text,
+            style = textStyle,
+            textAlign = TextAlign.Center,
+            maxLines = maxLines,
+        )
+    }
+}
+
+@Composable
+private fun rememberShakeTranslation(shakeToken: Int): Float {
+    val distancePx = with(LocalDensity.current) { LayoutTuning.Quiz.wrongShakeDistance.toPx() }
+    val fraction = remember { Animatable(0f) }
+    LaunchedEffect(shakeToken) {
+        if (shakeToken == 0) {
+            fraction.snapTo(0f)
+            return@LaunchedEffect
+        }
+        val peaks = floatArrayOf(1f, -0.75f, 0.4f, -0.15f, 0f)
+        for (peak in peaks) {
+            fraction.animateTo(peak, tween(durationMillis = SHAKE_STEP_MILLIS, easing = LinearEasing))
+        }
+    }
+    return fraction.value * distancePx
+}
+
+private fun <T> shakeToken(shaken: Pair<T, Int>?, button: T): Int =
+    if (shaken != null && shaken.first == button) shaken.second else 0
+
+@Composable
+private fun <T> rememberShakenButton(feedback: AnswerFeedback?, tapped: T?): Pair<T, Int>? {
+    var shaken by remember { mutableStateOf<Pair<T, Int>?>(null) }
+    LaunchedEffect(feedback?.id) {
+        val answer = feedback ?: return@LaunchedEffect
+        val button = tapped ?: return@LaunchedEffect
+        if (!answer.correct) shaken = button to answer.id
+    }
+    return shaken
+}
+
 private fun chordAnswerColumns(count: Int): Int {
     val maxRows = LayoutTuning.Quiz.chordAnswerMaxRows
     if (count <= maxRows) return count.coerceAtLeast(1)
     return (count + maxRows - 1) / maxRows
 }
+
+private const val SCORE_POP_UP_MILLIS = 90
+private const val SCORE_POP_DOWN_MILLIS = 160
+private const val SHAKE_STEP_MILLIS = 42

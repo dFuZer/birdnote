@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.example.birdnote.ScoreStore
 import com.example.birdnote.SettingsStore
+import com.example.birdnote.findActivity
 import com.example.birdnote.ui.navigation.BirdNoteNavHost
 import com.example.birdnote.ui.screens.PreferredClefsScreen
 import com.example.birdnote.ui.theme.LightBlue
@@ -23,6 +24,7 @@ fun BirdNoteApp() {
     val settingsStore = remember { SettingsStore(context) }
     val scoreStore = remember { ScoreStore(context) }
     val noteNaming by settingsStore.noteNaming.collectAsStateWithLifecycle()
+    val appLanguage by settingsStore.appLanguage.collectAsStateWithLifecycle()
     val preferredClefs by settingsStore.preferredClefs.collectAsStateWithLifecycle()
     val preferredClefsChosen by settingsStore.preferredClefsChosen.collectAsStateWithLifecycle()
     Scaffold(
@@ -34,6 +36,12 @@ fun BirdNoteApp() {
                 navController = navController,
                 noteNaming = noteNaming,
                 onNoteNamingChange = settingsStore::setNoteNaming,
+                appLanguage = appLanguage,
+                onAppLanguageChange = { language ->
+                    val changed = language != appLanguage
+                    settingsStore.setAppLanguage(language)
+                    if (changed) context.findActivity().recreate()
+                },
                 preferredClefs = preferredClefs,
                 onPreferredClefToggle = settingsStore::togglePreferredClef,
                 scoreStore = scoreStore,

@@ -138,13 +138,6 @@ class MusicTest {
     }
 
     @Test
-    fun intervalLabelsAreFrench() {
-        assertEquals("Seconde", IntervalName.SECONDE.label())
-        assertEquals("Septième", IntervalName.SEPTIEME.label())
-        assertEquals("Neuvième", IntervalName.NEUVIEME.label())
-    }
-
-    @Test
     fun isCorrectIntervalComparesNameOnly() {
         val interval = StaffInterval(Pitch(32), Pitch(34), Clef.SOL)
         assertTrue(isCorrect(interval, IntervalName.TIERCE))
@@ -299,19 +292,6 @@ class MusicTest {
                 assertEquals(quality.semitoneIntervals, intervalPattern(chord))
             }
         }
-    }
-
-    @Test
-    fun chordLabelsAreFrench() {
-        assertEquals("Majeur", ChordQuality.MAJOR.label())
-        assertEquals("Mineur", ChordQuality.MINOR.label())
-        assertEquals("Augmenté", ChordQuality.AUGMENTED.label())
-        assertEquals("Diminué", ChordQuality.DIMINISHED.label())
-        assertEquals("7e de dominante", ChordQuality.DOMINANT_7.label())
-        assertEquals("7e majeure", ChordQuality.MAJOR_7.label())
-        assertEquals("7e mineure", ChordQuality.MINOR_7.label())
-        assertEquals("7e demi-diminuée", ChordQuality.HALF_DIMINISHED_7.label())
-        assertEquals("7e diminuée", ChordQuality.DIMINISHED_7.label())
     }
 
     @Test

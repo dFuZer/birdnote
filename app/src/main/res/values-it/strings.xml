@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">BirdNote</string>
+    <string name="train">Esercitati</string>
+    <string name="my_scores">I miei punteggi</string>
+    <string name="settings">Impostazioni</string>
+    <string name="language">Lingua</string>
+    <string name="note_names">Nome delle note</string>
+    <string name="training_title">Cosa facciamo?</string>
+    <string name="notes">Note</string>
+    <string name="intervals">Intervalli</string>
+    <string name="chords">Accordi</string>
+    <string name="back">Indietro</string>
+    <string name="score_best">Migliore</string>
+    <string name="score_empty">—</string>
+    <string name="difficulty">Difficoltà</string>
+    <string name="clef">Chiave</string>
+    <string name="clefs">Chiavi</string>
+    <string name="clef_sol">Sol</string>
+    <string name="clef_fa">Fa</string>
+    <string name="clef_alto">Contralto</string>
+    <string name="clef_tenor">Tenore</string>
+    <string name="clef_sol_fa">Sol + Fa</string>
+    <string name="preferred_clefs_title">Le tue chiavi</string>
+    <string name="preferred_clefs_hint">Potrai cambiarle in Impostazioni.</string>
+    <string name="continue_action">Continua</string>
+    <string name="lets_go">Si parte!</string>
+    <string name="stop">Stop</string>
+    <string name="time_remaining">Tempo rimanente</string>
+    <string name="bravo">Bravo!</string>
+    <string name="your_score">il tuo punteggio:</string>
+    <string name="restart">Ricomincia</string>
+    <plurals name="score_notes">
+        <item quantity="one">%d nota</item>
+        <item quantity="other">%d note</item>
+    </plurals>
+    <plurals name="score_intervals">
+        <item quantity="one">%d intervallo</item>
+        <item quantity="other">%d intervalli</item>
+    </plurals>
+    <plurals name="score_chords">
+        <item quantity="one">%d accordo</item>
+        <item quantity="other">%d accordi</item>
+    </plurals>
+    <string name="menu">Menu</string>
+    <string name="interval_second">Seconda</string>
+    <string name="interval_third">Terza</string>
+    <string name="interval_fourth">Quarta</string>
+    <string name="interval_fifth">Quinta</string>
+    <string name="interval_sixth">Sesta</string>
+    <string name="interval_seventh">Settima</string>
+    <string name="interval_octave">Ottava</string>
+    <string name="interval_ninth">Nona</string>
+    <string name="chord_major">Maggiore</string>
+    <string name="chord_minor">Minore</string>
+    <string name="chord_augmented">Aumentato</string>
+    <string name="chord_diminished">Diminuito</string>
+    <string name="chord_dominant_7">7ª di dominante</string>
+    <string name="chord_major_7">7ª maggiore</string>
+    <string name="chord_minor_7">7ª minore</string>
+    <string name="chord_half_diminished_7">7ª semidiminuita</string>
+    <string name="chord_diminished_7">7ª diminuita</string>
+</resources>

@@ -1,9 +1,11 @@
 package com.example.birdnote
 
 import android.content.Context
+import com.example.birdnote.domain.AppLanguage
 import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.preferredClefsStorage
+import com.example.birdnote.domain.resolveAppLanguage
 import com.example.birdnote.domain.storedNoteNaming
 import com.example.birdnote.domain.storedPreferredClefs
 import com.example.birdnote.domain.withClefToggled
@@ -22,6 +24,10 @@ class SettingsStore(context: Context) {
         storedNoteNaming(prefs.getString(KEY_NOTE_NAMING, null)),
     )
     val noteNaming: StateFlow<NoteNaming> = _noteNaming.asStateFlow()
+    private val _appLanguage = MutableStateFlow(
+        resolveAppLanguage(prefs.getString(KEY_APP_LANGUAGE, null), systemDeviceLocale()),
+    )
+    val appLanguage: StateFlow<AppLanguage> = _appLanguage.asStateFlow()
     private val _preferredClefs = MutableStateFlow(
         storedPreferredClefs(prefs.getString(KEY_PREFERRED_CLEFS, null)),
     )
@@ -34,6 +40,11 @@ class SettingsStore(context: Context) {
     fun setNoteNaming(naming: NoteNaming) {
         prefs.edit().putString(KEY_NOTE_NAMING, naming.name).apply()
         _noteNaming.value = naming
+    }
+
+    fun setAppLanguage(language: AppLanguage) {
+        prefs.edit().putString(KEY_APP_LANGUAGE, language.tag).apply()
+        _appLanguage.value = language
     }
 
     fun togglePreferredClef(clef: Clef) {
