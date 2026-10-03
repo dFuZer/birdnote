@@ -5,11 +5,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -20,16 +20,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import com.example.birdnote.R
 import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.ClefMode
@@ -40,10 +43,14 @@ import com.example.birdnote.domain.PracticeChord
 import com.example.birdnote.domain.label
 import com.example.birdnote.domain.previewChords
 import com.example.birdnote.ui.LayoutTuning
+import com.example.birdnote.ui.staff.ChordGridTarget
 import com.example.birdnote.ui.staff.StaffCanvas
 import com.example.birdnote.ui.staff.StaffRenderModel
 import com.example.birdnote.ui.staff.asChord
 import com.example.birdnote.ui.staff.chordPreviewStaffScale
+import com.example.birdnote.ui.staff.chordTileMotions
+import com.example.birdnote.ui.staff.easedTileFrame
+import com.example.birdnote.ui.staff.rememberSetupEase
 import com.example.birdnote.ui.theme.DarkBlue
 import com.example.birdnote.ui.theme.Neutral
 
@@ -150,32 +157,57 @@ fun ChordSetupScreen(
                         .weight(tuning.previewWeight)
                         .fillMaxSize(),
                 ) {
-                    Column(
+                    BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(tuning.previewInnerPadding),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        val columns = previewColumns(preview.size)
-                        preview.chunked(columns).forEach { row ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                row.forEach { chord ->
+                        val ease = rememberSetupEase(ChordGridTarget(preview, difficulty))
+                        val motions = chordTileMotions(
+                            fromChords = ease.from.chords,
+                            fromDifficulty = ease.from.difficulty,
+                            toChords = ease.to.chords,
+                            toDifficulty = ease.to.difficulty,
+                        )
+                        val density = LocalDensity.current
+                        val widthPx = constraints.maxWidth.toFloat()
+                        val heightPx = constraints.maxHeight.toFloat()
+                        val gapPx = with(density) { tuning.chordPreviewTileGap.toPx() }
+                        val fraction = ease.fraction
+                        Box(Modifier.fillMaxSize()) {
+                            motions.forEach { motion ->
+                                val frame = easedTileFrame(
+                                    motion = motion,
+                                    fraction = fraction,
+                                    width = widthPx,
+                                    height = heightPx,
+                                    gap = gapPx,
+                                )
+                                if (frame.alpha <= 0f) return@forEach
+                                val chord = motion.toChord ?: motion.fromChord ?: return@forEach
+                                val tileDifficulty = motion.toDifficulty ?: motion.fromDifficulty ?: difficulty
+                                key(motion.quality) {
                                     ChordPreviewTile(
                                         chord = chord,
-                                        difficulty = difficulty,
+                                        difficulty = tileDifficulty,
                                         notesSingleStaffHeightPx = notesSingleStaffHeightPx,
                                         modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxHeight(),
+                                            .offset {
+                                                IntOffset(
+                                                    frame.left.roundToInt(),
+                                                    frame.top.roundToInt(),
+                                                )
+                                            }
+                                            .requiredSize(
+                                                with(density) { frame.width.toDp() },
+                                                with(density) { frame.height.toDp() },
+                                            )
+                                            .graphicsLayer {
+                                                alpha = frame.alpha
+                                                scaleX = frame.scale
+                                                scaleY = frame.scale
+                                            },
                                     )
-                                }
-                                repeat(columns - row.size) {
-                                    Spacer(Modifier.weight(1f).fillMaxHeight())
                                 }
                             }
                         }
@@ -228,6 +260,7 @@ private fun ChordPreviewTile(
                 centerVertically = difficulty == MIN_DIFFICULTY,
                 noteAreaExtraLeftPaddingInLineSpaces =
                     tuning.previewNoteAreaExtraLeftPaddingInLineSpaces,
+                easeChanges = true,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -245,10 +278,4 @@ private fun ChordPreviewTile(
 private fun Clef.toMode(): ClefMode = when (this) {
     Clef.SOL -> ClefMode.SOL
     Clef.FA -> ClefMode.FA
-}
-
-private fun previewColumns(count: Int): Int {
-    val maxRows = LayoutTuning.Setup.chordPreviewMaxRows
-    if (count <= maxRows) return count.coerceAtLeast(1)
-    return (count + maxRows - 1) / maxRows
 }
