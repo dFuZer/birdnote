@@ -33,6 +33,20 @@ class PracticeTest {
     }
 
     @Test
+    fun altoAndTenorRangesCenterOnMiddleCThenReachTwoLedgers() {
+        (MIN_DIFFICULTY..2).forEach { level ->
+            assertEquals(28, pitchRange(level, Clef.ALTO).average().toInt())
+            assertEquals(28, pitchRange(level, Clef.TENOR).average().toInt())
+        }
+        assertEquals(22..34, pitchRange(3, Clef.ALTO))
+        assertEquals(20..32, pitchRange(3, Clef.TENOR))
+        assertEquals(20..36, pitchRange(MAX_DIFFICULTY, Clef.ALTO))
+        assertEquals(18..34, pitchRange(MAX_DIFFICULTY, Clef.TENOR))
+        assertEquals(pitchRange(MAX_DIFFICULTY, Clef.ALTO), chordPitchRange(Clef.ALTO))
+        assertEquals(pitchRange(MAX_DIFFICULTY, Clef.TENOR), chordPitchRange(Clef.TENOR))
+    }
+
+    @Test
     fun previewNotesStayInsideSelectedRanges() {
         ClefMode.entries.forEach { mode ->
             (MIN_DIFFICULTY..MAX_DIFFICULTY).forEach { difficulty ->
@@ -222,7 +236,7 @@ class PracticeTest {
 
     @Test
     fun generatedChordsStayInRangeAvoidQualityRepeatsAndFitTheStaff() {
-        listOf(ClefMode.SOL, ClefMode.FA).forEach { mode ->
+        ClefMode.entries.filter { it.clefs().size == 1 }.forEach { mode ->
             val config = ChordConfig(MAX_DIFFICULTY, mode)
             val random = Random(21)
             var previous: PracticeChord? = null

@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.birdnote.R
+import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.MAX_DIFFICULTY
 import com.example.birdnote.domain.MIN_DIFFICULTY
 import com.example.birdnote.domain.PracticeMode
@@ -46,6 +47,7 @@ import com.example.birdnote.ui.theme.Neutral
 fun ScoresScreen(
     scores: Map<String, Int>,
     onBackClick: () -> Unit,
+    clefModes: List<ClefMode>,
     modifier: Modifier = Modifier,
 ) {
     val common = LayoutTuning.Common
@@ -86,6 +88,7 @@ fun ScoresScreen(
             ScoresTable(
                 mode = mode,
                 scores = scores,
+                clefModes = clefModes,
                 modifier = Modifier.panelWidth(),
             )
         }
@@ -148,11 +151,12 @@ private fun ModeButton(
 private fun ScoresTable(
     mode: PracticeMode,
     scores: Map<String, Int>,
+    clefModes: List<ClefMode>,
     modifier: Modifier = Modifier,
 ) {
     val tuning = LayoutTuning.Scores
     val difficulties = (MIN_DIFFICULTY..MAX_DIFFICULTY).toList()
-    val rows = scoreGrid(mode).groupBy { it.clefMode }
+    val rows = scoreGrid(mode, clefModes).groupBy { it.clefMode }
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(tuning.tableCornerRadius),

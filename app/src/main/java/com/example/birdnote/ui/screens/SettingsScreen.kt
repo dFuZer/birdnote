@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.birdnote.R
+import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.scalePreview
 import com.example.birdnote.ui.LayoutTuning
@@ -27,6 +28,8 @@ import com.example.birdnote.ui.theme.DarkBlue
 fun SettingsScreen(
     noteNaming: NoteNaming,
     onNoteNamingChange: (NoteNaming) -> Unit,
+    preferredClefs: Set<Clef>,
+    onPreferredClefToggle: (Clef) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -91,6 +94,15 @@ fun SettingsScreen(
                         }
                     }
                 }
+                Text(
+                    text = stringResource(R.string.clefs),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DarkBlue,
+                )
+                PreferredClefToggles(
+                    selected = preferredClefs,
+                    onToggle = onPreferredClefToggle,
+                )
             }
         }
     }

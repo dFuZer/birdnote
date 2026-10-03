@@ -4,7 +4,12 @@ import kotlin.random.Random
 
 fun pitchRange(difficulty: Int, clef: Clef): IntRange {
     require(difficulty in MIN_DIFFICULTY..MAX_DIFFICULTY)
-    val table = if (clef == Clef.SOL) TREBLE_RANGES else BASS_RANGES
+    val table = when (clef) {
+        Clef.SOL -> TREBLE_RANGES
+        Clef.FA -> BASS_RANGES
+        Clef.ALTO -> ALTO_RANGES
+        Clef.TENOR -> TENOR_RANGES
+    }
     return table.getValue(difficulty)
 }
 
@@ -135,6 +140,8 @@ fun nextClef(mode: ClefMode, previous: StaffNote?): Clef = nextClef(mode, previo
 fun nextClef(mode: ClefMode, previousClef: Clef?): Clef = when (mode) {
     ClefMode.SOL -> Clef.SOL
     ClefMode.FA -> Clef.FA
+    ClefMode.ALTO -> Clef.ALTO
+    ClefMode.TENOR -> Clef.TENOR
     ClefMode.SOL_FA -> if (previousClef == Clef.SOL) Clef.FA else Clef.SOL
 }
 
@@ -143,8 +150,12 @@ fun chordQualitiesFor(difficulty: Int): List<ChordQuality> {
     return CHORD_QUALITIES_BY_DIFFICULTY.getValue(difficulty)
 }
 
-fun chordPitchRange(clef: Clef): IntRange =
-    if (clef == Clef.SOL) CHORD_TREBLE_RANGE else CHORD_BASS_RANGE
+fun chordPitchRange(clef: Clef): IntRange = when (clef) {
+    Clef.SOL -> CHORD_TREBLE_RANGE
+    Clef.FA -> CHORD_BASS_RANGE
+    Clef.ALTO -> CHORD_ALTO_RANGE
+    Clef.TENOR -> CHORD_TENOR_RANGE
+}
 
 fun previewChords(config: ChordConfig): List<PracticeChord> {
     val qualities = chordQualitiesFor(config.difficulty)
@@ -222,6 +233,8 @@ internal val INTERVAL_PITCH_RANGE = 26..42
 
 internal val CHORD_TREBLE_RANGE = 26..42
 internal val CHORD_BASS_RANGE = 14..30
+internal val CHORD_ALTO_RANGE = 20..36
+internal val CHORD_TENOR_RANGE = 18..34
 
 internal val CHORD_QUALITIES_BY_DIFFICULTY = mapOf(
     1 to listOf(ChordQuality.MAJOR, ChordQuality.MINOR),
@@ -246,6 +259,8 @@ internal val CHORD_QUALITIES_BY_DIFFICULTY = mapOf(
 internal fun previewRootStep(clef: Clef): Int = when (clef) {
     Clef.SOL -> 32 // G4, a 7th stays on the top line
     Clef.FA -> 19 // A2; B2 cannot spell augmented (needs F double-sharp)
+    Clef.ALTO -> 26 // A3, a 7th stays on the top line
+    Clef.TENOR -> 23 // E3; F3 diminished seventh needs a double-flat
 }
 
 internal val BASS_RANGES = mapOf(
@@ -253,6 +268,20 @@ internal val BASS_RANGES = mapOf(
     2 to 20..28,
     3 to 16..28, // Expand downward only to keep mixed staves separated
     4 to 14..30, // C2–E4, two ledgers either side
+)
+
+internal val ALTO_RANGES = mapOf(
+    1 to 26..30, // Centered on C4, the middle line
+    2 to 24..32,
+    3 to 22..34, // One ledger either side
+    4 to 20..36, // Two ledgers either side
+)
+
+internal val TENOR_RANGES = mapOf(
+    1 to 26..30, // Centered on C4, the fourth line
+    2 to 24..32,
+    3 to 20..32, // Expand downward, same staff window as bass
+    4 to 18..34, // Two ledgers either side
 )
 
 private fun sampleRange(range: IntRange): List<Int> {

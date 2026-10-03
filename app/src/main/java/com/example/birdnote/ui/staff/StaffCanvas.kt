@@ -34,6 +34,7 @@ import com.example.birdnote.domain.Pitch
 import com.example.birdnote.domain.PracticeChord
 import com.example.birdnote.domain.StaffInterval
 import com.example.birdnote.domain.StaffNote
+import com.example.birdnote.domain.clefs
 import com.example.birdnote.domain.staffStep
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.theme.LightBlue
@@ -66,6 +67,7 @@ data class StaffRenderModel(
 private class StaffPainters(
     val trebleClef: Painter,
     val bassClef: Painter,
+    val cClef: Painter,
     val note: Painter,
     val sharp: Painter,
     val flat: Painter,
@@ -85,6 +87,7 @@ fun StaffCanvas(
 ) {
     val trebleClef = rememberStaffSvgPainter("key-sol.svg", width = 38, height = 109)
     val bassClef = rememberStaffSvgPainter("key-fa.svg", width = 49, height = 57)
+    val cClef = rememberStaffSvgPainter("key-ut.svg", width = 32, height = 80)
     val note = rememberStaffSvgPainter("note.svg", width = 20, height = 64)
     val sharp = rememberStaffSvgPainter(
         LayoutTuning.Staff.sharpAsset,
@@ -101,8 +104,8 @@ fun StaffCanvas(
         width = LayoutTuning.Staff.accidentalRasterWidth,
         height = LayoutTuning.Staff.accidentalRasterHeight,
     )
-    val painters = remember(trebleClef, bassClef, note, sharp, flat, natural) {
-        StaffPainters(trebleClef, bassClef, note, sharp, flat, natural)
+    val painters = remember(trebleClef, bassClef, cClef, note, sharp, flat, natural) {
+        StaffPainters(trebleClef, bassClef, cClef, note, sharp, flat, natural)
     }
     Box(modifier) {
         StaffRangeLayer(
@@ -462,11 +465,7 @@ internal fun staffGeometry(
     staffScaleOverride: Float? = null,
     centerVertically: Boolean = false,
 ): StaffGeometry {
-    val clefs = when (model.clefMode) {
-        ClefMode.SOL -> listOf(Clef.SOL)
-        ClefMode.FA -> listOf(Clef.FA)
-        ClefMode.SOL_FA -> listOf(Clef.SOL, Clef.FA)
-    }
+    val clefs = model.clefMode.clefs()
     val tuning = LayoutTuning.Staff
     val paddingX = size.width * tuning.horizontalPadding
     val paddingY = size.height * if (compactVertical) {
@@ -580,7 +579,7 @@ private fun DrawScope.drawStaff(
             left = geometry.paddingX,
             bottomLineY = bottomLineY,
             lineSpacing = geometry.lineSpacing,
-            painter = if (clef == Clef.SOL) painters.trebleClef else painters.bassClef,
+            painter = painters.painterFor(clef),
         )
     }
 }
@@ -833,6 +832,49 @@ private fun staffLayoutMetrics(): ChordLayoutMetrics {
     )
 }
 
+private fun StaffPainters.painterFor(clef: Clef): Painter = when (clef) {
+    Clef.SOL -> trebleClef
+    Clef.FA -> bassClef
+    Clef.ALTO, Clef.TENOR -> cClef
+}
+
+internal data class ClefGlyphBox(
+    val xInLineSpaces: Float,
+    val topInLineSpaces: Float,
+    val widthInLineSpaces: Float,
+    val heightInLineSpaces: Float,
+)
+
+internal fun Clef.glyphBox(): ClefGlyphBox {
+    val tuning = LayoutTuning.Staff
+    return when (this) {
+        Clef.SOL -> ClefGlyphBox(
+            tuning.trebleClefXInLineSpaces,
+            tuning.trebleClefTopInLineSpaces,
+            tuning.trebleClefWidthInLineSpaces,
+            tuning.trebleClefHeightInLineSpaces,
+        )
+        Clef.FA -> ClefGlyphBox(
+            tuning.bassClefXInLineSpaces,
+            tuning.bassClefTopInLineSpaces,
+            tuning.bassClefWidthInLineSpaces,
+            tuning.bassClefHeightInLineSpaces,
+        )
+        Clef.ALTO -> ClefGlyphBox(
+            tuning.cClefXInLineSpaces,
+            tuning.altoClefTopInLineSpaces,
+            tuning.cClefWidthInLineSpaces,
+            tuning.cClefHeightInLineSpaces,
+        )
+        Clef.TENOR -> ClefGlyphBox(
+            tuning.cClefXInLineSpaces,
+            tuning.tenorClefTopInLineSpaces,
+            tuning.cClefWidthInLineSpaces,
+            tuning.cClefHeightInLineSpaces,
+        )
+    }
+}
+
 private fun DrawScope.drawClef(
     clef: Clef,
     left: Float,
@@ -840,25 +882,11 @@ private fun DrawScope.drawClef(
     lineSpacing: Float,
     painter: Painter,
 ) {
-    val tuning = LayoutTuning.Staff
-    val x: Float
-    val top: Float
-    val width: Float
-    val height: Float
-    when (clef) {
-        Clef.SOL -> {
-            x = left + lineSpacing * tuning.trebleClefXInLineSpaces
-            top = bottomLineY + lineSpacing * tuning.trebleClefTopInLineSpaces
-            width = lineSpacing * tuning.trebleClefWidthInLineSpaces
-            height = lineSpacing * tuning.trebleClefHeightInLineSpaces
-        }
-        Clef.FA -> {
-            x = left + lineSpacing * tuning.bassClefXInLineSpaces
-            top = bottomLineY + lineSpacing * tuning.bassClefTopInLineSpaces
-            width = lineSpacing * tuning.bassClefWidthInLineSpaces
-            height = lineSpacing * tuning.bassClefHeightInLineSpaces
-        }
-    }
+    val box = clef.glyphBox()
+    val x = left + lineSpacing * box.xInLineSpaces
+    val top = bottomLineY + lineSpacing * box.topInLineSpaces
+    val width = lineSpacing * box.widthInLineSpaces
+    val height = lineSpacing * box.heightInLineSpaces
     withTransform({
         translate(left = x, top = top)
     }) {

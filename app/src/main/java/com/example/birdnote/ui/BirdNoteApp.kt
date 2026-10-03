@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.birdnote.ScoreStore
 import com.example.birdnote.SettingsStore
 import com.example.birdnote.ui.navigation.BirdNoteNavHost
+import com.example.birdnote.ui.screens.PreferredClefsScreen
 import com.example.birdnote.ui.theme.LightBlue
 
 @Composable
@@ -22,16 +23,29 @@ fun BirdNoteApp() {
     val settingsStore = remember { SettingsStore(context) }
     val scoreStore = remember { ScoreStore(context) }
     val noteNaming by settingsStore.noteNaming.collectAsStateWithLifecycle()
+    val preferredClefs by settingsStore.preferredClefs.collectAsStateWithLifecycle()
+    val preferredClefsChosen by settingsStore.preferredClefsChosen.collectAsStateWithLifecycle()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = LightBlue,
     ) { innerPadding ->
-        BirdNoteNavHost(
-            navController = navController,
-            noteNaming = noteNaming,
-            onNoteNamingChange = settingsStore::setNoteNaming,
-            scoreStore = scoreStore,
-            modifier = Modifier.padding(innerPadding),
-        )
+        if (preferredClefsChosen) {
+            BirdNoteNavHost(
+                navController = navController,
+                noteNaming = noteNaming,
+                onNoteNamingChange = settingsStore::setNoteNaming,
+                preferredClefs = preferredClefs,
+                onPreferredClefToggle = settingsStore::togglePreferredClef,
+                scoreStore = scoreStore,
+                modifier = Modifier.padding(innerPadding),
+            )
+        } else {
+            PreferredClefsScreen(
+                selected = preferredClefs,
+                onToggle = settingsStore::togglePreferredClef,
+                onContinue = settingsStore::confirmPreferredClefs,
+                modifier = Modifier.padding(innerPadding),
+            )
+        }
     }
 }

@@ -22,6 +22,73 @@ class MusicTest {
     }
 
     @Test
+    fun altoStaffStepsPutMiddleCOnTheMiddleLine() {
+        assertEquals(0, Pitch(24).staffStep(Clef.ALTO)) // F3 bottom line
+        assertEquals(4, Pitch(28).staffStep(Clef.ALTO)) // C4, third line
+        assertEquals(8, Pitch(32).staffStep(Clef.ALTO)) // G4 top line
+    }
+
+    @Test
+    fun tenorStaffStepsPutMiddleCOnTheFourthLine() {
+        assertEquals(0, Pitch(22).staffStep(Clef.TENOR)) // D3 bottom line
+        assertEquals(6, Pitch(28).staffStep(Clef.TENOR)) // C4, fourth line
+        assertEquals(8, Pitch(30).staffStep(Clef.TENOR)) // E4 top line
+    }
+
+    @Test
+    fun solFaStillUsesOnlyTrebleAndBass() {
+        assertEquals(listOf(Clef.SOL, Clef.FA), ClefMode.SOL_FA.clefs())
+        assertEquals(listOf(Clef.ALTO), ClefMode.ALTO.clefs())
+        assertEquals(listOf(Clef.TENOR), ClefMode.TENOR.clefs())
+    }
+
+    @Test
+    fun preferredClefsKeepSolFaOnlyWhenBothAreOn() {
+        assertEquals(
+            listOf(ClefMode.SOL, ClefMode.FA, ClefMode.SOL_FA),
+            clefModesFor(setOf(Clef.SOL, Clef.FA)),
+        )
+        assertEquals(listOf(ClefMode.SOL), clefModesFor(setOf(Clef.SOL)))
+        assertEquals(listOf(ClefMode.ALTO, ClefMode.TENOR), clefModesFor(setOf(Clef.ALTO, Clef.TENOR)))
+        assertFalse(ClefMode.SOL_FA in clefModesFor(setOf(Clef.SOL, Clef.ALTO)))
+        assertEquals(ClefMode.entries.toList(), clefModesFor(Clef.entries.toSet()))
+    }
+
+    @Test
+    fun lastPreferredClefStaysOn() {
+        val onlyTenor = setOf(Clef.TENOR)
+        assertEquals(onlyTenor, withClefToggled(onlyTenor, Clef.TENOR))
+        assertEquals(setOf(Clef.TENOR, Clef.ALTO), withClefToggled(onlyTenor, Clef.ALTO))
+        assertEquals(setOf(Clef.ALTO), withClefToggled(setOf(Clef.TENOR, Clef.ALTO), Clef.TENOR))
+    }
+
+    @Test
+    fun setupOpensOnAClefThatIsStillPreferred() {
+        assertEquals(ClefMode.ALTO, openingClefMode(setOf(Clef.ALTO)))
+        assertEquals(
+            ClefMode.FA,
+            openingClefMode(setOf(Clef.FA, Clef.ALTO), remembered = ClefMode.SOL),
+        )
+        assertEquals(
+            ClefMode.ALTO,
+            openingClefMode(setOf(Clef.SOL, Clef.ALTO), remembered = ClefMode.ALTO),
+        )
+        assertEquals(
+            ClefMode.SOL,
+            openingClefMode(setOf(Clef.SOL), remembered = ClefMode.SOL_FA),
+        )
+    }
+
+    @Test
+    fun preferredClefsRoundTripInClefOrder() {
+        assertEquals("SOL,TENOR", preferredClefsStorage(setOf(Clef.TENOR, Clef.SOL)))
+        assertEquals(setOf(Clef.SOL, Clef.TENOR), storedPreferredClefs("SOL,TENOR"))
+        assertEquals(Clef.entries.toSet(), storedPreferredClefs(null))
+        assertEquals(Clef.entries.toSet(), storedPreferredClefs(""))
+        assertEquals(Clef.entries.toSet(), storedPreferredClefs("NOPE"))
+    }
+
+    @Test
     fun pianoAssetPathUsesScientificPitchNames() {
         assertEquals("notes/2C.ogg", Pitch(14).pianoAssetPath())
         assertEquals("notes/3A.ogg", Pitch(26).pianoAssetPath())

@@ -13,9 +13,15 @@
     <string name="score_empty">—</string>
     <string name="difficulty">Difficulté</string>
     <string name="clef">Clé</string>
+    <string name="clefs">Clés</string>
     <string name="clef_sol">Sol</string>
     <string name="clef_fa">Fa</string>
+    <string name="clef_alto">Alto</string>
+    <string name="clef_tenor">Ténor</string>
     <string name="clef_sol_fa">Sol + Fa</string>
+    <string name="preferred_clefs_title">Tes clés</string>
+    <string name="preferred_clefs_hint">Tu pourras les changer dans Paramètres.</string>
+    <string name="continue_action">Continuer</string>
     <string name="lets_go">C\'est parti !</string>
     <string name="stop">Arrêter</string>
     <string name="time_remaining">Temps restant</string>

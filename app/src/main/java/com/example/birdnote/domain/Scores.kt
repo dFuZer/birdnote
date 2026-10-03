@@ -11,12 +11,15 @@ data class ScoreCell(
     val clefMode: ClefMode? = null,
 )
 
-fun scoreGrid(mode: PracticeMode): List<ScoreCell> {
+fun scoreGrid(
+    mode: PracticeMode,
+    clefModes: List<ClefMode> = ClefMode.entries,
+): List<ScoreCell> {
     val difficulties = MIN_DIFFICULTY..MAX_DIFFICULTY
     return when (mode) {
         PracticeMode.INTERVALS -> difficulties.map { ScoreCell(it) }
         PracticeMode.NOTES, PracticeMode.CHORDS ->
-            ClefMode.entries.flatMap { clef ->
+            clefModes.flatMap { clef ->
                 difficulties.map { ScoreCell(it, clef) }
             }
     }
