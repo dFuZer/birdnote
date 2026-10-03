@@ -37,6 +37,10 @@
     <string name="quiz_score">Score %1$d</string>
     <string name="bravo">Bravo !</string>
     <string name="your_score">ton score :</string>
+    <string name="result_above_best">+%d par rapport à ton record</string>
+    <string name="result_short_of_best">Encore %d pour battre ton record</string>
+    <string name="result_first_run">C\'est ton premier score</string>
+    <string name="result_tie">Égal à ton record</string>
     <plurals name="score_notes">
         <item quantity="one">%d note</item>
         <item quantity="other">%d notes</item>

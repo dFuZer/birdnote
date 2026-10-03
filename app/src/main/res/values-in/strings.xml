@@ -28,6 +28,10 @@
     <string name="time_remaining">Sisa waktu</string>
     <string name="bravo">Hebat!</string>
     <string name="your_score">skormu:</string>
+    <string name="result_above_best">+%d dari rekor kamu</string>
+    <string name="result_short_of_best">%d lagi untuk mengalahkan rekor kamu</string>
+    <string name="result_first_run">Ini skormu yang pertama</string>
+    <string name="result_tie">Sama dengan rekor kamu</string>
     <string name="restart">Ulangi</string>
     <plurals name="score_notes">
         <item quantity="other">%d nada</item>

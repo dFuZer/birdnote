@@ -28,6 +28,10 @@
     <string name="time_remaining">残り時間</string>
     <string name="bravo">よくできました！</string>
     <string name="your_score">スコア：</string>
+    <string name="result_above_best">自己ベストより+%d</string>
+    <string name="result_short_of_best">自己ベストまであと%d</string>
+    <string name="result_first_run">初めてのスコアです</string>
+    <string name="result_tie">自己ベストと同じ</string>
     <string name="restart">もう一度</string>
     <plurals name="score_notes">
         <item quantity="other">%d音符</item>

@@ -53,4 +53,23 @@ fun improvedBest(current: Int?, candidate: Int): Int? {
     return if (current == null || candidate > current) candidate else null
 }
 
+/** Compares [score] with the best stored before this run was saved. */
+fun compareToBest(previousBest: Int?, score: Int): BestComparison {
+    require(score >= 0) { "Score cannot be negative" }
+    if (previousBest == null) return BestComparison.FirstRun
+    require(previousBest >= 0) { "Best cannot be negative" }
+    return when {
+        score > previousBest -> BestComparison.AboveBest(score - previousBest)
+        score < previousBest -> BestComparison.ShortOfBest(previousBest - score)
+        else -> BestComparison.Tie
+    }
+}
+
+sealed interface BestComparison {
+    data object FirstRun : BestComparison
+    data class AboveBest(val by: Int) : BestComparison
+    data class ShortOfBest(val by: Int) : BestComparison
+    data object Tie : BestComparison
+}
+
 private const val NO_CLEF = "-"

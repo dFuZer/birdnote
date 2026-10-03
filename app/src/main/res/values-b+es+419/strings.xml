@@ -28,6 +28,10 @@
     <string name="time_remaining">Tiempo restante</string>
     <string name="bravo">¡Bravo!</string>
     <string name="your_score">tu puntaje:</string>
+    <string name="result_above_best">+%d respecto a tu récord</string>
+    <string name="result_short_of_best">Faltan %d para superar tu récord</string>
+    <string name="result_first_run">Es tu primer puntaje</string>
+    <string name="result_tie">Igual a tu récord</string>
     <string name="restart">Recomenzar</string>
     <plurals name="score_notes">
         <item quantity="one">%d nota</item>
