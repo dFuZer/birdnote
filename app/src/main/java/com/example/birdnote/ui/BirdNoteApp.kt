@@ -30,6 +30,7 @@ fun BirdNoteApp() {
             navController = navController,
             noteNaming = noteNaming,
             onNoteNamingChange = settingsStore::setNoteNaming,
+            settingsStore = settingsStore,
             scoreStore = scoreStore,
             modifier = Modifier.padding(innerPadding),
         )

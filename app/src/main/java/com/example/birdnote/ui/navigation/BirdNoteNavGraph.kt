@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.birdnote.R
 import com.example.birdnote.ScoreStore
+import com.example.birdnote.SettingsStore
 import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.IntervalConfig
@@ -67,6 +68,7 @@ fun BirdNoteNavHost(
     navController: NavHostController,
     noteNaming: NoteNaming,
     onNoteNamingChange: (NoteNaming) -> Unit,
+    settingsStore: SettingsStore,
     scoreStore: ScoreStore,
     modifier: Modifier = Modifier,
 ) {
@@ -105,7 +107,13 @@ fun BirdNoteNavHost(
             )
         }
         composable(Routes.SETUP) {
+            val setup = settingsStore.lastSetup(PracticeMode.NOTES)
             NoteSetupScreen(
+                initialDifficulty = setup.difficulty,
+                initialClefMode = checkNotNull(setup.clefMode),
+                onSaveSetup = { difficulty, clefMode ->
+                    settingsStore.saveLastSetup(PracticeMode.NOTES, difficulty, clefMode)
+                },
                 onStartClick = { difficulty, clefMode ->
                     navController.navigate(Routes.quiz(difficulty, clefMode))
                 },
@@ -113,7 +121,12 @@ fun BirdNoteNavHost(
             )
         }
         composable(Routes.INTERVAL_SETUP) {
+            val setup = settingsStore.lastSetup(PracticeMode.INTERVALS)
             IntervalSetupScreen(
+                initialDifficulty = setup.difficulty,
+                onSaveSetup = { difficulty ->
+                    settingsStore.saveLastSetup(PracticeMode.INTERVALS, difficulty, null)
+                },
                 onStartClick = { difficulty ->
                     navController.navigate(Routes.intervalQuiz(difficulty))
                 },
@@ -121,7 +134,13 @@ fun BirdNoteNavHost(
             )
         }
         composable(Routes.CHORD_SETUP) {
+            val setup = settingsStore.lastSetup(PracticeMode.CHORDS)
             ChordSetupScreen(
+                initialDifficulty = setup.difficulty,
+                initialClefMode = checkNotNull(setup.clefMode),
+                onSaveSetup = { difficulty, clefMode ->
+                    settingsStore.saveLastSetup(PracticeMode.CHORDS, difficulty, clefMode)
+                },
                 onStartClick = { difficulty, clefMode ->
                     navController.navigate(Routes.chordQuiz(difficulty, clefMode))
                 },

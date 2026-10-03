@@ -13,8 +13,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,13 +39,20 @@ import com.example.birdnote.ui.theme.Neutral
 
 @Composable
 fun IntervalSetupScreen(
+    initialDifficulty: Int,
+    onSaveSetup: (difficulty: Int) -> Unit,
     onStartClick: (difficulty: Int) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Setup
-    var difficulty by rememberSaveable { mutableIntStateOf(MIN_DIFFICULTY) }
+    var difficulty by rememberSaveable { mutableIntStateOf(initialDifficulty) }
+    val saveSetup by rememberUpdatedState(onSaveSetup)
+    val difficultyToSave by rememberUpdatedState(difficulty)
+    DisposableEffect(Unit) {
+        onDispose { saveSetup(difficultyToSave) }
+    }
     val config = IntervalConfig(difficulty)
     val preview = StaffRenderModel(
         clefMode = ClefMode.SOL,
@@ -55,7 +64,10 @@ fun IntervalSetupScreen(
     DecoratedScreen(modifier = modifier) {
         BackButton(
             label = stringResource(R.string.back),
-            onClick = onBackClick,
+            onClick = {
+                onSaveSetup(difficulty)
+                onBackClick()
+            },
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(commonTuning.backButtonMargin),
@@ -116,7 +128,10 @@ fun IntervalSetupScreen(
         }
         AppButton(
             text = stringResource(R.string.lets_go),
-            onClick = { onStartClick(difficulty) },
+            onClick = {
+                onSaveSetup(difficulty)
+                onStartClick(difficulty)
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = tuning.startButtonBottomMargin),
