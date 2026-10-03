@@ -73,7 +73,10 @@ object LayoutTuning {
         const val chordPreviewMaxRows = 2
         const val chordPreviewReducedElementScale = 0.70f
         val chordPreviewLabelGap = 2.dp
+        val chordPreviewTileGap = 4.dp
         val startButtonBottomMargin = 12.dp
+        /** One smooth settle. The drill follow is a long chase; setup can arrive together. */
+        const val previewEaseMillis = 680
     }
 
     object Quiz {

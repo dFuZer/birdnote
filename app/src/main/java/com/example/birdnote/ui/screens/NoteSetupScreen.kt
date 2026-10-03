@@ -148,6 +148,7 @@ fun NoteSetupScreen(
                         model = preview,
                         noteAreaExtraLeftPaddingInLineSpaces =
                             tuning.previewNoteAreaExtraLeftPaddingInLineSpaces,
+                        easeChanges = true,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(tuning.previewInnerPadding),
