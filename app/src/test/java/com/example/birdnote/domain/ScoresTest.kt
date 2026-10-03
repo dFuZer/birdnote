@@ -24,6 +24,72 @@ class ScoresTest {
     }
 
     @Test
+    fun firstRunHasNoEarlierRecord() {
+        assertEquals(BestComparison.FirstRun, compareToBest(null, 0))
+        assertEquals(BestComparison.FirstRun, compareToBest(null, 4))
+    }
+
+    @Test
+    fun newBestIsTheMarginAboveThePreviousBest() {
+        assertEquals(BestComparison.AboveBest(3), compareToBest(7, 10))
+        assertEquals(BestComparison.AboveBest(1), compareToBest(0, 1))
+    }
+
+    @Test
+    fun comparingWithTheSavedBestWouldHideANewRecord() {
+        val previous = 7
+        val score = 10
+        assertEquals(score, improvedBest(previous, score))
+        assertEquals(BestComparison.Tie, compareToBest(score, score))
+        assertEquals(BestComparison.AboveBest(3), compareToBest(previous, score))
+    }
+
+    @Test
+    fun shortfallIsTheMarginBelowTheBest() {
+        assertEquals(BestComparison.ShortOfBest(2), compareToBest(9, 7))
+    }
+
+    @Test
+    fun tieMatchesTheStoredBest() {
+        assertEquals(BestComparison.Tie, compareToBest(7, 7))
+        assertEquals(BestComparison.Tie, compareToBest(0, 0))
+    }
+
+    @Test
+    fun comparisonUsesTheBestForThatSessionCell() {
+        val scores = mapOf(
+            "NOTES:SOL:1" to 10,
+            "NOTES:FA:1" to 4,
+            "INTERVALS:-:1" to 7,
+            "CHORDS:SOL:2" to 5,
+        )
+        assertEquals(
+            BestComparison.AboveBest(3),
+            compareToBest(bestScore(scores, PracticeMode.NOTES, 1, ClefMode.SOL), 13),
+        )
+        assertEquals(
+            BestComparison.ShortOfBest(2),
+            compareToBest(bestScore(scores, PracticeMode.NOTES, 1, ClefMode.FA), 2),
+        )
+        assertEquals(
+            BestComparison.Tie,
+            compareToBest(bestScore(scores, PracticeMode.INTERVALS, 1, null), 7),
+        )
+        assertEquals(
+            BestComparison.Tie,
+            compareToBest(bestScore(scores, PracticeMode.CHORDS, 2, ClefMode.SOL), 5),
+        )
+        assertEquals(
+            BestComparison.FirstRun,
+            compareToBest(bestScore(scores, PracticeMode.CHORDS, 2, ClefMode.FA), 1),
+        )
+        assertEquals(
+            BestComparison.FirstRun,
+            compareToBest(bestScore(scores, PracticeMode.INTERVALS, 2, null), 3),
+        )
+    }
+
+    @Test
     fun noteAndChordGridsCoverEveryClefAndDifficulty() {
         listOf(PracticeMode.NOTES, PracticeMode.CHORDS).forEach { mode ->
             val cells = scoreGrid(mode)

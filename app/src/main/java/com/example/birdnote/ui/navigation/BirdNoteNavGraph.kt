@@ -1,5 +1,6 @@
 package com.example.birdnote.ui.navigation
 
+import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -17,6 +18,7 @@ import com.example.birdnote.domain.IntervalConfig
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.PracticeMode
+import com.example.birdnote.domain.bestScore
 import com.example.birdnote.ui.screens.ChordQuizRoute
 import com.example.birdnote.ui.screens.ChordSetupScreen
 import com.example.birdnote.ui.screens.HomeScreen
@@ -40,9 +42,9 @@ object Routes {
     const val QUIZ = "quiz/{difficulty}/{clefMode}"
     const val INTERVAL_QUIZ = "interval-quiz/{difficulty}"
     const val CHORD_QUIZ = "chord-quiz/{difficulty}/{clefMode}"
-    const val RESULT = "result/{difficulty}/{clefMode}/{score}"
-    const val INTERVAL_RESULT = "interval-result/{difficulty}/{score}"
-    const val CHORD_RESULT = "chord-result/{difficulty}/{clefMode}/{score}"
+    const val RESULT = "result/{difficulty}/{clefMode}/{score}/{previousBest}"
+    const val INTERVAL_RESULT = "interval-result/{difficulty}/{score}/{previousBest}"
+    const val CHORD_RESULT = "chord-result/{difficulty}/{clefMode}/{score}/{previousBest}"
 
     fun quiz(difficulty: Int, clefMode: ClefMode): String =
         "quiz/$difficulty/${clefMode.name}"
@@ -52,15 +54,20 @@ object Routes {
     fun chordQuiz(difficulty: Int, clefMode: ClefMode): String =
         "chord-quiz/$difficulty/${clefMode.name}"
 
-    fun result(difficulty: Int, clefMode: ClefMode, score: Int): String =
-        "result/$difficulty/${clefMode.name}/$score"
+    fun result(difficulty: Int, clefMode: ClefMode, score: Int, previousBest: Int?): String =
+        "result/$difficulty/${clefMode.name}/$score/${previousBest ?: NO_STORED_BEST}"
 
-    fun intervalResult(difficulty: Int, score: Int): String =
-        "interval-result/$difficulty/$score"
+    fun intervalResult(difficulty: Int, score: Int, previousBest: Int?): String =
+        "interval-result/$difficulty/$score/${previousBest ?: NO_STORED_BEST}"
 
-    fun chordResult(difficulty: Int, clefMode: ClefMode, score: Int): String =
-        "chord-result/$difficulty/${clefMode.name}/$score"
+    fun chordResult(difficulty: Int, clefMode: ClefMode, score: Int, previousBest: Int?): String =
+        "chord-result/$difficulty/${clefMode.name}/$score/${previousBest ?: NO_STORED_BEST}"
 }
+
+private const val NO_STORED_BEST = -1
+
+private fun previousBestArg(arguments: Bundle?): Int? =
+    arguments?.getInt("previousBest", NO_STORED_BEST)?.takeIf { it >= 0 }
 
 @Composable
 fun BirdNoteNavHost(
@@ -141,8 +148,14 @@ fun BirdNoteNavHost(
                 config = PracticeConfig(difficulty, clefMode),
                 noteNaming = noteNaming,
                 onFinished = { score ->
+                    val previousBest = bestScore(
+                        scoreStore.scores.value,
+                        PracticeMode.NOTES,
+                        difficulty,
+                        clefMode,
+                    )
                     scoreStore.record(PracticeMode.NOTES, difficulty, clefMode, score)
-                    navController.navigate(Routes.result(difficulty, clefMode, score)) {
+                    navController.navigate(Routes.result(difficulty, clefMode, score, previousBest)) {
                         popUpTo(Routes.QUIZ) { inclusive = true }
                     }
                 },
@@ -158,8 +171,14 @@ fun BirdNoteNavHost(
             IntervalQuizRoute(
                 config = IntervalConfig(difficulty),
                 onFinished = { score ->
+                    val previousBest = bestScore(
+                        scoreStore.scores.value,
+                        PracticeMode.INTERVALS,
+                        difficulty,
+                        null,
+                    )
                     scoreStore.record(PracticeMode.INTERVALS, difficulty, null, score)
-                    navController.navigate(Routes.intervalResult(difficulty, score)) {
+                    navController.navigate(Routes.intervalResult(difficulty, score, previousBest)) {
                         popUpTo(Routes.INTERVAL_QUIZ) { inclusive = true }
                     }
                 },
@@ -179,8 +198,14 @@ fun BirdNoteNavHost(
             ChordQuizRoute(
                 config = ChordConfig(difficulty, clefMode),
                 onFinished = { score ->
+                    val previousBest = bestScore(
+                        scoreStore.scores.value,
+                        PracticeMode.CHORDS,
+                        difficulty,
+                        clefMode,
+                    )
                     scoreStore.record(PracticeMode.CHORDS, difficulty, clefMode, score)
-                    navController.navigate(Routes.chordResult(difficulty, clefMode, score)) {
+                    navController.navigate(Routes.chordResult(difficulty, clefMode, score, previousBest)) {
                         popUpTo(Routes.CHORD_QUIZ) { inclusive = true }
                     }
                 },
@@ -192,6 +217,10 @@ fun BirdNoteNavHost(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("clefMode") { type = NavType.StringType },
                 navArgument("score") { type = NavType.IntType },
+                navArgument("previousBest") {
+                    type = NavType.IntType
+                    defaultValue = NO_STORED_BEST
+                },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
@@ -199,6 +228,7 @@ fun BirdNoteNavHost(
             val score = entry.arguments?.getInt("score") ?: 0
             ResultScreen(
                 score = score,
+                previousBest = previousBestArg(entry.arguments),
                 onRestartClick = {
                     navController.navigate(Routes.quiz(difficulty, clefMode)) {
                         popUpTo(Routes.RESULT) { inclusive = true }
@@ -214,12 +244,17 @@ fun BirdNoteNavHost(
             arguments = listOf(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("score") { type = NavType.IntType },
+                navArgument("previousBest") {
+                    type = NavType.IntType
+                    defaultValue = NO_STORED_BEST
+                },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
             val score = entry.arguments?.getInt("score") ?: 0
             ResultScreen(
                 score = score,
+                previousBest = previousBestArg(entry.arguments),
                 scorePluralRes = R.plurals.score_intervals,
                 onRestartClick = {
                     navController.navigate(Routes.intervalQuiz(difficulty)) {
@@ -237,6 +272,10 @@ fun BirdNoteNavHost(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("clefMode") { type = NavType.StringType },
                 navArgument("score") { type = NavType.IntType },
+                navArgument("previousBest") {
+                    type = NavType.IntType
+                    defaultValue = NO_STORED_BEST
+                },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
@@ -246,6 +285,7 @@ fun BirdNoteNavHost(
             val score = entry.arguments?.getInt("score") ?: 0
             ResultScreen(
                 score = score,
+                previousBest = previousBestArg(entry.arguments),
                 scorePluralRes = R.plurals.score_chords,
                 onRestartClick = {
                     navController.navigate(Routes.chordQuiz(difficulty, clefMode)) {

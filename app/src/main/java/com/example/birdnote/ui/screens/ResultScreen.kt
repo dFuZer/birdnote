@@ -4,6 +4,7 @@ import androidx.annotation.PluralsRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -12,12 +13,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import com.example.birdnote.R
+import com.example.birdnote.domain.BestComparison
+import com.example.birdnote.domain.compareToBest
 import com.example.birdnote.ui.LayoutTuning
 
 @Composable
 fun ResultScreen(
     score: Int,
+    previousBest: Int?,
     onRestartClick: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -46,7 +51,15 @@ fun ResultScreen(
                 text = pluralStringResource(scorePluralRes, score, score),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = tuning.scoreBottomSpacing),
+            )
+            Text(
+                text = comparisonLine(compareToBest(previousBest, score)),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = tuning.buttonGap, bottom = tuning.scoreBottomSpacing),
             )
             AppButton(
                 text = stringResource(R.string.restart),
@@ -59,4 +72,12 @@ fun ResultScreen(
             )
         }
     }
+}
+
+@Composable
+private fun comparisonLine(comparison: BestComparison): String = when (comparison) {
+    BestComparison.FirstRun -> stringResource(R.string.result_first_run)
+    is BestComparison.AboveBest -> stringResource(R.string.result_above_best, comparison.by)
+    is BestComparison.ShortOfBest -> stringResource(R.string.result_short_of_best, comparison.by)
+    BestComparison.Tie -> stringResource(R.string.result_tie)
 }
