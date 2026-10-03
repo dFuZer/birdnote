@@ -3,11 +3,15 @@ package com.dfuzer.birdnote
 import android.content.Context
 import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.domain.Clef
+import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.domain.NoteNaming
+import com.dfuzer.birdnote.domain.PracticeMode
+import com.dfuzer.birdnote.domain.StoredSetup
 import com.dfuzer.birdnote.domain.preferredClefsStorage
 import com.dfuzer.birdnote.domain.resolveAppLanguage
 import com.dfuzer.birdnote.domain.storedNoteNaming
 import com.dfuzer.birdnote.domain.storedPreferredClefs
+import com.dfuzer.birdnote.domain.storedSetup
 import com.dfuzer.birdnote.domain.withClefToggled
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +45,26 @@ class SettingsStore(context: Context) {
         prefs.edit().putString(KEY_NOTE_NAMING, naming.name).apply()
         _noteNaming.value = naming
     }
+
+    fun lastSetup(mode: PracticeMode): StoredSetup {
+        val difficulty = prefs.all[difficultyKey(mode)] as? Int
+        val clefName = prefs.getString(clefKey(mode), null)
+        return storedSetup(mode, difficulty, clefName)
+    }
+
+    fun saveLastSetup(mode: PracticeMode, difficulty: Int, clefMode: ClefMode?) {
+        val editor = prefs.edit().putInt(difficultyKey(mode), difficulty)
+        when (mode) {
+            PracticeMode.INTERVALS -> editor.remove(clefKey(mode))
+            PracticeMode.NOTES, PracticeMode.CHORDS ->
+                editor.putString(clefKey(mode), checkNotNull(clefMode).name)
+        }
+        editor.commit()
+    }
+
+    private fun difficultyKey(mode: PracticeMode) = "setup_${mode.name}_difficulty"
+
+    private fun clefKey(mode: PracticeMode) = "setup_${mode.name}_clef"
 
     fun setAppLanguage(language: AppLanguage) {
         prefs.edit().putString(KEY_APP_LANGUAGE, language.tag).apply()

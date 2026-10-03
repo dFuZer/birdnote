@@ -44,6 +44,7 @@ fun BirdNoteApp() {
                 },
                 preferredClefs = preferredClefs,
                 onPreferredClefToggle = settingsStore::togglePreferredClef,
+                settingsStore = settingsStore,
                 scoreStore = scoreStore,
                 modifier = Modifier.padding(innerPadding),
             )

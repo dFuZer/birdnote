@@ -19,10 +19,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,6 +59,9 @@ import com.dfuzer.birdnote.ui.theme.Neutral
 
 @Composable
 fun ChordSetupScreen(
+    initialDifficulty: Int,
+    initialClefMode: ClefMode,
+    onSaveSetup: (difficulty: Int, clefMode: ClefMode) -> Unit,
     onStartClick: (difficulty: Int, clefMode: ClefMode) -> Unit,
     onBackClick: () -> Unit,
     clefModes: List<ClefMode>,
@@ -64,20 +69,29 @@ fun ChordSetupScreen(
 ) {
     val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Setup
-    var difficulty by rememberSaveable { mutableIntStateOf(MIN_DIFFICULTY) }
-    var clefModeName by rememberSaveable { mutableStateOf(clefModes.first().name) }
+    var difficulty by rememberSaveable { mutableIntStateOf(initialDifficulty) }
+    var clefModeName by rememberSaveable { mutableStateOf(initialClefMode.name) }
     var clefMenuExpanded by rememberSaveable { mutableStateOf(false) }
     val clefMode = openingClefMode(
         preferred = clefModes.flatMap { it.clefs() }.toSet(),
         remembered = ClefMode.entries.firstOrNull { it.name == clefModeName },
     )
+    val saveSetup by rememberUpdatedState(onSaveSetup)
+    val difficultyToSave by rememberUpdatedState(difficulty)
+    val clefToSave by rememberUpdatedState(clefMode)
+    DisposableEffect(Unit) {
+        onDispose { saveSetup(difficultyToSave, clefToSave) }
+    }
     val config = ChordConfig(difficulty, clefMode)
     val preview = previewChords(config)
 
     DecoratedScreen(modifier = modifier) {
         BackButton(
             label = stringResource(R.string.back),
-            onClick = onBackClick,
+            onClick = {
+                onSaveSetup(difficulty, clefMode)
+                onBackClick()
+            },
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(commonTuning.backButtonMargin),
@@ -222,7 +236,10 @@ fun ChordSetupScreen(
         }
         AppButton(
             text = stringResource(R.string.lets_go),
-            onClick = { onStartClick(difficulty, clefMode) },
+            onClick = {
+                onSaveSetup(difficulty, clefMode)
+                onStartClick(difficulty, clefMode)
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = tuning.startButtonBottomMargin),
