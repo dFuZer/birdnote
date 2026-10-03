@@ -87,7 +87,7 @@ fun StaffCanvas(
 ) {
     val trebleClef = rememberStaffSvgPainter("key-sol.svg", width = 38, height = 109)
     val bassClef = rememberStaffSvgPainter("key-fa.svg", width = 49, height = 57)
-    val cClef = rememberStaffSvgPainter("key-ut.svg", width = 32, height = 80)
+    val cClef = rememberStaffSvgPainter("key-ut.svg", width = 90, height = 125)
     val note = rememberStaffSvgPainter("note.svg", width = 20, height = 64)
     val sharp = rememberStaffSvgPainter(
         LayoutTuning.Staff.sharpAsset,

@@ -182,10 +182,11 @@ object LayoutTuning {
         const val bassClefWidthInLineSpaces = 2.60f*1.15f
         const val bassClefHeightInLineSpaces = 3.00f*1.15f
 
-        // One C-clef glyph. Its vertical center is the C line: middle line for alto, fourth for tenor.
+        // One C-clef glyph (key-ut.svg, 18 by 25). Its vertical center is the C line:
+        // middle line for alto, fourth for tenor. Height spans the staff.
         const val cClefXInLineSpaces = 0.15f
-        const val cClefWidthInLineSpaces = 2.4f
-        const val cClefHeightInLineSpaces = 6f
+        const val cClefHeightInLineSpaces = 4f
+        const val cClefWidthInLineSpaces = cClefHeightInLineSpaces * 18f / 25f
         const val altoClefTopInLineSpaces = -2f - cClefHeightInLineSpaces / 2f
         const val tenorClefTopInLineSpaces = -3f - cClefHeightInLineSpaces / 2f
     }
