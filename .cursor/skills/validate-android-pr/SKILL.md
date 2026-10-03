@@ -56,7 +56,7 @@ Use a worktree already on that branch when its `HEAD` equals the PR SHA. If the 
 
 Otherwise add a worktree from `origin/<head-branch>` and copy `local.properties` from the main checkout into it. Do not commit that file.
 
-Read `applicationId` from that worktree's `app/build.gradle.kts`. Do not assume `com.example.birdnote`.
+Read `applicationId` from that worktree's `app/build.gradle.kts`. Do not assume `com.dfuzer.birdnote`.
 
 ## 3. Build
 

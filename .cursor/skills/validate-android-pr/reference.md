@@ -11,13 +11,13 @@
 | Back key | `DEVICE key BACK` |
 | Wait for boot | `DEVICE wait-boot` |
 | Install | `DEVICE install path/to/app-debug.apk` |
-| Launcher component | `DEVICE resolve com.example.birdnote` |
-| Open | `DEVICE start com.example.birdnote/.MainActivity` |
-| Fresh state | `DEVICE clear com.example.birdnote` |
+| Launcher component | `DEVICE resolve com.dfuzer.birdnote` |
+| Open | `DEVICE start com.dfuzer.birdnote/.MainActivity` |
+| Fresh state | `DEVICE clear com.dfuzer.birdnote` |
 | Phone language | `DEVICE locale es-MX` |
 | Read phone language | `DEVICE locale` |
 
-`resolve` and `clear` take the `applicationId` from the PR, which may not be `com.example.birdnote`.
+`resolve` and `clear` take the `applicationId` from the PR, which may not be `com.dfuzer.birdnote`.
 
 Screenshots are device pixels in the file. The on-screen window is scaled to 0.4. Ignore the window size when tapping.
 

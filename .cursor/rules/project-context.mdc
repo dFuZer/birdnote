@@ -17,7 +17,7 @@ Native Android app that helps users get better at reading sheet music and recogn
 
 - Language: Kotlin (`kotlin.code.style=official`), Java 11 bytecode
 - UI: Jetpack Compose + Material 3 (`BirdNoteTheme`), not Views/XML layouts
-- Entry: single-module `:app`, package `com.example.birdnote`, launcher `MainActivity`
+- Entry: single-module `:app`, package `com.dfuzer.birdnote`, launcher `MainActivity`
 - Build: Gradle version catalog (`gradle/libs.versions.toml`), AGP 9.4.1, Kotlin 2.2.10, Compose BOM
 - SDK: `minSdk 26`, `compileSdk`/`targetSdk` 37
 - Tests: JUnit 4 unit tests; Espresso + Compose UI tests for instrumented

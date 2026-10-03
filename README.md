@@ -30,7 +30,7 @@ Correct answers play the pitches on piano; mistakes cost time and play a clear â
 
 ## Technical stack
 
-The project is a single Android application module, `:app`, package `com.example.birdnote`.
+The project is a single Android application module, `:app`, package `com.dfuzer.birdnote`.
 
 | | |
 |--|--|

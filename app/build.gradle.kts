@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.birdnote"
+    namespace = "com.dfuzer.birdnote"
     sourceSets["main"].assets.srcDir("../assets")
 
     compileSdk {
