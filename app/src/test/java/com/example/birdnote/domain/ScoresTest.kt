@@ -24,8 +24,8 @@ class ScoresTest {
     }
 
     @Test
-    fun noteAndChordGridsCoverEveryClefAndDifficulty() {
-        listOf(PracticeMode.NOTES, PracticeMode.CHORDS).forEach { mode ->
+    fun clefModesCoverEveryDifficulty() {
+        listOf(PracticeMode.NOTES, PracticeMode.CHORDS, PracticeMode.KEY_SIGNATURES).forEach { mode ->
             val cells = scoreGrid(mode)
             assertEquals(ClefMode.entries.size * (MAX_DIFFICULTY - MIN_DIFFICULTY + 1), cells.size)
             ClefMode.entries.forEach { clef ->
@@ -55,6 +55,10 @@ class ScoresTest {
         assertEquals("NOTES:SOL:1", scoreStorageKey(PracticeMode.NOTES, 1, ClefMode.SOL))
         assertEquals("INTERVALS:-:4", scoreStorageKey(PracticeMode.INTERVALS, 4, null))
         assertEquals("CHORDS:SOL_FA:2", scoreStorageKey(PracticeMode.CHORDS, 2, ClefMode.SOL_FA))
+        assertEquals(
+            "KEY_SIGNATURES:FA:3",
+            scoreStorageKey(PracticeMode.KEY_SIGNATURES, 3, ClefMode.FA),
+        )
         assertEquals(12, bestScore(mapOf("NOTES:SOL:1" to 12), PracticeMode.NOTES, 1, ClefMode.SOL))
         assertNull(bestScore(emptyMap(), PracticeMode.NOTES, 1, ClefMode.FA))
     }

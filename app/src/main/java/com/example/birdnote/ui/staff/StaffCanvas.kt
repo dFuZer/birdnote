@@ -28,6 +28,7 @@ import coil3.request.ImageRequest
 import com.example.birdnote.domain.Accidental
 import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.ClefMode
+import com.example.birdnote.domain.KeySignature
 import com.example.birdnote.domain.MAX_DIFFICULTY
 import com.example.birdnote.domain.MIN_DIFFICULTY
 import com.example.birdnote.domain.Pitch
@@ -43,10 +44,13 @@ import kotlin.math.round
 
 @Immutable
 data class StaffChord(
-    val notes: List<StaffNote>,
+    val notes: List<StaffNote> = emptyList(),
+    val signature: KeySignature? = null,
 )
 
 fun StaffNote.asChord(): StaffChord = StaffChord(listOf(this))
+
+fun KeySignature.asChord(): StaffChord = StaffChord(signature = this)
 
 fun List<StaffNote>.asChords(): List<StaffChord> = map { it.asChord() }
 
@@ -357,28 +361,7 @@ private fun layoutSlot(
     absoluteIndex: Int,
     geometry: StaffGeometry,
 ): List<CachedChordDraw> {
-    val metrics = staffLayoutMetrics()
-    val x = geometry.slotCenterX(absoluteIndex)
-    return buildList {
-        geometry.clefs.forEachIndexed { staffIndex, clef ->
-            val onStaff = chord.notes.filter { it.clef == clef }
-            if (onStaff.isEmpty()) return@forEachIndexed
-            val bottomLineY = geometry.bottomLineYs[staffIndex]
-            add(
-                CachedChordDraw(
-                    index = absoluteIndex,
-                    bottomLineY = bottomLineY,
-                    layout = layoutChord(
-                        onStaff,
-                        x,
-                        geometry.lineSpacing,
-                        bottomLineY,
-                        metrics,
-                    ),
-                ),
-            )
-        }
-    }
+    return layoutStaffChord(chord, absoluteIndex, geometry)
 }
 
 @Composable
@@ -534,25 +517,57 @@ internal class CachedChordDraw(
 internal fun cacheChordDraws(
     model: StaffRenderModel,
     geometry: StaffGeometry,
+): List<CachedChordDraw> =
+    model.chords.flatMapIndexed { index, chord ->
+        layoutStaffChord(chord, index, geometry)
+    }
+
+private fun layoutStaffChord(
+    chord: StaffChord,
+    index: Int,
+    geometry: StaffGeometry,
 ): List<CachedChordDraw> {
     val metrics = staffLayoutMetrics()
     return buildList {
         geometry.clefs.forEachIndexed { staffIndex, clef ->
             val bottomLineY = geometry.bottomLineYs[staffIndex]
-            model.chords.forEachIndexed { index, chord ->
+            val signature = chord.signature
+            val layout = if (signature != null) {
+                if (signature.clef != clef) {
+                    null
+                } else {
+                    layoutKeySignature(
+                        signature,
+                        signatureLeftX(
+                            geometry.notesStartX,
+                            geometry.slotWidth,
+                            index,
+                            geometry.lineSpacing,
+                        ),
+                        geometry.lineSpacing,
+                        bottomLineY,
+                    )
+                }
+            } else {
                 val onStaff = chord.notes.filter { it.clef == clef }
-                if (onStaff.isEmpty()) return@forEachIndexed
+                if (onStaff.isEmpty()) {
+                    null
+                } else {
+                    layoutChord(
+                        onStaff,
+                        geometry.slotCenterX(index),
+                        geometry.lineSpacing,
+                        bottomLineY,
+                        metrics,
+                    )
+                }
+            }
+            if (layout != null) {
                 add(
                     CachedChordDraw(
                         index = index,
                         bottomLineY = bottomLineY,
-                        layout = layoutChord(
-                            onStaff,
-                            geometry.slotCenterX(index),
-                            geometry.lineSpacing,
-                            bottomLineY,
-                            metrics,
-                        ),
+                        layout = layout,
                     ),
                 )
             }
@@ -652,7 +667,9 @@ internal fun highlightRects(
     return chordDraws.mapNotNull { chordDraw ->
         if (chordDraw.index != highlightIndex) return@mapNotNull null
         val layout = chordDraw.layout
-        if (layout.heads.isEmpty()) return@mapNotNull null
+        if (layout.heads.isEmpty() && layout.bounds.right <= layout.bounds.left) {
+            return@mapNotNull null
+        }
         val staffTop = chordDraw.bottomLineY - 4f * lineSpacing
         val left = layout.bounds.left
         val right = layout.bounds.right
@@ -676,48 +693,50 @@ private fun DrawScope.drawChord(
     color: Color,
     painters: StaffPainters,
 ) {
-    val ledgerHalf = lineSpacing * LayoutTuning.Staff.ledgerHalfWidthInLineSpaces
-    val ledgerLeft = layout.heads.minOf { it.x } - ledgerHalf
-    val ledgerRight = layout.heads.maxOf { it.x } + ledgerHalf
-    layout.ledgerSteps.forEach { ledgerStep ->
-        val ly = yForStep(ledgerStep.toFloat(), bottomLineY, lineSpacing)
-        drawLine(
-            color,
-            Offset(ledgerLeft, ly),
-            Offset(ledgerRight, ly),
-            strokeWidth = lineSpacing * LayoutTuning.Staff.ledgerLineWidthInLineSpaces,
-        )
-    }
-    if (layout.useCompleteNote) {
-        val head = layout.heads.first()
-        drawCompleteNote(
-            x = head.x,
-            step = head.step,
-            stemDown = head.stemDown,
-            bottomLineY = bottomLineY,
-            lineSpacing = lineSpacing,
-            painter = painters.note,
-        )
-    } else {
-        val stem = layout.stem
-        if (stem != null) {
-            val headWidth = lineSpacing * LayoutTuning.Staff.noteWidthInLineSpaces
+    if (layout.heads.isNotEmpty()) {
+        val ledgerHalf = lineSpacing * LayoutTuning.Staff.ledgerHalfWidthInLineSpaces
+        val ledgerLeft = layout.heads.minOf { it.x } - ledgerHalf
+        val ledgerRight = layout.heads.maxOf { it.x } + ledgerHalf
+        layout.ledgerSteps.forEach { ledgerStep ->
+            val ly = yForStep(ledgerStep.toFloat(), bottomLineY, lineSpacing)
             drawLine(
-                color = color,
-                start = Offset(stem.x, stem.startY),
-                end = Offset(stem.x, stem.endY),
-                strokeWidth = headWidth * LayoutTuning.Staff.stemThicknessInNoteWidths,
-                cap = StrokeCap.Butt,
+                color,
+                Offset(ledgerLeft, ly),
+                Offset(ledgerRight, ly),
+                strokeWidth = lineSpacing * LayoutTuning.Staff.ledgerLineWidthInLineSpaces,
             )
         }
-        val headWidth = lineSpacing * LayoutTuning.Staff.noteWidthInLineSpaces
-        layout.heads.forEach { head ->
-            drawNoteHeadOval(
+        if (layout.useCompleteNote) {
+            val head = layout.heads.first()
+            drawCompleteNote(
                 x = head.x,
-                y = yForStep(head.step.toFloat(), bottomLineY, lineSpacing),
-                width = headWidth,
-                color = color,
+                step = head.step,
+                stemDown = head.stemDown,
+                bottomLineY = bottomLineY,
+                lineSpacing = lineSpacing,
+                painter = painters.note,
             )
+        } else {
+            val stem = layout.stem
+            if (stem != null) {
+                val headWidth = lineSpacing * LayoutTuning.Staff.noteWidthInLineSpaces
+                drawLine(
+                    color = color,
+                    start = Offset(stem.x, stem.startY),
+                    end = Offset(stem.x, stem.endY),
+                    strokeWidth = headWidth * LayoutTuning.Staff.stemThicknessInNoteWidths,
+                    cap = StrokeCap.Butt,
+                )
+            }
+            val headWidth = lineSpacing * LayoutTuning.Staff.noteWidthInLineSpaces
+            layout.heads.forEach { head ->
+                drawNoteHeadOval(
+                    x = head.x,
+                    y = yForStep(head.step.toFloat(), bottomLineY, lineSpacing),
+                    width = headWidth,
+                    color = color,
+                )
+            }
         }
     }
     layout.accidentals.forEach { accidental ->

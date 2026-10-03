@@ -8,6 +8,11 @@
     <string name="notes">Notes</string>
     <string name="intervals">Intervalles</string>
     <string name="chords">Accords</string>
+    <string name="key_signatures">Armures</string>
+    <string name="tonics">Tonalités</string>
+    <string name="all_tonics">Toutes</string>
+    <string name="signature_clef_sol">Clé de sol</string>
+    <string name="signature_clef_fa">Clé de fa</string>
     <string name="back">Retour</string>
     <string name="score_best">Meilleur</string>
     <string name="score_empty">—</string>
@@ -32,6 +37,10 @@
     <plurals name="score_chords">
         <item quantity="one">%d accord</item>
         <item quantity="other">%d accords</item>
+    </plurals>
+    <plurals name="score_key_signatures">
+        <item quantity="one">%d armure</item>
+        <item quantity="other">%d armures</item>
     </plurals>
     <string name="restart">Recommencer</string>
     <string name="menu">Menu</string>

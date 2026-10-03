@@ -18,6 +18,7 @@ fun TrainingMenuScreen(
     onNotesClick: () -> Unit,
     onIntervalsClick: () -> Unit,
     onChordsClick: () -> Unit,
+    onKeySignaturesClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +54,7 @@ fun TrainingMenuScreen(
                 MenuButton(text = stringResource(R.string.notes), onClick = onNotesClick)
                 MenuButton(text = stringResource(R.string.intervals), onClick = onIntervalsClick)
                 MenuButton(text = stringResource(R.string.chords), onClick = onChordsClick)
+                MenuButton(text = stringResource(R.string.key_signatures), onClick = onKeySignaturesClick)
             }
         }
     }

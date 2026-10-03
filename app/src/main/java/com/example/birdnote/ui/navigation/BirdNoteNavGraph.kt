@@ -14,14 +14,21 @@ import com.example.birdnote.ScoreStore
 import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.IntervalConfig
+import com.example.birdnote.domain.KeySignatureConfig
+import com.example.birdnote.domain.ALL_MAJOR_KEYS
+import com.example.birdnote.domain.MajorKey
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.PracticeMode
+import com.example.birdnote.domain.majorKeyFromRoute
+import com.example.birdnote.domain.routeValue
 import com.example.birdnote.ui.screens.ChordQuizRoute
 import com.example.birdnote.ui.screens.ChordSetupScreen
 import com.example.birdnote.ui.screens.HomeScreen
 import com.example.birdnote.ui.screens.IntervalQuizRoute
 import com.example.birdnote.ui.screens.IntervalSetupScreen
+import com.example.birdnote.ui.screens.KeySignatureQuizRoute
+import com.example.birdnote.ui.screens.KeySignatureSetupScreen
 import com.example.birdnote.ui.screens.NoteSetupScreen
 import com.example.birdnote.ui.screens.QuizRoute
 import com.example.birdnote.ui.screens.ResultScreen
@@ -36,13 +43,16 @@ object Routes {
     const val SETUP = "setup"
     const val INTERVAL_SETUP = "interval-setup"
     const val CHORD_SETUP = "chord-setup"
+    const val KEY_SIGNATURE_SETUP = "key-signature-setup"
     const val SETTINGS = "settings"
     const val QUIZ = "quiz/{difficulty}/{clefMode}"
     const val INTERVAL_QUIZ = "interval-quiz/{difficulty}"
     const val CHORD_QUIZ = "chord-quiz/{difficulty}/{clefMode}"
+    const val KEY_SIGNATURE_QUIZ = "key-signature-quiz/{difficulty}/{clefMode}/{key}"
     const val RESULT = "result/{difficulty}/{clefMode}/{score}"
     const val INTERVAL_RESULT = "interval-result/{difficulty}/{score}"
     const val CHORD_RESULT = "chord-result/{difficulty}/{clefMode}/{score}"
+    const val KEY_SIGNATURE_RESULT = "key-signature-result/{difficulty}/{clefMode}/{key}/{score}"
 
     fun quiz(difficulty: Int, clefMode: ClefMode): String =
         "quiz/$difficulty/${clefMode.name}"
@@ -52,6 +62,9 @@ object Routes {
     fun chordQuiz(difficulty: Int, clefMode: ClefMode): String =
         "chord-quiz/$difficulty/${clefMode.name}"
 
+    fun keySignatureQuiz(difficulty: Int, clefMode: ClefMode, key: MajorKey?): String =
+        "key-signature-quiz/$difficulty/${clefMode.name}/${routeValue(key)}"
+
     fun result(difficulty: Int, clefMode: ClefMode, score: Int): String =
         "result/$difficulty/${clefMode.name}/$score"
 
@@ -60,6 +73,13 @@ object Routes {
 
     fun chordResult(difficulty: Int, clefMode: ClefMode, score: Int): String =
         "chord-result/$difficulty/${clefMode.name}/$score"
+
+    fun keySignatureResult(
+        difficulty: Int,
+        clefMode: ClefMode,
+        key: MajorKey?,
+        score: Int,
+    ): String = "key-signature-result/$difficulty/${clefMode.name}/${routeValue(key)}/$score"
 }
 
 @Composable
@@ -101,6 +121,7 @@ fun BirdNoteNavHost(
                 onNotesClick = { navController.navigate(Routes.SETUP) },
                 onIntervalsClick = { navController.navigate(Routes.INTERVAL_SETUP) },
                 onChordsClick = { navController.navigate(Routes.CHORD_SETUP) },
+                onKeySignaturesClick = { navController.navigate(Routes.KEY_SIGNATURE_SETUP) },
                 onBackClick = { navController.popBackStack() },
             )
         }
@@ -124,6 +145,15 @@ fun BirdNoteNavHost(
             ChordSetupScreen(
                 onStartClick = { difficulty, clefMode ->
                     navController.navigate(Routes.chordQuiz(difficulty, clefMode))
+                },
+                onBackClick = { navController.popBackStack() },
+            )
+        }
+        composable(Routes.KEY_SIGNATURE_SETUP) {
+            KeySignatureSetupScreen(
+                noteNaming = noteNaming,
+                onStartClick = { difficulty, clefMode, key ->
+                    navController.navigate(Routes.keySignatureQuiz(difficulty, clefMode, key))
                 },
                 onBackClick = { navController.popBackStack() },
             )
@@ -182,6 +212,32 @@ fun BirdNoteNavHost(
                     scoreStore.record(PracticeMode.CHORDS, difficulty, clefMode, score)
                     navController.navigate(Routes.chordResult(difficulty, clefMode, score)) {
                         popUpTo(Routes.CHORD_QUIZ) { inclusive = true }
+                    }
+                },
+            )
+        }
+        composable(
+            route = Routes.KEY_SIGNATURE_QUIZ,
+            arguments = listOf(
+                navArgument("difficulty") { type = NavType.IntType },
+                navArgument("clefMode") { type = NavType.StringType },
+                navArgument("key") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
+            val clefMode = ClefMode.valueOf(
+                entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name,
+            )
+            val key = majorKeyFromRoute(entry.arguments?.getString("key") ?: ALL_MAJOR_KEYS)
+            KeySignatureQuizRoute(
+                config = KeySignatureConfig(difficulty, clefMode, key),
+                noteNaming = noteNaming,
+                onFinished = { score ->
+                    scoreStore.record(PracticeMode.KEY_SIGNATURES, difficulty, clefMode, score)
+                    navController.navigate(
+                        Routes.keySignatureResult(difficulty, clefMode, key, score),
+                    ) {
+                        popUpTo(Routes.KEY_SIGNATURE_QUIZ) { inclusive = true }
                     }
                 },
             )
@@ -250,6 +306,34 @@ fun BirdNoteNavHost(
                 onRestartClick = {
                     navController.navigate(Routes.chordQuiz(difficulty, clefMode)) {
                         popUpTo(Routes.CHORD_RESULT) { inclusive = true }
+                    }
+                },
+                onMenuClick = {
+                    navController.popBackStack(Routes.HOME, inclusive = false)
+                },
+            )
+        }
+        composable(
+            route = Routes.KEY_SIGNATURE_RESULT,
+            arguments = listOf(
+                navArgument("difficulty") { type = NavType.IntType },
+                navArgument("clefMode") { type = NavType.StringType },
+                navArgument("key") { type = NavType.StringType },
+                navArgument("score") { type = NavType.IntType },
+            ),
+        ) { entry ->
+            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
+            val clefMode = ClefMode.valueOf(
+                entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name,
+            )
+            val key = majorKeyFromRoute(entry.arguments?.getString("key") ?: ALL_MAJOR_KEYS)
+            val score = entry.arguments?.getInt("score") ?: 0
+            ResultScreen(
+                score = score,
+                scorePluralRes = R.plurals.score_key_signatures,
+                onRestartClick = {
+                    navController.navigate(Routes.keySignatureQuiz(difficulty, clefMode, key)) {
+                        popUpTo(Routes.KEY_SIGNATURE_RESULT) { inclusive = true }
                     }
                 },
                 onMenuClick = {

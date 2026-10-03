@@ -39,11 +39,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.StateFlow
 import com.example.birdnote.R
 import com.example.birdnote.domain.CHORD_VISIBLE_SLOTS
+import com.example.birdnote.domain.Clef
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.ChordQuality
 import com.example.birdnote.domain.IntervalConfig
 import com.example.birdnote.domain.IntervalName
+import com.example.birdnote.domain.KEY_SIGNATURE_VISIBLE_SLOTS
+import com.example.birdnote.domain.KeySignature
+import com.example.birdnote.domain.KeySignatureConfig
 import com.example.birdnote.domain.NoteName
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeChord
@@ -58,6 +62,7 @@ import com.example.birdnote.domain.queueSize
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.quiz.ChordQuizViewModel
 import com.example.birdnote.ui.quiz.IntervalQuizViewModel
+import com.example.birdnote.ui.quiz.KeySignatureQuizViewModel
 import com.example.birdnote.ui.quiz.QuizSounds
 import com.example.birdnote.ui.quiz.QuizViewModel
 import com.example.birdnote.ui.quiz.SOUNDS_ENABLED
@@ -342,6 +347,122 @@ fun ChordQuizScreen(
         ChordAnswerGrid(
             difficulty = difficulty,
             answersLocked = answersLocked,
+            onAnswer = onAnswer,
+        )
+    }
+}
+
+@Composable
+fun KeySignatureQuizRoute(
+    config: KeySignatureConfig,
+    noteNaming: NoteNaming,
+    onFinished: (score: Int) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: KeySignatureQuizViewModel = viewModel(
+        factory = KeySignatureQuizViewModel.factory(config),
+    ),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val sounds = rememberQuizSounds()
+    var didNavigate by remember { mutableStateOf(false) }
+    LaunchedEffect(state.finished) {
+        if (state.finished && !didNavigate) {
+            didNavigate = true
+            onFinished(state.score)
+        }
+    }
+    if (sounds != null) {
+        LaunchedEffect(state.answerFeedback?.id) {
+            state.answerFeedback?.let(sounds::play)
+        }
+    }
+    KeySignatureQuizScreen(
+        signatures = state.signatures,
+        remainingMillis = viewModel.remainingMillis,
+        durationMillis = state.durationMillis,
+        answersLocked = state.answersLocked,
+        clefMode = config.clefMode,
+        difficulty = config.difficulty,
+        noteNaming = noteNaming,
+        onAnswer = viewModel::onAnswer,
+        onStop = viewModel::stop,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun KeySignatureQuizScreen(
+    signatures: List<KeySignature>,
+    remainingMillis: StateFlow<Long>,
+    durationMillis: Long,
+    answersLocked: Boolean,
+    clefMode: ClefMode,
+    difficulty: Int,
+    noteNaming: NoteNaming,
+    onAnswer: (NoteName) -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tuning = LayoutTuning.Quiz
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(LightBlue)
+            .padding(
+                horizontal = tuning.horizontalPadding,
+                vertical = tuning.verticalPadding,
+            ),
+    ) {
+        QuizTopBar(
+            remainingMillis = remainingMillis,
+            durationMillis = durationMillis,
+            onStop = onStop,
+        )
+        Spacer(Modifier.height(tuning.staffVerticalGap))
+        Card(
+            shape = RoundedCornerShape(tuning.staffCornerRadius),
+            colors = CardDefaults.cardColors(containerColor = Neutral),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
+            StaffSurface(
+                notes = signatures,
+                toChords = { queued -> queued.map { it.asChord() } },
+                clefMode = clefMode,
+                difficulty = difficulty,
+                visibleCount = KEY_SIGNATURE_VISIBLE_SLOTS,
+                followTimeMillis = tuning.noteFollowTimeMillis,
+                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(tuning.staffInnerPadding),
+            )
+        }
+        if (clefMode == ClefMode.SOL_FA) {
+            val clef = signatures.firstOrNull()?.clef
+            if (clef != null) {
+                Text(
+                    text = stringResource(
+                        if (clef == Clef.SOL) {
+                            R.string.signature_clef_sol
+                        } else {
+                            R.string.signature_clef_fa
+                        },
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DarkBlue,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = tuning.staffVerticalGap),
+                )
+            }
+        }
+        Spacer(Modifier.height(tuning.staffVerticalGap))
+        AnswerRow(
+            answersLocked = answersLocked,
+            noteNaming = noteNaming,
             onAnswer = onAnswer,
         )
     }

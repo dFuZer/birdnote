@@ -4,6 +4,7 @@ enum class PracticeMode {
     NOTES,
     INTERVALS,
     CHORDS,
+    KEY_SIGNATURES,
 }
 
 data class ScoreCell(
@@ -15,7 +16,7 @@ fun scoreGrid(mode: PracticeMode): List<ScoreCell> {
     val difficulties = MIN_DIFFICULTY..MAX_DIFFICULTY
     return when (mode) {
         PracticeMode.INTERVALS -> difficulties.map { ScoreCell(it) }
-        PracticeMode.NOTES, PracticeMode.CHORDS ->
+        PracticeMode.NOTES, PracticeMode.CHORDS, PracticeMode.KEY_SIGNATURES ->
             ClefMode.entries.flatMap { clef ->
                 difficulties.map { ScoreCell(it, clef) }
             }
@@ -31,7 +32,7 @@ fun scoreStorageKey(mode: PracticeMode, difficulty: Int, clefMode: ClefMode?): S
             require(clefMode == null) { "Intervals have no clef" }
             NO_CLEF
         }
-        PracticeMode.NOTES, PracticeMode.CHORDS ->
+        PracticeMode.NOTES, PracticeMode.CHORDS, PracticeMode.KEY_SIGNATURES ->
             requireNotNull(clefMode) { "$mode scores keep a clef" }.name
     }
     return "${mode.name}:$clef:$difficulty"

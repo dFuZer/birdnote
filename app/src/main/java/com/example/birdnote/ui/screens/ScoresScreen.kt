@@ -251,6 +251,7 @@ private fun PracticeMode.label(): String = when (this) {
     PracticeMode.NOTES -> stringResource(R.string.notes)
     PracticeMode.INTERVALS -> stringResource(R.string.intervals)
     PracticeMode.CHORDS -> stringResource(R.string.chords)
+    PracticeMode.KEY_SIGNATURES -> stringResource(R.string.key_signatures)
 }
 
 private fun Modifier.panelWidth(): Modifier {
