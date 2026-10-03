@@ -95,6 +95,11 @@ object LayoutTuning {
         const val answerDisabledAlpha = 0.55f
         const val noteFollowTimeMillis = 1500
         const val noteFollowMinSpeedSlotsPerSecond = 0.05f
+        const val answerBrightenMillis = 450
+        const val answerBrightenAlpha = 150
+        const val scorePopScale = 1.16f
+        val scoreMinWidth = 28.dp
+        val wrongShakeDistance = 4.dp
     }
 
     object Result {

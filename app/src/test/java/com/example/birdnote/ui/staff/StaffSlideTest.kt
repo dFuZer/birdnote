@@ -105,6 +105,40 @@ class StaffSlideTest {
         assertEquals(0.0125f, next, 0.0001f)
     }
 
+    @Test
+    fun brightenStrengthFadesDuringTheSlide() {
+        val duration = 0.45f
+        assertEquals(1f, brightenStrength(0f, duration), 0f)
+        assertTrue(brightenStrength(0.15f, duration) < 1f)
+        assertTrue(brightenStrength(0.15f, duration) > 0f)
+        assertEquals(0f, brightenStrength(duration, duration), 0f)
+        assertEquals(0f, brightenStrength(1.5f, duration), 0f)
+    }
+
+    @Test
+    fun brightenStaysOnTheAnsweredNoteWhileTheBeltAdvances() {
+        val belt = StaffBelt<String>()
+        val visible = 4
+        assertEquals(
+            BeltStep.Reset,
+            belt.offer(listOf("a", "b", "c", "d"), visible, nowSeconds = 0.0, frameSeconds = 0.0),
+        )
+        assertEquals(
+            BeltStep.Advanced,
+            belt.offer(listOf("b", "c", "d", "e"), visible, nowSeconds = 0.2, frameSeconds = 0.016),
+        )
+        belt.armBrighten()
+        assertEquals(0, belt.brightenLocalIndex())
+        assertEquals("a", belt.notes[belt.brightenLocalIndex()!!])
+
+        belt.advance(nowSeconds = 30.0, followTimeSeconds = 1.5f, minSpeedSlotsPerSecond = 0.05f)
+        assertEquals(
+            BeltStep.Advanced,
+            belt.offer(listOf("c", "d", "e", "f"), visible, nowSeconds = 30.1, frameSeconds = 0.016),
+        )
+        assertEquals(null, belt.brightenLocalIndex())
+    }
+
     private fun displayedSlot(absoluteIndex: Int, shift: Float, origin: Int): Float =
         (absoluteIndex - origin) - slideOffsetSlots(shift, origin)
 }
