@@ -5,6 +5,7 @@ import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.NoteName
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
+import com.example.birdnote.domain.STREAK_REWARD_LENGTH
 import com.example.birdnote.domain.isCorrect
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -131,5 +133,45 @@ class QuizViewModelTest {
         val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL_FA), Random(3))
         viewModel.stop()
         assertTrue(viewModel.state.value.finished)
+    }
+
+    @Test
+    fun streakRewardShowsAfterSeveralCorrectAnswersAndClearsOnAMiss() = runTest(testDispatcher) {
+        val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL), Random(7))
+        try {
+            repeat(STREAK_REWARD_LENGTH - 1) {
+                val note = viewModel.state.value.notes.first()
+                viewModel.onAnswer(note.pitch.noteName)
+            }
+            assertEquals(STREAK_REWARD_LENGTH - 1, viewModel.state.value.correctInARow)
+            assertNull(viewModel.state.value.sparklePopMillis)
+            assertEquals(STREAK_REWARD_LENGTH - 1, viewModel.state.value.score)
+
+            viewModel.onAnswer(viewModel.state.value.notes.first().pitch.noteName)
+            val popping = viewModel.state.value
+            assertEquals(STREAK_REWARD_LENGTH, popping.correctInARow)
+            assertTrue(popping.sparklePopMillis != null)
+            assertEquals(STREAK_REWARD_LENGTH, popping.score)
+
+            val held = popping.sparklePopMillis
+            viewModel.onAnswer(viewModel.state.value.notes.first().pitch.noteName)
+            assertEquals(held, viewModel.state.value.sparklePopMillis)
+            assertEquals(STREAK_REWARD_LENGTH + 1, viewModel.state.value.score)
+            assertEquals(QUIZ_DURATION_SECONDS * 1000L, viewModel.state.value.durationMillis)
+
+            val missed = viewModel.state.value.notes.first()
+            val wrong = NoteName.entries.first { !isCorrect(missed, it) }
+            val remainingBefore = viewModel.remainingMillis.value
+            viewModel.onAnswer(wrong)
+            assertEquals(0, viewModel.state.value.correctInARow)
+            assertNull(viewModel.state.value.sparklePopMillis)
+            assertEquals(STREAK_REWARD_LENGTH + 1, viewModel.state.value.score)
+            assertEquals(
+                remainingBefore - MISTAKE_TIME_PENALTY_SECONDS * 1000L,
+                viewModel.remainingMillis.value,
+            )
+        } finally {
+            viewModel.stop()
+        }
     }
 }

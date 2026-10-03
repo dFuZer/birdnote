@@ -13,6 +13,7 @@ import com.example.birdnote.domain.advanceQueue
 import com.example.birdnote.domain.generateQueue
 import com.example.birdnote.domain.isCorrect
 import com.example.birdnote.domain.queueSize
+import com.example.birdnote.domain.streakAfterAnswer
 import kotlin.random.Random
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -39,6 +40,8 @@ data class AnswerFeedback(
 data class QuizUiState(
     val notes: List<StaffNote> = emptyList(),
     val score: Int = 0,
+    val correctInARow: Int = 0,
+    val sparklePopMillis: Long? = null,
     val durationMillis: Long = QUIZ_DURATION_SECONDS * 1000L,
     val answersLocked: Boolean = false,
     val lastFeedbackCorrect: Boolean? = null,
@@ -86,9 +89,17 @@ class QuizViewModel(
         }
         _remainingMillis.value = remaining
         val finished = remaining <= 0L
+        val streak = streakAfterAnswer(
+            correctInARow = current.correctInARow,
+            sparklePopMillis = current.sparklePopMillis,
+            correct = correct,
+            nowMillis = System.currentTimeMillis(),
+        )
         _state.value = current.copy(
             notes = advanceQueue(current.notes, config, random),
             score = if (correct) current.score + 1 else current.score,
+            correctInARow = streak.correctInARow,
+            sparklePopMillis = streak.sparklePopMillis,
             lastFeedbackCorrect = correct,
             answerFeedback = AnswerFeedback(
                 id = (current.answerFeedback?.id ?: 0) + 1,

@@ -1,5 +1,14 @@
 package com.example.birdnote.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -29,6 +39,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -55,6 +69,7 @@ import com.example.birdnote.domain.chordQualitiesFor
 import com.example.birdnote.domain.intervalNamesFor
 import com.example.birdnote.domain.label
 import com.example.birdnote.domain.queueSize
+import com.example.birdnote.domain.streakActive
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.quiz.ChordQuizViewModel
 import com.example.birdnote.ui.quiz.IntervalQuizViewModel
@@ -66,6 +81,8 @@ import com.example.birdnote.ui.staff.asChord
 import com.example.birdnote.ui.theme.DarkBlue
 import com.example.birdnote.ui.theme.LightBlue
 import com.example.birdnote.ui.theme.Neutral
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun QuizRoute(
@@ -97,6 +114,9 @@ fun QuizRoute(
         clefMode = config.clefMode,
         difficulty = config.difficulty,
         noteNaming = noteNaming,
+        score = state.score,
+        correctInARow = state.correctInARow,
+        sparklePopMillis = state.sparklePopMillis,
         onAnswer = viewModel::onAnswer,
         onStop = viewModel::stop,
         modifier = modifier,
@@ -112,6 +132,9 @@ fun QuizScreen(
     clefMode: ClefMode,
     difficulty: Int,
     noteNaming: NoteNaming,
+    score: Int,
+    correctInARow: Int,
+    sparklePopMillis: Long?,
     onAnswer: (NoteName) -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
@@ -131,6 +154,9 @@ fun QuizScreen(
         QuizTopBar(
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
+            score = score,
+            correctInARow = correctInARow,
+            sparklePopMillis = sparklePopMillis,
             onStop = onStop,
         )
         Spacer(Modifier.height(tuning.staffVerticalGap))
@@ -190,6 +216,9 @@ fun IntervalQuizRoute(
         durationMillis = state.durationMillis,
         answersLocked = state.answersLocked,
         difficulty = config.difficulty,
+        score = state.score,
+        correctInARow = state.correctInARow,
+        sparklePopMillis = state.sparklePopMillis,
         onAnswer = viewModel::onAnswer,
         onStop = viewModel::stop,
         modifier = modifier,
@@ -203,6 +232,9 @@ fun IntervalQuizScreen(
     durationMillis: Long,
     answersLocked: Boolean,
     difficulty: Int,
+    score: Int,
+    correctInARow: Int,
+    sparklePopMillis: Long?,
     onAnswer: (IntervalName) -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
@@ -222,6 +254,9 @@ fun IntervalQuizScreen(
         QuizTopBar(
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
+            score = score,
+            correctInARow = correctInARow,
+            sparklePopMillis = sparklePopMillis,
             onStop = onStop,
         )
         Spacer(Modifier.height(tuning.staffVerticalGap))
@@ -282,6 +317,9 @@ fun ChordQuizRoute(
         answersLocked = state.answersLocked,
         difficulty = config.difficulty,
         clefMode = config.clefMode,
+        score = state.score,
+        correctInARow = state.correctInARow,
+        sparklePopMillis = state.sparklePopMillis,
         onAnswer = viewModel::onAnswer,
         onStop = viewModel::stop,
         modifier = modifier,
@@ -296,6 +334,9 @@ fun ChordQuizScreen(
     answersLocked: Boolean,
     difficulty: Int,
     clefMode: ClefMode,
+    score: Int,
+    correctInARow: Int,
+    sparklePopMillis: Long?,
     onAnswer: (ChordQuality) -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
@@ -315,6 +356,9 @@ fun ChordQuizScreen(
         QuizTopBar(
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
+            score = score,
+            correctInARow = correctInARow,
+            sparklePopMillis = sparklePopMillis,
             onStop = onStop,
         )
         Spacer(Modifier.height(tuning.staffVerticalGap))
@@ -351,6 +395,9 @@ fun ChordQuizScreen(
 private fun QuizTopBar(
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
+    score: Int,
+    correctInARow: Int,
+    sparklePopMillis: Long?,
     onStop: () -> Unit,
 ) {
     val remaining by remainingMillis.collectAsStateWithLifecycle()
@@ -399,6 +446,132 @@ private fun QuizTopBar(
                     .background(DarkBlue),
             )
         }
+        Spacer(Modifier.width(tuning.rewardGap))
+        StreakReward(
+            score = score,
+            correctInARow = correctInARow,
+            sparklePopMillis = sparklePopMillis,
+        )
+    }
+}
+
+@Composable
+private fun StreakReward(
+    score: Int,
+    correctInARow: Int,
+    sparklePopMillis: Long?,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        StreakIndicator(correctInARow = correctInARow)
+        ScoreSparkle(
+            score = score,
+            sparklePopMillis = sparklePopMillis,
+        )
+    }
+}
+
+@Composable
+private fun StreakIndicator(correctInARow: Int) {
+    val active = streakActive(correctInARow)
+    val scale = remember { Animatable(1f) }
+    val pulse = scale.value
+    LaunchedEffect(correctInARow, active) {
+        if (!active) {
+            scale.snapTo(1f)
+            return@LaunchedEffect
+        }
+        scale.snapTo(0.84f)
+        scale.animateTo(1f, tween(durationMillis = 280, easing = FastOutSlowInEasing))
+    }
+    AnimatedVisibility(
+        visible = active,
+        enter = fadeIn(tween(200)) + expandHorizontally(
+            animationSpec = tween(200),
+            expandFrom = Alignment.End,
+        ),
+        exit = fadeOut(tween(140)) + shrinkHorizontally(
+            animationSpec = tween(140),
+            shrinkTowards = Alignment.End,
+        ),
+    ) {
+        val streakLabel = stringResource(R.string.streak_indicator, correctInARow)
+        Text(
+            text = "×$correctInARow",
+            style = MaterialTheme.typography.bodyLarge,
+            color = DarkBlue,
+            maxLines = 1,
+            modifier = Modifier
+                .padding(end = LayoutTuning.Quiz.streakLabelSpacing)
+                .graphicsLayer {
+                    scaleX = pulse
+                    scaleY = pulse
+                }
+                .semantics { contentDescription = streakLabel },
+        )
+    }
+}
+
+@Composable
+private fun ScoreSparkle(
+    score: Int,
+    sparklePopMillis: Long?,
+) {
+    val progress = remember { Animatable(1f) }
+    LaunchedEffect(sparklePopMillis) {
+        if (sparklePopMillis == null) {
+            progress.snapTo(1f)
+            return@LaunchedEffect
+        }
+        progress.snapTo(0f)
+        progress.animateTo(1f, tween(durationMillis = 480, easing = FastOutSlowInEasing))
+    }
+    val scoreLabel = stringResource(R.string.quiz_score, score)
+    val bump = 1f + (1f - progress.value) * 0.06f
+    Box(
+        modifier = Modifier.size(LayoutTuning.Quiz.scoreSparkleSize),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (progress.value < 1f) {
+            Canvas(Modifier.fillMaxSize()) {
+                drawScoreSparkle(progress.value)
+            }
+        }
+        Text(
+            text = score.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            color = DarkBlue,
+            maxLines = 1,
+            modifier = Modifier
+                .graphicsLayer {
+                    scaleX = bump
+                    scaleY = bump
+                }
+                .semantics { contentDescription = scoreLabel },
+        )
+    }
+}
+
+private fun DrawScope.drawScoreSparkle(progress: Float) {
+    val center = this.center
+    val reach = size.minDimension * 0.46f
+    val alpha = ((1f - progress) * 0.85f).coerceIn(0f, 0.85f)
+    val color = Neutral.copy(alpha = alpha)
+    drawCircle(
+        color = color,
+        radius = reach * (0.35f + 0.65f * progress),
+        style = Stroke(width = size.minDimension * 0.04f),
+    )
+    repeat(4) { index ->
+        val angle = Math.toRadians((index * 90.0) - 45.0)
+        val distance = reach * (0.22f + 0.78f * progress)
+        drawCircle(
+            color = color,
+            radius = size.minDimension * 0.055f,
+            center = Offset(
+                x = center.x + (cos(angle) * distance).toFloat(),
+                y = center.y + (sin(angle) * distance).toFloat(),
+            ),
+        )
     }
 }
 

@@ -12,6 +12,7 @@ import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
 import com.example.birdnote.domain.advanceChordQueue
 import com.example.birdnote.domain.generateChordQueue
 import com.example.birdnote.domain.isCorrect
+import com.example.birdnote.domain.streakAfterAnswer
 import kotlin.random.Random
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -24,6 +25,8 @@ import kotlinx.coroutines.launch
 data class ChordQuizUiState(
     val chords: List<PracticeChord> = emptyList(),
     val score: Int = 0,
+    val correctInARow: Int = 0,
+    val sparklePopMillis: Long? = null,
     val durationMillis: Long = QUIZ_DURATION_SECONDS * 1000L,
     val answersLocked: Boolean = false,
     val lastFeedbackCorrect: Boolean? = null,
@@ -69,9 +72,17 @@ class ChordQuizViewModel(
         }
         _remainingMillis.value = remaining
         val finished = remaining <= 0L
+        val streak = streakAfterAnswer(
+            correctInARow = current.correctInARow,
+            sparklePopMillis = current.sparklePopMillis,
+            correct = correct,
+            nowMillis = System.currentTimeMillis(),
+        )
         _state.value = current.copy(
             chords = advanceChordQueue(current.chords, config, random),
             score = if (correct) current.score + 1 else current.score,
+            correctInARow = streak.correctInARow,
+            sparklePopMillis = streak.sparklePopMillis,
             lastFeedbackCorrect = correct,
             answerFeedback = AnswerFeedback(
                 id = (current.answerFeedback?.id ?: 0) + 1,

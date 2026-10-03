@@ -83,6 +83,9 @@ object LayoutTuning {
         val stopButtonHorizontalPadding = 16.dp
         val progressBarGap = 16.dp
         val progressBarHeight = 10.dp
+        val rewardGap = 12.dp
+        val scoreSparkleSize = 36.dp
+        val streakLabelSpacing = 2.dp
         val staffCornerRadius = 8.dp
         val staffInnerPadding = 8.dp
         val staffVerticalGap = 8.dp

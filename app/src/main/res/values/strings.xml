@@ -19,6 +19,8 @@
     <string name="lets_go">C\'est parti !</string>
     <string name="stop">Arrêter</string>
     <string name="time_remaining">Temps restant</string>
+    <string name="quiz_score">Score : %d</string>
+    <string name="streak_indicator">Série de %d</string>
     <string name="bravo">Bravo !</string>
     <string name="your_score">ton score :</string>
     <plurals name="score_notes">

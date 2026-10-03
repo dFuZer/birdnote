@@ -4,6 +4,7 @@ import com.example.birdnote.domain.IntervalConfig
 import com.example.birdnote.domain.IntervalName
 import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
+import com.example.birdnote.domain.STREAK_REWARD_LENGTH
 import com.example.birdnote.domain.isCorrect
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -91,6 +93,43 @@ class IntervalQuizViewModelTest {
             runCurrent()
             assertTrue(viewModel.state.value.finished)
             assertEquals(0L, viewModel.remainingMillis.value)
+        } finally {
+            viewModel.stop()
+        }
+    }
+
+    @Test
+    fun streakRewardShowsAfterSeveralCorrectAnswersAndClearsOnAMiss() = runTest(testDispatcher) {
+        val viewModel = IntervalQuizViewModel(IntervalConfig(1), Random(7))
+        try {
+            repeat(STREAK_REWARD_LENGTH - 1) {
+                viewModel.onAnswer(viewModel.state.value.intervals.first().name)
+            }
+            assertEquals(STREAK_REWARD_LENGTH - 1, viewModel.state.value.correctInARow)
+            assertNull(viewModel.state.value.sparklePopMillis)
+
+            viewModel.onAnswer(viewModel.state.value.intervals.first().name)
+            val popping = viewModel.state.value
+            assertEquals(STREAK_REWARD_LENGTH, popping.correctInARow)
+            assertTrue(popping.sparklePopMillis != null)
+            assertEquals(STREAK_REWARD_LENGTH, popping.score)
+
+            val held = popping.sparklePopMillis
+            viewModel.onAnswer(viewModel.state.value.intervals.first().name)
+            assertEquals(held, viewModel.state.value.sparklePopMillis)
+            assertEquals(STREAK_REWARD_LENGTH + 1, viewModel.state.value.score)
+
+            val missed = viewModel.state.value.intervals.first()
+            val wrong = IntervalName.entries.first { !isCorrect(missed, it) }
+            val remainingBefore = viewModel.remainingMillis.value
+            viewModel.onAnswer(wrong)
+            assertEquals(0, viewModel.state.value.correctInARow)
+            assertNull(viewModel.state.value.sparklePopMillis)
+            assertEquals(STREAK_REWARD_LENGTH + 1, viewModel.state.value.score)
+            assertEquals(
+                remainingBefore - MISTAKE_TIME_PENALTY_SECONDS * 1000L,
+                viewModel.remainingMillis.value,
+            )
         } finally {
             viewModel.stop()
         }
