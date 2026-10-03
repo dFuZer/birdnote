@@ -17,6 +17,7 @@ import com.example.birdnote.domain.IntervalConfig
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.PracticeMode
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.ui.screens.ChordQuizRoute
 import com.example.birdnote.ui.screens.ChordSetupScreen
 import com.example.birdnote.ui.screens.HomeScreen
@@ -37,29 +38,30 @@ object Routes {
     const val INTERVAL_SETUP = "interval-setup"
     const val CHORD_SETUP = "chord-setup"
     const val SETTINGS = "settings"
-    const val QUIZ = "quiz/{difficulty}/{clefMode}"
-    const val INTERVAL_QUIZ = "interval-quiz/{difficulty}"
-    const val CHORD_QUIZ = "chord-quiz/{difficulty}/{clefMode}"
-    const val RESULT = "result/{difficulty}/{clefMode}/{score}"
-    const val INTERVAL_RESULT = "interval-result/{difficulty}/{score}"
-    const val CHORD_RESULT = "chord-result/{difficulty}/{clefMode}/{score}"
+    const val QUIZ = "quiz/{difficulty}/{clefMode}/{roundMode}"
+    const val INTERVAL_QUIZ = "interval-quiz/{difficulty}/{roundMode}"
+    const val CHORD_QUIZ = "chord-quiz/{difficulty}/{clefMode}/{roundMode}"
+    const val RESULT = "result/{difficulty}/{clefMode}/{score}/{roundMode}"
+    const val INTERVAL_RESULT = "interval-result/{difficulty}/{score}/{roundMode}"
+    const val CHORD_RESULT = "chord-result/{difficulty}/{clefMode}/{score}/{roundMode}"
 
-    fun quiz(difficulty: Int, clefMode: ClefMode): String =
-        "quiz/$difficulty/${clefMode.name}"
+    fun quiz(difficulty: Int, clefMode: ClefMode, roundMode: RoundMode): String =
+        "quiz/$difficulty/${clefMode.name}/${roundMode.name}"
 
-    fun intervalQuiz(difficulty: Int): String = "interval-quiz/$difficulty"
+    fun intervalQuiz(difficulty: Int, roundMode: RoundMode): String =
+        "interval-quiz/$difficulty/${roundMode.name}"
 
-    fun chordQuiz(difficulty: Int, clefMode: ClefMode): String =
-        "chord-quiz/$difficulty/${clefMode.name}"
+    fun chordQuiz(difficulty: Int, clefMode: ClefMode, roundMode: RoundMode): String =
+        "chord-quiz/$difficulty/${clefMode.name}/${roundMode.name}"
 
-    fun result(difficulty: Int, clefMode: ClefMode, score: Int): String =
-        "result/$difficulty/${clefMode.name}/$score"
+    fun result(difficulty: Int, clefMode: ClefMode, score: Int, roundMode: RoundMode): String =
+        "result/$difficulty/${clefMode.name}/$score/${roundMode.name}"
 
-    fun intervalResult(difficulty: Int, score: Int): String =
-        "interval-result/$difficulty/$score"
+    fun intervalResult(difficulty: Int, score: Int, roundMode: RoundMode): String =
+        "interval-result/$difficulty/$score/${roundMode.name}"
 
-    fun chordResult(difficulty: Int, clefMode: ClefMode, score: Int): String =
-        "chord-result/$difficulty/${clefMode.name}/$score"
+    fun chordResult(difficulty: Int, clefMode: ClefMode, score: Int, roundMode: RoundMode): String =
+        "chord-result/$difficulty/${clefMode.name}/$score/${roundMode.name}"
 }
 
 @Composable
@@ -106,24 +108,24 @@ fun BirdNoteNavHost(
         }
         composable(Routes.SETUP) {
             NoteSetupScreen(
-                onStartClick = { difficulty, clefMode ->
-                    navController.navigate(Routes.quiz(difficulty, clefMode))
+                onStartClick = { difficulty, clefMode, roundMode ->
+                    navController.navigate(Routes.quiz(difficulty, clefMode, roundMode))
                 },
                 onBackClick = { navController.popBackStack() },
             )
         }
         composable(Routes.INTERVAL_SETUP) {
             IntervalSetupScreen(
-                onStartClick = { difficulty ->
-                    navController.navigate(Routes.intervalQuiz(difficulty))
+                onStartClick = { difficulty, roundMode ->
+                    navController.navigate(Routes.intervalQuiz(difficulty, roundMode))
                 },
                 onBackClick = { navController.popBackStack() },
             )
         }
         composable(Routes.CHORD_SETUP) {
             ChordSetupScreen(
-                onStartClick = { difficulty, clefMode ->
-                    navController.navigate(Routes.chordQuiz(difficulty, clefMode))
+                onStartClick = { difficulty, clefMode, roundMode ->
+                    navController.navigate(Routes.chordQuiz(difficulty, clefMode, roundMode))
                 },
                 onBackClick = { navController.popBackStack() },
             )
@@ -133,16 +135,21 @@ fun BirdNoteNavHost(
             arguments = listOf(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("clefMode") { type = NavType.StringType },
+                navArgument("roundMode") { type = NavType.StringType },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
             val clefMode = ClefMode.valueOf(entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name)
+            val roundMode = roundMode(entry.arguments?.getString("roundMode"))
             QuizRoute(
                 config = PracticeConfig(difficulty, clefMode),
+                roundMode = roundMode,
                 noteNaming = noteNaming,
                 onFinished = { score ->
-                    scoreStore.record(PracticeMode.NOTES, difficulty, clefMode, score)
-                    navController.navigate(Routes.result(difficulty, clefMode, score)) {
+                    if (roundMode == RoundMode.NORMAL) {
+                        scoreStore.record(PracticeMode.NOTES, difficulty, clefMode, score)
+                    }
+                    navController.navigate(Routes.result(difficulty, clefMode, score, roundMode)) {
                         popUpTo(Routes.QUIZ) { inclusive = true }
                     }
                 },
@@ -152,14 +159,19 @@ fun BirdNoteNavHost(
             route = Routes.INTERVAL_QUIZ,
             arguments = listOf(
                 navArgument("difficulty") { type = NavType.IntType },
+                navArgument("roundMode") { type = NavType.StringType },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
+            val roundMode = roundMode(entry.arguments?.getString("roundMode"))
             IntervalQuizRoute(
                 config = IntervalConfig(difficulty),
+                roundMode = roundMode,
                 onFinished = { score ->
-                    scoreStore.record(PracticeMode.INTERVALS, difficulty, null, score)
-                    navController.navigate(Routes.intervalResult(difficulty, score)) {
+                    if (roundMode == RoundMode.NORMAL) {
+                        scoreStore.record(PracticeMode.INTERVALS, difficulty, null, score)
+                    }
+                    navController.navigate(Routes.intervalResult(difficulty, score, roundMode)) {
                         popUpTo(Routes.INTERVAL_QUIZ) { inclusive = true }
                     }
                 },
@@ -170,17 +182,22 @@ fun BirdNoteNavHost(
             arguments = listOf(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("clefMode") { type = NavType.StringType },
+                navArgument("roundMode") { type = NavType.StringType },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
             val clefMode = ClefMode.valueOf(
                 entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name,
             )
+            val roundMode = roundMode(entry.arguments?.getString("roundMode"))
             ChordQuizRoute(
                 config = ChordConfig(difficulty, clefMode),
+                roundMode = roundMode,
                 onFinished = { score ->
-                    scoreStore.record(PracticeMode.CHORDS, difficulty, clefMode, score)
-                    navController.navigate(Routes.chordResult(difficulty, clefMode, score)) {
+                    if (roundMode == RoundMode.NORMAL) {
+                        scoreStore.record(PracticeMode.CHORDS, difficulty, clefMode, score)
+                    }
+                    navController.navigate(Routes.chordResult(difficulty, clefMode, score, roundMode)) {
                         popUpTo(Routes.CHORD_QUIZ) { inclusive = true }
                     }
                 },
@@ -192,15 +209,17 @@ fun BirdNoteNavHost(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("clefMode") { type = NavType.StringType },
                 navArgument("score") { type = NavType.IntType },
+                navArgument("roundMode") { type = NavType.StringType },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
             val clefMode = ClefMode.valueOf(entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name)
             val score = entry.arguments?.getInt("score") ?: 0
+            val roundMode = roundMode(entry.arguments?.getString("roundMode"))
             ResultScreen(
                 score = score,
                 onRestartClick = {
-                    navController.navigate(Routes.quiz(difficulty, clefMode)) {
+                    navController.navigate(Routes.quiz(difficulty, clefMode, roundMode)) {
                         popUpTo(Routes.RESULT) { inclusive = true }
                     }
                 },
@@ -214,15 +233,17 @@ fun BirdNoteNavHost(
             arguments = listOf(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("score") { type = NavType.IntType },
+                navArgument("roundMode") { type = NavType.StringType },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
             val score = entry.arguments?.getInt("score") ?: 0
+            val roundMode = roundMode(entry.arguments?.getString("roundMode"))
             ResultScreen(
                 score = score,
                 scorePluralRes = R.plurals.score_intervals,
                 onRestartClick = {
-                    navController.navigate(Routes.intervalQuiz(difficulty)) {
+                    navController.navigate(Routes.intervalQuiz(difficulty, roundMode)) {
                         popUpTo(Routes.INTERVAL_RESULT) { inclusive = true }
                     }
                 },
@@ -237,6 +258,7 @@ fun BirdNoteNavHost(
                 navArgument("difficulty") { type = NavType.IntType },
                 navArgument("clefMode") { type = NavType.StringType },
                 navArgument("score") { type = NavType.IntType },
+                navArgument("roundMode") { type = NavType.StringType },
             ),
         ) { entry ->
             val difficulty = entry.arguments?.getInt("difficulty") ?: 1
@@ -244,11 +266,12 @@ fun BirdNoteNavHost(
                 entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name,
             )
             val score = entry.arguments?.getInt("score") ?: 0
+            val roundMode = roundMode(entry.arguments?.getString("roundMode"))
             ResultScreen(
                 score = score,
                 scorePluralRes = R.plurals.score_chords,
                 onRestartClick = {
-                    navController.navigate(Routes.chordQuiz(difficulty, clefMode)) {
+                    navController.navigate(Routes.chordQuiz(difficulty, clefMode, roundMode)) {
                         popUpTo(Routes.CHORD_RESULT) { inclusive = true }
                     }
                 },
@@ -259,3 +282,6 @@ fun BirdNoteNavHost(
         }
     }
 }
+
+private fun roundMode(name: String?): RoundMode =
+    RoundMode.entries.firstOrNull { it.name == name } ?: RoundMode.NORMAL

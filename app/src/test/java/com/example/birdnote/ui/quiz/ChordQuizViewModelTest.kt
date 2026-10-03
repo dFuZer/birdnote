@@ -5,6 +5,7 @@ import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.ChordQuality
 import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.domain.isCorrect
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -96,6 +97,32 @@ class ChordQuizViewModelTest {
             runCurrent()
             assertTrue(viewModel.state.value.finished)
             assertEquals(0L, viewModel.remainingMillis.value)
+        } finally {
+            viewModel.stop()
+        }
+    }
+
+    @Test
+    fun practiceMissDoesNotPenalizeOrFinish() = runTest(testDispatcher) {
+        val viewModel = ChordQuizViewModel(
+            ChordConfig(1, ClefMode.SOL),
+            Random(1),
+            roundMode = RoundMode.PRACTICE,
+        )
+        try {
+            val started = viewModel.remainingMillis.value
+            val first = viewModel.state.value.chords.first()
+            val wrong = ChordQuality.entries.first { !isCorrect(first, it) }
+            viewModel.onAnswer(wrong)
+            assertFalse(viewModel.state.value.finished)
+            assertEquals(0, viewModel.state.value.score)
+            assertEquals(started, viewModel.remainingMillis.value)
+            assertNotEquals(first, viewModel.state.value.chords.first())
+            assertEquals(30, viewModel.guessesPerMinute.value)
+            advanceTimeBy(QUIZ_DURATION_SECONDS * 1000L)
+            runCurrent()
+            assertFalse(viewModel.state.value.finished)
+            assertEquals(0, viewModel.guessesPerMinute.value)
         } finally {
             viewModel.stop()
         }

@@ -18,7 +18,11 @@
     <string name="clef_sol_fa">Sol + Fa</string>
     <string name="lets_go">C\'est parti !</string>
     <string name="stop">Arrêter</string>
+    <string name="round_mode">Mode</string>
+    <string name="mode_normal">Normal</string>
+    <string name="mode_practice">Pratique</string>
     <string name="time_remaining">Temps restant</string>
+    <string name="guesses_per_minute">%d essais/min</string>
     <string name="bravo">Bravo !</string>
     <string name="your_score">ton score :</string>
     <plurals name="score_notes">

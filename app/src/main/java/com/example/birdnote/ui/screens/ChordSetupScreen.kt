@@ -37,6 +37,7 @@ import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.MAX_DIFFICULTY
 import com.example.birdnote.domain.MIN_DIFFICULTY
 import com.example.birdnote.domain.PracticeChord
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.domain.label
 import com.example.birdnote.domain.previewChords
 import com.example.birdnote.ui.LayoutTuning
@@ -49,7 +50,7 @@ import com.example.birdnote.ui.theme.Neutral
 
 @Composable
 fun ChordSetupScreen(
-    onStartClick: (difficulty: Int, clefMode: ClefMode) -> Unit,
+    onStartClick: (difficulty: Int, clefMode: ClefMode, roundMode: RoundMode) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -58,7 +59,9 @@ fun ChordSetupScreen(
     var difficulty by rememberSaveable { mutableIntStateOf(MIN_DIFFICULTY) }
     var clefModeName by rememberSaveable { mutableStateOf(ClefMode.SOL.name) }
     var clefMenuExpanded by rememberSaveable { mutableStateOf(false) }
+    var roundModeName by rememberSaveable { mutableStateOf(RoundMode.NORMAL.name) }
     val clefMode = ClefMode.valueOf(clefModeName)
+    val roundMode = RoundMode.valueOf(roundModeName)
     val config = ChordConfig(difficulty, clefMode)
     val preview = previewChords(config)
 
@@ -142,6 +145,10 @@ fun ChordSetupScreen(
                             }
                         }
                     }
+                    RoundModePicker(
+                        roundMode = roundMode,
+                        onRoundModeChange = { roundModeName = it.name },
+                    )
                 }
                 Card(
                     shape = RoundedCornerShape(tuning.previewCornerRadius),
@@ -185,7 +192,7 @@ fun ChordSetupScreen(
         }
         AppButton(
             text = stringResource(R.string.lets_go),
-            onClick = { onStartClick(difficulty, clefMode) },
+            onClick = { onStartClick(difficulty, clefMode, roundMode) },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = tuning.startButtonBottomMargin),

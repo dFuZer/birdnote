@@ -9,6 +9,7 @@ import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.PracticeChord
 import com.example.birdnote.domain.QUEUE_SIZE
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.domain.advanceChordQueue
 import com.example.birdnote.domain.generateChordQueue
 import com.example.birdnote.domain.isCorrect
@@ -35,10 +36,13 @@ class ChordQuizViewModel(
     private val config: ChordConfig,
     private val random: Random = Random.Default,
     durationSeconds: Int = QUIZ_DURATION_SECONDS,
+    private val roundMode: RoundMode = RoundMode.NORMAL,
 ) : ViewModel() {
 
     private val durationMillis = durationSeconds * 1000L
     private val penaltyMillis = MISTAKE_TIME_PENALTY_SECONDS * 1000L
+    private val practice = roundMode == RoundMode.PRACTICE
+    private val guessRate = GuessRateClock()
 
     private val _state = MutableStateFlow(
         ChordQuizUiState(
@@ -51,10 +55,13 @@ class ChordQuizViewModel(
     private val _remainingMillis = MutableStateFlow(durationMillis)
     val remainingMillis: StateFlow<Long> = _remainingMillis.asStateFlow()
 
+    private val _guessesPerMinute = MutableStateFlow(0)
+    val guessesPerMinute: StateFlow<Int> = _guessesPerMinute.asStateFlow()
+
     private var timerJob: Job? = null
 
     init {
-        startTimer()
+        if (practice) startPracticeClock() else startTimer()
     }
 
     fun onAnswer(answer: ChordQuality) {
@@ -62,13 +69,18 @@ class ChordQuizViewModel(
         if (current.finished || current.answersLocked || current.chords.isEmpty()) return
         val answered = current.chords.first()
         val correct = isCorrect(answered, answer)
-        val remaining = if (correct) {
-            _remainingMillis.value
+        val finished = if (practice) {
+            _guessesPerMinute.value = guessRate.recordGuess()
+            false
         } else {
-            (_remainingMillis.value - penaltyMillis).coerceAtLeast(0L)
+            val remaining = if (correct) {
+                _remainingMillis.value
+            } else {
+                (_remainingMillis.value - penaltyMillis).coerceAtLeast(0L)
+            }
+            _remainingMillis.value = remaining
+            remaining <= 0L
         }
-        _remainingMillis.value = remaining
-        val finished = remaining <= 0L
         _state.value = current.copy(
             chords = advanceChordQueue(current.chords, config, random),
             score = if (correct) current.score + 1 else current.score,
@@ -96,6 +108,16 @@ class ChordQuizViewModel(
         super.onCleared()
     }
 
+    private fun startPracticeClock() {
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(TIMER_TICK_MILLIS)
+                if (_state.value.finished) break
+                _guessesPerMinute.value = guessRate.advance(TIMER_TICK_MILLIS)
+            }
+        }
+    }
+
     private fun startTimer() {
         timerJob = viewModelScope.launch {
             while (true) {
@@ -118,11 +140,11 @@ class ChordQuizViewModel(
     }
 
     companion object {
-        fun factory(config: ChordConfig): ViewModelProvider.Factory =
+        fun factory(config: ChordConfig, roundMode: RoundMode): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return ChordQuizViewModel(config) as T
+                    return ChordQuizViewModel(config, roundMode = roundMode) as T
                 }
             }
     }

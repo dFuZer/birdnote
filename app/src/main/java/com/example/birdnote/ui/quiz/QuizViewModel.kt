@@ -8,6 +8,7 @@ import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.NoteName
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.domain.StaffNote
 import com.example.birdnote.domain.advanceQueue
 import com.example.birdnote.domain.generateQueue
@@ -52,10 +53,13 @@ class QuizViewModel(
     private val config: PracticeConfig,
     private val random: Random = Random.Default,
     durationSeconds: Int = QUIZ_DURATION_SECONDS,
+    private val roundMode: RoundMode = RoundMode.NORMAL,
 ) : ViewModel() {
 
     private val durationMillis = durationSeconds * 1000L
     private val penaltyMillis = MISTAKE_TIME_PENALTY_SECONDS * 1000L
+    private val practice = roundMode == RoundMode.PRACTICE
+    private val guessRate = GuessRateClock()
 
     private val _state = MutableStateFlow(
         QuizUiState(
@@ -68,10 +72,13 @@ class QuizViewModel(
     private val _remainingMillis = MutableStateFlow(durationMillis)
     val remainingMillis: StateFlow<Long> = _remainingMillis.asStateFlow()
 
+    private val _guessesPerMinute = MutableStateFlow(0)
+    val guessesPerMinute: StateFlow<Int> = _guessesPerMinute.asStateFlow()
+
     private var timerJob: Job? = null
 
     init {
-        startTimer()
+        if (practice) startPracticeClock() else startTimer()
     }
 
     fun onAnswer(answer: NoteName) {
@@ -79,13 +86,18 @@ class QuizViewModel(
         if (current.finished || current.answersLocked || current.notes.isEmpty()) return
         val answered = current.notes.first()
         val correct = isCorrect(answered, answer)
-        val remaining = if (correct) {
-            _remainingMillis.value
+        val finished = if (practice) {
+            _guessesPerMinute.value = guessRate.recordGuess()
+            false
         } else {
-            (_remainingMillis.value - penaltyMillis).coerceAtLeast(0L)
+            val remaining = if (correct) {
+                _remainingMillis.value
+            } else {
+                (_remainingMillis.value - penaltyMillis).coerceAtLeast(0L)
+            }
+            _remainingMillis.value = remaining
+            remaining <= 0L
         }
-        _remainingMillis.value = remaining
-        val finished = remaining <= 0L
         _state.value = current.copy(
             notes = advanceQueue(current.notes, config, random),
             score = if (correct) current.score + 1 else current.score,
@@ -111,6 +123,16 @@ class QuizViewModel(
         super.onCleared()
     }
 
+    private fun startPracticeClock() {
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(TIMER_TICK_MILLIS)
+                if (_state.value.finished) break
+                _guessesPerMinute.value = guessRate.advance(TIMER_TICK_MILLIS)
+            }
+        }
+    }
+
     private fun startTimer() {
         timerJob = viewModelScope.launch {
             while (true) {
@@ -133,11 +155,11 @@ class QuizViewModel(
     }
 
     companion object {
-        fun factory(config: PracticeConfig): ViewModelProvider.Factory =
+        fun factory(config: PracticeConfig, roundMode: RoundMode): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return QuizViewModel(config) as T
+                    return QuizViewModel(config, roundMode = roundMode) as T
                 }
             }
     }

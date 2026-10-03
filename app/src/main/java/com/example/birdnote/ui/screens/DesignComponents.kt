@@ -2,10 +2,14 @@ package com.example.birdnote.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -27,12 +31,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.birdnote.R
 import com.example.birdnote.domain.ClefMode
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.theme.DarkBlue
 import com.example.birdnote.ui.theme.DisabledGrey
@@ -217,6 +224,74 @@ fun DifficultyButton(
             textAlign = TextAlign.Center,
         )
     }
+}
+
+@Composable
+fun RoundModePicker(
+    roundMode: RoundMode,
+    onRoundModeChange: (RoundMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tuning = LayoutTuning.Setup
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(tuning.controlsGap),
+    ) {
+        Text(
+            text = stringResource(R.string.round_mode),
+            style = MaterialTheme.typography.titleMedium,
+            color = DarkBlue,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(tuning.difficultyGap),
+        ) {
+            RoundMode.entries.forEach { mode ->
+                RoundModeButton(
+                    text = mode.label(),
+                    selected = mode == roundMode,
+                    onClick = { onRoundModeChange(mode) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoundModeButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val commonTuning = LayoutTuning.Common
+    val tuning = LayoutTuning.Setup
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(commonTuning.buttonCornerRadius),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) Highlight else DarkBlue,
+            contentColor = Neutral,
+        ),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+        modifier = modifier
+            .semantics { this.selected = selected }
+            .height(tuning.difficultyButtonHeight),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+fun RoundMode.label(): String = when (this) {
+    RoundMode.NORMAL -> stringResource(R.string.mode_normal)
+    RoundMode.PRACTICE -> stringResource(R.string.mode_practice)
 }
 
 @Composable

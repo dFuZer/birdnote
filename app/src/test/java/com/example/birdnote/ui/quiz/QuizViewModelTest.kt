@@ -5,6 +5,7 @@ import com.example.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.example.birdnote.domain.NoteName
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.QUIZ_DURATION_SECONDS
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.domain.isCorrect
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -131,5 +132,50 @@ class QuizViewModelTest {
         val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL_FA), Random(3))
         viewModel.stop()
         assertTrue(viewModel.state.value.finished)
+    }
+
+    @Test
+    fun practiceMissDoesNotPenalizeAndCountsGuessesOverTwoSeconds() = runTest(testDispatcher) {
+        val viewModel = QuizViewModel(
+            PracticeConfig(1, ClefMode.SOL),
+            Random(1),
+            roundMode = RoundMode.PRACTICE,
+        )
+        try {
+            val started = viewModel.remainingMillis.value
+            val first = viewModel.state.value.notes.first()
+            val wrong = NoteName.entries.first { !isCorrect(first, it) }
+            viewModel.onAnswer(wrong)
+            assertFalse(viewModel.state.value.finished)
+            assertFalse(viewModel.state.value.answersLocked)
+            assertEquals(0, viewModel.state.value.score)
+            assertEquals(false, viewModel.state.value.answerFeedback?.correct)
+            assertEquals(started, viewModel.remainingMillis.value)
+            assertNotEquals(first, viewModel.state.value.notes.first())
+            assertEquals(30, viewModel.guessesPerMinute.value)
+
+            advanceTimeBy(1_000)
+            runCurrent()
+            val second = viewModel.state.value.notes.first()
+            viewModel.onAnswer(second.pitch.noteName)
+            assertEquals(1, viewModel.state.value.score)
+            assertEquals(60, viewModel.guessesPerMinute.value)
+            assertFalse(viewModel.state.value.finished)
+
+            advanceTimeBy(1_050)
+            runCurrent()
+            assertEquals(30, viewModel.guessesPerMinute.value)
+            assertFalse(viewModel.state.value.finished)
+
+            advanceTimeBy(QUIZ_DURATION_SECONDS * 1000L)
+            runCurrent()
+            assertFalse(viewModel.state.value.finished)
+            assertEquals(started, viewModel.remainingMillis.value)
+            assertEquals(0, viewModel.guessesPerMinute.value)
+            viewModel.stop()
+            assertTrue(viewModel.state.value.finished)
+        } finally {
+            viewModel.stop()
+        }
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,6 +27,7 @@ import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.IntervalConfig
 import com.example.birdnote.domain.MAX_DIFFICULTY
 import com.example.birdnote.domain.MIN_DIFFICULTY
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.domain.intervalPitchRange
 import com.example.birdnote.domain.previewIntervals
 import com.example.birdnote.ui.LayoutTuning
@@ -37,13 +39,15 @@ import com.example.birdnote.ui.theme.Neutral
 
 @Composable
 fun IntervalSetupScreen(
-    onStartClick: (difficulty: Int) -> Unit,
+    onStartClick: (difficulty: Int, roundMode: RoundMode) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Setup
     var difficulty by rememberSaveable { mutableIntStateOf(MIN_DIFFICULTY) }
+    var roundModeName by rememberSaveable { mutableStateOf(RoundMode.NORMAL.name) }
+    val roundMode = RoundMode.valueOf(roundModeName)
     val config = IntervalConfig(difficulty)
     val preview = StaffRenderModel(
         clefMode = ClefMode.SOL,
@@ -95,6 +99,10 @@ fun IntervalSetupScreen(
                             )
                         }
                     }
+                    RoundModePicker(
+                        roundMode = roundMode,
+                        onRoundModeChange = { roundModeName = it.name },
+                    )
                 }
                 Card(
                     shape = RoundedCornerShape(tuning.previewCornerRadius),
@@ -116,7 +124,7 @@ fun IntervalSetupScreen(
         }
         AppButton(
             text = stringResource(R.string.lets_go),
-            onClick = { onStartClick(difficulty) },
+            onClick = { onStartClick(difficulty, roundMode) },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = tuning.startButtonBottomMargin),

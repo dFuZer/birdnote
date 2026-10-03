@@ -49,6 +49,7 @@ import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.PracticeChord
 import com.example.birdnote.domain.PracticeConfig
 import com.example.birdnote.domain.QUEUE_SIZE
+import com.example.birdnote.domain.RoundMode
 import com.example.birdnote.domain.StaffInterval
 import com.example.birdnote.domain.StaffNote
 import com.example.birdnote.domain.chordQualitiesFor
@@ -70,10 +71,11 @@ import com.example.birdnote.ui.theme.Neutral
 @Composable
 fun QuizRoute(
     config: PracticeConfig,
+    roundMode: RoundMode,
     noteNaming: NoteNaming,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuizViewModel = viewModel(factory = QuizViewModel.factory(config)),
+    viewModel: QuizViewModel = viewModel(factory = QuizViewModel.factory(config, roundMode)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sounds = rememberQuizSounds()
@@ -91,8 +93,10 @@ fun QuizRoute(
     }
     QuizScreen(
         notes = state.notes,
+        roundMode = roundMode,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
+        guessesPerMinute = viewModel.guessesPerMinute,
         answersLocked = state.answersLocked,
         clefMode = config.clefMode,
         difficulty = config.difficulty,
@@ -106,8 +110,10 @@ fun QuizRoute(
 @Composable
 fun QuizScreen(
     notes: List<StaffNote>,
+    roundMode: RoundMode,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
+    guessesPerMinute: StateFlow<Int>,
     answersLocked: Boolean,
     clefMode: ClefMode,
     difficulty: Int,
@@ -129,8 +135,10 @@ fun QuizScreen(
             ),
     ) {
         QuizTopBar(
+            roundMode = roundMode,
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
+            guessesPerMinute = guessesPerMinute,
             onStop = onStop,
         )
         Spacer(Modifier.height(tuning.staffVerticalGap))
@@ -166,9 +174,10 @@ fun QuizScreen(
 @Composable
 fun IntervalQuizRoute(
     config: IntervalConfig,
+    roundMode: RoundMode,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: IntervalQuizViewModel = viewModel(factory = IntervalQuizViewModel.factory(config)),
+    viewModel: IntervalQuizViewModel = viewModel(factory = IntervalQuizViewModel.factory(config, roundMode)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sounds = rememberQuizSounds()
@@ -186,8 +195,10 @@ fun IntervalQuizRoute(
     }
     IntervalQuizScreen(
         intervals = state.intervals,
+        roundMode = roundMode,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
+        guessesPerMinute = viewModel.guessesPerMinute,
         answersLocked = state.answersLocked,
         difficulty = config.difficulty,
         onAnswer = viewModel::onAnswer,
@@ -199,8 +210,10 @@ fun IntervalQuizRoute(
 @Composable
 fun IntervalQuizScreen(
     intervals: List<StaffInterval>,
+    roundMode: RoundMode,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
+    guessesPerMinute: StateFlow<Int>,
     answersLocked: Boolean,
     difficulty: Int,
     onAnswer: (IntervalName) -> Unit,
@@ -220,8 +233,10 @@ fun IntervalQuizScreen(
             ),
     ) {
         QuizTopBar(
+            roundMode = roundMode,
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
+            guessesPerMinute = guessesPerMinute,
             onStop = onStop,
         )
         Spacer(Modifier.height(tuning.staffVerticalGap))
@@ -257,9 +272,10 @@ fun IntervalQuizScreen(
 @Composable
 fun ChordQuizRoute(
     config: ChordConfig,
+    roundMode: RoundMode,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ChordQuizViewModel = viewModel(factory = ChordQuizViewModel.factory(config)),
+    viewModel: ChordQuizViewModel = viewModel(factory = ChordQuizViewModel.factory(config, roundMode)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sounds = rememberQuizSounds()
@@ -277,8 +293,10 @@ fun ChordQuizRoute(
     }
     ChordQuizScreen(
         chords = state.chords,
+        roundMode = roundMode,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
+        guessesPerMinute = viewModel.guessesPerMinute,
         answersLocked = state.answersLocked,
         difficulty = config.difficulty,
         clefMode = config.clefMode,
@@ -291,8 +309,10 @@ fun ChordQuizRoute(
 @Composable
 fun ChordQuizScreen(
     chords: List<PracticeChord>,
+    roundMode: RoundMode,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
+    guessesPerMinute: StateFlow<Int>,
     answersLocked: Boolean,
     difficulty: Int,
     clefMode: ClefMode,
@@ -313,8 +333,10 @@ fun ChordQuizScreen(
             ),
     ) {
         QuizTopBar(
+            roundMode = roundMode,
             remainingMillis = remainingMillis,
             durationMillis = durationMillis,
+            guessesPerMinute = guessesPerMinute,
             onStop = onStop,
         )
         Spacer(Modifier.height(tuning.staffVerticalGap))
@@ -349,11 +371,12 @@ fun ChordQuizScreen(
 
 @Composable
 private fun QuizTopBar(
+    roundMode: RoundMode,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
+    guessesPerMinute: StateFlow<Int>,
     onStop: () -> Unit,
 ) {
-    val remaining by remainingMillis.collectAsStateWithLifecycle()
     val commonTuning = LayoutTuning.Common
     val tuning = LayoutTuning.Quiz
     Row(
@@ -377,27 +400,41 @@ private fun QuizTopBar(
                 style = MaterialTheme.typography.titleMedium,
             )
         }
-        val timeRemainingLabel = stringResource(R.string.time_remaining)
-        val remainingFraction = if (durationMillis <= 0L) {
-            0f
+        if (roundMode == RoundMode.PRACTICE) {
+            val rate by guessesPerMinute.collectAsStateWithLifecycle()
+            Text(
+                text = stringResource(R.string.guesses_per_minute, rate),
+                style = MaterialTheme.typography.titleMedium,
+                color = DarkBlue,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = tuning.progressBarGap),
+            )
         } else {
-            (remaining.toFloat() / durationMillis.toFloat()).coerceIn(0f, 1f)
-        }
-        Spacer(Modifier.width(tuning.progressBarGap))
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(tuning.progressBarHeight)
-                .clip(RoundedCornerShape(percent = 50))
-                .background(Neutral)
-                .semantics { contentDescription = timeRemainingLabel },
-        ) {
+            val remaining by remainingMillis.collectAsStateWithLifecycle()
+            val timeRemainingLabel = stringResource(R.string.time_remaining)
+            val remainingFraction = if (durationMillis <= 0L) {
+                0f
+            } else {
+                (remaining.toFloat() / durationMillis.toFloat()).coerceIn(0f, 1f)
+            }
+            Spacer(Modifier.width(tuning.progressBarGap))
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(remainingFraction)
-                    .background(DarkBlue),
-            )
+                    .weight(1f)
+                    .height(tuning.progressBarHeight)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(Neutral)
+                    .semantics { contentDescription = timeRemainingLabel },
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(remainingFraction)
+                        .background(DarkBlue),
+                )
+            }
         }
     }
 }
