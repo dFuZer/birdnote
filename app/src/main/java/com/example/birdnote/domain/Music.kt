@@ -21,8 +21,9 @@ enum class Clef {
     SOL, FA, ALTO, TENOR
 }
 
+/** Menu and score-row order: Sol, Fa, Sol + Fa, then Alto and Tenor. */
 enum class ClefMode {
-    SOL, FA, ALTO, TENOR, SOL_FA
+    SOL, FA, SOL_FA, ALTO, TENOR
 }
 
 enum class Accidental {

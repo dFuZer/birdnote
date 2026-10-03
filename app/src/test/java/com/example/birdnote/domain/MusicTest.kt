@@ -51,7 +51,10 @@ class MusicTest {
         assertEquals(listOf(ClefMode.SOL), clefModesFor(setOf(Clef.SOL)))
         assertEquals(listOf(ClefMode.ALTO, ClefMode.TENOR), clefModesFor(setOf(Clef.ALTO, Clef.TENOR)))
         assertFalse(ClefMode.SOL_FA in clefModesFor(setOf(Clef.SOL, Clef.ALTO)))
-        assertEquals(ClefMode.entries.toList(), clefModesFor(Clef.entries.toSet()))
+        assertEquals(
+            listOf(ClefMode.SOL, ClefMode.FA, ClefMode.SOL_FA, ClefMode.ALTO, ClefMode.TENOR),
+            clefModesFor(Clef.entries.toSet()),
+        )
     }
 
     @Test
