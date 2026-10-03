@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">BirdNote</string>
+    <string name="train">Berlatih</string>
+    <string name="my_scores">Skor saya</string>
+    <string name="settings">Pengaturan</string>
+    <string name="language">Bahasa</string>
+    <string name="note_names">Nama nada</string>
+    <string name="training_title">Latihan apa?</string>
+    <string name="notes">Nada</string>
+    <string name="intervals">Interval</string>
+    <string name="chords">Akor</string>
+    <string name="back">Kembali</string>
+    <string name="score_best">Terbaik</string>
+    <string name="score_empty">—</string>
+    <string name="difficulty">Kesulitan</string>
+    <string name="clef">Kunci</string>
+    <string name="clef_sol">Sol</string>
+    <string name="clef_fa">Fa</string>
+    <string name="clef_sol_fa">Sol + Fa</string>
+    <string name="lets_go">Mulai!</string>
+    <string name="stop">Berhenti</string>
+    <string name="time_remaining">Sisa waktu</string>
+    <string name="bravo">Hebat!</string>
+    <string name="your_score">skormu:</string>
+    <string name="restart">Ulangi</string>
+    <plurals name="score_notes">
+        <item quantity="other">%d nada</item>
+    </plurals>
+    <plurals name="score_intervals">
+        <item quantity="other">%d interval</item>
+    </plurals>
+    <plurals name="score_chords">
+        <item quantity="other">%d akor</item>
+    </plurals>
+    <string name="menu">Menu</string>
+    <string name="interval_second">Sekonde</string>
+    <string name="interval_third">Terts</string>
+    <string name="interval_fourth">Kuart</string>
+    <string name="interval_fifth">Kuint</string>
+    <string name="interval_sixth">Sekst</string>
+    <string name="interval_seventh">Septim</string>
+    <string name="interval_octave">Oktaf</string>
+    <string name="interval_ninth">Nona</string>
+    <string name="chord_major">Mayor</string>
+    <string name="chord_minor">Minor</string>
+    <string name="chord_augmented">Augmented</string>
+    <string name="chord_diminished">Diminished</string>
+    <string name="chord_dominant_7">Dominan 7</string>
+    <string name="chord_major_7">Mayor 7</string>
+    <string name="chord_minor_7">Minor 7</string>
+    <string name="chord_half_diminished_7">Setengah diminished</string>
+    <string name="chord_diminished_7">Diminished 7</string>
+</resources>

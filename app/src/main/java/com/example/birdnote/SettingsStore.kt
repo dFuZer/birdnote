@@ -1,7 +1,9 @@
 package com.example.birdnote
 
 import android.content.Context
+import com.example.birdnote.domain.AppLanguage
 import com.example.birdnote.domain.NoteNaming
+import com.example.birdnote.domain.resolveAppLanguage
 import com.example.birdnote.domain.storedNoteNaming
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,10 +20,19 @@ class SettingsStore(context: Context) {
         storedNoteNaming(prefs.getString(KEY_NOTE_NAMING, null)),
     )
     val noteNaming: StateFlow<NoteNaming> = _noteNaming.asStateFlow()
+    private val _appLanguage = MutableStateFlow(
+        resolveAppLanguage(prefs.getString(KEY_APP_LANGUAGE, null), systemDeviceLocale()),
+    )
+    val appLanguage: StateFlow<AppLanguage> = _appLanguage.asStateFlow()
 
     fun setNoteNaming(naming: NoteNaming) {
         prefs.edit().putString(KEY_NOTE_NAMING, naming.name).apply()
         _noteNaming.value = naming
+    }
+
+    fun setAppLanguage(language: AppLanguage) {
+        prefs.edit().putString(KEY_APP_LANGUAGE, language.tag).apply()
+        _appLanguage.value = language
     }
 
     private companion object {

@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.birdnote.R
 import com.example.birdnote.ScoreStore
+import com.example.birdnote.domain.AppLanguage
 import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.ClefMode
 import com.example.birdnote.domain.IntervalConfig
@@ -67,6 +68,8 @@ fun BirdNoteNavHost(
     navController: NavHostController,
     noteNaming: NoteNaming,
     onNoteNamingChange: (NoteNaming) -> Unit,
+    appLanguage: AppLanguage,
+    onAppLanguageChange: (AppLanguage) -> Unit,
     scoreStore: ScoreStore,
     modifier: Modifier = Modifier,
 ) {
@@ -93,6 +96,8 @@ fun BirdNoteNavHost(
             SettingsScreen(
                 noteNaming = noteNaming,
                 onNoteNamingChange = onNoteNamingChange,
+                appLanguage = appLanguage,
+                onAppLanguageChange = onAppLanguageChange,
                 onBackClick = { navController.popBackStack() },
             )
         }
