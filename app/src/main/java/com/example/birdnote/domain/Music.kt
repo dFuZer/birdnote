@@ -209,31 +209,8 @@ fun spellChord(root: Pitch, quality: ChordQuality, clef: Clef): PracticeChord? {
     return PracticeChord(root, quality, clef, notes)
 }
 
-fun ChordQuality.label(): String = when (this) {
-    ChordQuality.MAJOR -> "Majeur"
-    ChordQuality.MINOR -> "Mineur"
-    ChordQuality.AUGMENTED -> "Augmenté"
-    ChordQuality.DIMINISHED -> "Diminué"
-    ChordQuality.DOMINANT_7 -> "7e de dominante"
-    ChordQuality.MAJOR_7 -> "7e majeure"
-    ChordQuality.MINOR_7 -> "7e mineure"
-    ChordQuality.HALF_DIMINISHED_7 -> "7e demi-diminuée"
-    ChordQuality.DIMINISHED_7 -> "7e diminuée"
-}
-
 val IntervalName.diatonicDistance: Int
     get() = ordinal + 1
-
-fun IntervalName.label(): String = when (this) {
-    IntervalName.SECONDE -> "Seconde"
-    IntervalName.TIERCE -> "Tierce"
-    IntervalName.QUARTE -> "Quarte"
-    IntervalName.QUINTE -> "Quinte"
-    IntervalName.SIXTE -> "Sixte"
-    IntervalName.SEPTIEME -> "Septième"
-    IntervalName.OCTAVE -> "Octave"
-    IntervalName.NEUVIEME -> "Neuvième"
-}
 
 fun storedNoteNaming(value: String?): NoteNaming =
     NoteNaming.entries.firstOrNull { it.name == value } ?: NoteNaming.SOLFEGE

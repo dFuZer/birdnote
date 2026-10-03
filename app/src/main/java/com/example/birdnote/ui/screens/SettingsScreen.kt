@@ -3,6 +3,7 @@ package com.example.birdnote.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.birdnote.R
+import com.example.birdnote.domain.AppLanguage
 import com.example.birdnote.domain.NoteNaming
 import com.example.birdnote.domain.scalePreview
 import com.example.birdnote.ui.LayoutTuning
@@ -27,11 +29,12 @@ import com.example.birdnote.ui.theme.DarkBlue
 fun SettingsScreen(
     noteNaming: NoteNaming,
     onNoteNamingChange: (NoteNaming) -> Unit,
+    appLanguage: AppLanguage,
+    onAppLanguageChange: (AppLanguage) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tuning = LayoutTuning.Common
-    var menuExpanded by rememberSaveable { mutableStateOf(false) }
     DecoratedScreen(modifier = modifier) {
         BackButton(
             label = stringResource(R.string.back),
@@ -56,40 +59,68 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = tuning.titleBottomSpacing),
             )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(tuning.menuButtonGap),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(tuning.menuButtonGap * 6),
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = stringResource(R.string.note_names),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = DarkBlue,
+                ChoiceMenu(
+                    label = stringResource(R.string.language),
+                    selected = appLanguage.label(),
+                    options = AppLanguage.entries.map { it.label() },
+                    onSelect = { onAppLanguageChange(AppLanguage.entries[it]) },
                 )
-                Box {
-                    AppButton(
-                        text = noteNaming.scalePreview(),
-                        onClick = { menuExpanded = true },
-                        textStyle = MaterialTheme.typography.titleMedium,
-                    )
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                    ) {
-                        NoteNaming.entries.forEach { naming ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = naming.scalePreview(),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                    )
-                                },
-                                onClick = {
-                                    onNoteNamingChange(naming)
-                                    menuExpanded = false
-                                },
+                ChoiceMenu(
+                    label = stringResource(R.string.note_names),
+                    selected = noteNaming.scalePreview(),
+                    options = NoteNaming.entries.map { it.scalePreview() },
+                    onSelect = { onNoteNamingChange(NoteNaming.entries[it]) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChoiceMenu(
+    label: String,
+    selected: String,
+    options: List<String>,
+    onSelect: (Int) -> Unit,
+) {
+    val tuning = LayoutTuning.Common
+    var menuExpanded by rememberSaveable { mutableStateOf(false) }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(tuning.menuButtonGap),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            color = DarkBlue,
+        )
+        Box {
+            AppButton(
+                text = selected,
+                onClick = { menuExpanded = true },
+                textStyle = MaterialTheme.typography.titleMedium,
+            )
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+            ) {
+                options.forEachIndexed { index, option ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = option,
+                                style = MaterialTheme.typography.bodyLarge,
                             )
-                        }
-                    }
+                        },
+                        onClick = {
+                            onSelect(index)
+                            menuExpanded = false
+                        },
+                    )
                 }
             }
         }

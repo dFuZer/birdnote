@@ -37,7 +37,6 @@ import com.example.birdnote.domain.ChordConfig
 import com.example.birdnote.domain.MAX_DIFFICULTY
 import com.example.birdnote.domain.MIN_DIFFICULTY
 import com.example.birdnote.domain.PracticeChord
-import com.example.birdnote.domain.label
 import com.example.birdnote.domain.previewChords
 import com.example.birdnote.ui.LayoutTuning
 import com.example.birdnote.ui.staff.StaffCanvas

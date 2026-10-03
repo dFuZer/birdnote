@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">BirdNote</string>
+    <string name="train">Üben</string>
+    <string name="my_scores">Meine Ergebnisse</string>
+    <string name="settings">Einstellungen</string>
+    <string name="language">Sprache</string>
+    <string name="note_names">Notennamen</string>
+    <string name="training_title">Was üben wir?</string>
+    <string name="notes">Noten</string>
+    <string name="intervals">Intervalle</string>
+    <string name="chords">Akkorde</string>
+    <string name="back">Zurück</string>
+    <string name="score_best">Bester</string>
+    <string name="score_empty">—</string>
+    <string name="difficulty">Schwierigkeit</string>
+    <string name="clef">Schlüssel</string>
+    <string name="clef_sol">Violin</string>
+    <string name="clef_fa">Bass</string>
+    <string name="clef_sol_fa">Violin + Bass</string>
+    <string name="lets_go">Los geht\'s!</string>
+    <string name="stop">Stopp</string>
+    <string name="time_remaining">Verbleibende Zeit</string>
+    <string name="bravo">Bravo!</string>
+    <string name="your_score">dein Ergebnis:</string>
+    <string name="restart">Nochmal</string>
+    <plurals name="score_notes">
+        <item quantity="one">%d Note</item>
+        <item quantity="other">%d Noten</item>
+    </plurals>
+    <plurals name="score_intervals">
+        <item quantity="one">%d Intervall</item>
+        <item quantity="other">%d Intervalle</item>
+    </plurals>
+    <plurals name="score_chords">
+        <item quantity="one">%d Akkord</item>
+        <item quantity="other">%d Akkorde</item>
+    </plurals>
+    <string name="menu">Menü</string>
+    <string name="interval_second">Sekunde</string>
+    <string name="interval_third">Terz</string>
+    <string name="interval_fourth">Quarte</string>
+    <string name="interval_fifth">Quinte</string>
+    <string name="interval_sixth">Sexte</string>
+    <string name="interval_seventh">Septime</string>
+    <string name="interval_octave">Oktave</string>
+    <string name="interval_ninth">None</string>
+    <string name="chord_major">Dur</string>
+    <string name="chord_minor">Moll</string>
+    <string name="chord_augmented">Übermäßig</string>
+    <string name="chord_diminished">Vermindert</string>
+    <string name="chord_dominant_7">Dominantsept</string>
+    <string name="chord_major_7">Majorsept</string>
+    <string name="chord_minor_7">Mollsept</string>
+    <string name="chord_half_diminished_7">Halbvermindert</string>
+    <string name="chord_diminished_7">Verminderter Sept</string>
+</resources>

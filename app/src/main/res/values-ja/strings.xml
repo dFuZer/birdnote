@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">BirdNote</string>
+    <string name="train">練習</string>
+    <string name="my_scores">スコア</string>
+    <string name="settings">設定</string>
+    <string name="language">言語</string>
+    <string name="note_names">音名</string>
+    <string name="training_title">何を練習する？</string>
+    <string name="notes">音符</string>
+    <string name="intervals">音程</string>
+    <string name="chords">和音</string>
+    <string name="back">戻る</string>
+    <string name="score_best">自己ベスト</string>
+    <string name="score_empty">—</string>
+    <string name="difficulty">難易度</string>
+    <string name="clef">音部記号</string>
+    <string name="clef_sol">ト音</string>
+    <string name="clef_fa">ヘ音</string>
+    <string name="clef_sol_fa">ト音＋ヘ音</string>
+    <string name="lets_go">スタート！</string>
+    <string name="stop">停止</string>
+    <string name="time_remaining">残り時間</string>
+    <string name="bravo">よくできました！</string>
+    <string name="your_score">スコア：</string>
+    <string name="restart">もう一度</string>
+    <plurals name="score_notes">
+        <item quantity="other">%d音符</item>
+    </plurals>
+    <plurals name="score_intervals">
+        <item quantity="other">%d音程</item>
+    </plurals>
+    <plurals name="score_chords">
+        <item quantity="other">%d和音</item>
+    </plurals>
+    <string name="menu">メニュー</string>
+    <string name="interval_second">二度</string>
+    <string name="interval_third">三度</string>
+    <string name="interval_fourth">四度</string>
+    <string name="interval_fifth">五度</string>
+    <string name="interval_sixth">六度</string>
+    <string name="interval_seventh">七度</string>
+    <string name="interval_octave">八度</string>
+    <string name="interval_ninth">九度</string>
+    <string name="chord_major">長三和音</string>
+    <string name="chord_minor">短三和音</string>
+    <string name="chord_augmented">増三和音</string>
+    <string name="chord_diminished">減三和音</string>
+    <string name="chord_dominant_7">属七の和音</string>
+    <string name="chord_major_7">長七の和音</string>
+    <string name="chord_minor_7">短七の和音</string>
+    <string name="chord_half_diminished_7">半減七の和音</string>
+    <string name="chord_diminished_7">減七の和音</string>
+</resources>
