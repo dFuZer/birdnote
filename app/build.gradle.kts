@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.birdnote"
+        applicationId = "com.dfuzer.birdnote"
         minSdk = 26
         targetSdk = 37
         versionCode = 1
