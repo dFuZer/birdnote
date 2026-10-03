@@ -15,6 +15,11 @@ enum class NoteNaming {
     ENGLISH,
     GERMAN,
     SOLFEGE_TI,
+    PORTUGUESE,
+    JAPANESE,
+    TURKISH,
+    RUSSIAN,
+    ARABIC,
 }
 
 enum class Clef {
@@ -254,46 +259,37 @@ fun spellChord(root: Pitch, quality: ChordQuality, clef: Clef): PracticeChord? {
 val IntervalName.diatonicDistance: Int
     get() = ordinal + 1
 
-fun storedNoteNaming(value: String?): NoteNaming =
-    NoteNaming.entries.firstOrNull { it.name == value } ?: NoteNaming.SOLFEGE
+/** A saved scheme wins. With nothing saved, names follow [language]. */
+fun storedNoteNaming(value: String?, language: AppLanguage): NoteNaming =
+    NoteNaming.entries.firstOrNull { it.name == value } ?: language.defaultNoteNaming()
 
-fun NoteName.label(naming: NoteNaming): String = when (naming) {
-    NoteNaming.SOLFEGE -> when (this) {
-        NoteName.DO -> "Do"
-        NoteName.RE -> "Ré"
-        NoteName.MI -> "Mi"
-        NoteName.FA -> "Fa"
-        NoteName.SOL -> "Sol"
-        NoteName.LA -> "La"
-        NoteName.SI -> "Si"
-    }
-    NoteNaming.ENGLISH -> when (this) {
-        NoteName.DO -> "C"
-        NoteName.RE -> "D"
-        NoteName.MI -> "E"
-        NoteName.FA -> "F"
-        NoteName.SOL -> "G"
-        NoteName.LA -> "A"
-        NoteName.SI -> "B"
-    }
-    NoteNaming.GERMAN -> when (this) {
-        NoteName.DO -> "C"
-        NoteName.RE -> "D"
-        NoteName.MI -> "E"
-        NoteName.FA -> "F"
-        NoteName.SOL -> "G"
-        NoteName.LA -> "A"
-        NoteName.SI -> "H"
-    }
-    NoteNaming.SOLFEGE_TI -> when (this) {
-        NoteName.DO -> "Do"
-        NoteName.RE -> "Re"
-        NoteName.MI -> "Mi"
-        NoteName.FA -> "Fa"
-        NoteName.SOL -> "Sol"
-        NoteName.LA -> "La"
-        NoteName.SI -> "Ti"
-    }
+fun AppLanguage.defaultNoteNaming(): NoteNaming = when (this) {
+    AppLanguage.FRENCH,
+    AppLanguage.ITALIAN,
+    AppLanguage.SPANISH_LATIN_AMERICA,
+    AppLanguage.INDONESIAN -> NoteNaming.SOLFEGE
+    AppLanguage.PORTUGUESE_BRAZIL -> NoteNaming.PORTUGUESE
+    AppLanguage.ENGLISH,
+    AppLanguage.HINDI -> NoteNaming.ENGLISH
+    AppLanguage.GERMAN -> NoteNaming.GERMAN
+    AppLanguage.JAPANESE -> NoteNaming.JAPANESE
+    AppLanguage.TURKISH -> NoteNaming.TURKISH
+    AppLanguage.RUSSIAN -> NoteNaming.RUSSIAN
+    AppLanguage.ARABIC -> NoteNaming.ARABIC
+}
+
+fun NoteName.label(naming: NoteNaming): String = naming.labels()[ordinal]
+
+private fun NoteNaming.labels(): List<String> = when (this) {
+    NoteNaming.SOLFEGE -> listOf("Do", "Ré", "Mi", "Fa", "Sol", "La", "Si")
+    NoteNaming.ENGLISH -> listOf("C", "D", "E", "F", "G", "A", "B")
+    NoteNaming.GERMAN -> listOf("C", "D", "E", "F", "G", "A", "H")
+    NoteNaming.SOLFEGE_TI -> listOf("Do", "Re", "Mi", "Fa", "Sol", "La", "Ti")
+    NoteNaming.PORTUGUESE -> listOf("Dó", "Ré", "Mi", "Fá", "Sol", "Lá", "Si")
+    NoteNaming.JAPANESE -> listOf("ド", "レ", "ミ", "ファ", "ソ", "ラ", "シ")
+    NoteNaming.TURKISH -> listOf("Do", "Re", "Mi", "Fa", "Sol", "La", "Si")
+    NoteNaming.RUSSIAN -> listOf("до", "ре", "ми", "фа", "соль", "ля", "си")
+    NoteNaming.ARABIC -> listOf("دو", "ري", "مي", "فا", "صول", "لا", "سي")
 }
 
 fun NoteNaming.scalePreview(): String =

@@ -11,7 +11,9 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.dfuzer.birdnote.domain.NoteName
 import com.dfuzer.birdnote.domain.NoteNaming
+import com.dfuzer.birdnote.domain.defaultNoteNaming
 import com.dfuzer.birdnote.domain.label
+import com.dfuzer.birdnote.domain.resolveAppLanguage
 import com.dfuzer.birdnote.domain.scalePreview
 import org.junit.Rule
 import org.junit.Test
@@ -60,8 +62,9 @@ class AppFlowTest {
                 .isNotEmpty()
         }
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.stop)).assertIsDisplayed()
-        composeRule.onNodeWithText(NoteName.DO.label(NoteNaming.SOLFEGE)).assertIsDisplayed()
-        composeRule.onNodeWithText(NoteName.SI.label(NoteNaming.SOLFEGE)).assertIsDisplayed()
+        val naming = unsetNoteNaming()
+        composeRule.onNodeWithText(NoteName.DO.label(naming)).assertIsDisplayed()
+        composeRule.onNodeWithText(NoteName.SI.label(naming)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.stop)).performClick()
 
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.bravo)).assertIsDisplayed()
@@ -122,8 +125,7 @@ class AppFlowTest {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.settings)).performClick()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.note_names))
             .assertIsDisplayed()
-        composeRule.onNodeWithText(NoteNaming.SOLFEGE.scalePreview()).performClick()
-        composeRule.onNodeWithText(NoteNaming.ENGLISH.scalePreview()).performClick()
+        chooseEnglishNoteNames()
         composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.back))
             .performClick()
 
@@ -180,5 +182,19 @@ class AppFlowTest {
     private fun continueFromClefChoice() {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.continue_action))
             .performClick()
+    }
+
+    private fun unsetNoteNaming(): NoteNaming =
+        resolveAppLanguage(null, systemDeviceLocale()).defaultNoteNaming()
+
+    private fun chooseEnglishNoteNames() {
+        val current = unsetNoteNaming()
+        if (current == NoteNaming.ENGLISH) {
+            composeRule.onNodeWithText(NoteNaming.ENGLISH.scalePreview()).performClick()
+            composeRule.onNodeWithText(NoteNaming.SOLFEGE.scalePreview()).performClick()
+        }
+        val shown = if (current == NoteNaming.ENGLISH) NoteNaming.SOLFEGE else current
+        composeRule.onNodeWithText(shown.scalePreview()).performClick()
+        composeRule.onNodeWithText(NoteNaming.ENGLISH.scalePreview()).performClick()
     }
 }

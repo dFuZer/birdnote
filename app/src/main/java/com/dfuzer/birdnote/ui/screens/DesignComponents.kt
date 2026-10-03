@@ -19,6 +19,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -32,7 +36,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.dfuzer.birdnote.R
 import com.dfuzer.birdnote.domain.Clef
@@ -134,12 +141,7 @@ fun AppButton(
             .widthIn(min = tuning.buttonMinWidth, max = tuning.buttonMaxWidth)
             .height(tuning.buttonHeight),
     ) {
-        Text(
-            text = text,
-            style = textStyle,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-        )
+        FittedText(text = text, style = textStyle)
     }
 }
 
@@ -270,13 +272,34 @@ private fun ClefToggle(
             .semantics { this.selected = selected }
             .size(width = tuning.toggleWidth, height = tuning.toggleHeight),
     ) {
-        Text(
+        FittedText(
             text = text,
             style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
         )
     }
+}
+
+@Composable
+private fun FittedText(
+    text: String,
+    style: TextStyle,
+    minFontSize: TextUnit = 13.sp,
+) {
+    var fontSize by remember(text, style.fontSize) { mutableStateOf(style.fontSize) }
+    Text(
+        text = text,
+        style = style.copy(fontSize = fontSize),
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { layout ->
+            if (layout.hasVisualOverflow && fontSize > minFontSize) {
+                val next = fontSize * 0.9f
+                fontSize = if (next < minFontSize) minFontSize else next
+            }
+        },
+    )
 }
 
 @Composable

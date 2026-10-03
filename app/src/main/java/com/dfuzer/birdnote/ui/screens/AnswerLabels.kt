@@ -52,4 +52,8 @@ private fun AppLanguage.labelRes(): Int = when (this) {
     AppLanguage.ITALIAN -> R.string.language_name_it
     AppLanguage.JAPANESE -> R.string.language_name_ja
     AppLanguage.FRENCH -> R.string.language_name_fr
+    AppLanguage.ARABIC -> R.string.language_name_ar
+    AppLanguage.HINDI -> R.string.language_name_hi
+    AppLanguage.RUSSIAN -> R.string.language_name_ru
+    AppLanguage.TURKISH -> R.string.language_name_tr
 }

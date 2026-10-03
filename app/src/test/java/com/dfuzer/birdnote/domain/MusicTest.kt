@@ -152,13 +152,33 @@ class MusicTest {
         assertEquals("Ti", NoteName.SI.label(NoteNaming.SOLFEGE_TI))
         assertEquals("Re", NoteName.RE.label(NoteNaming.SOLFEGE_TI))
         assertEquals("Ré", NoteName.RE.label(NoteNaming.SOLFEGE))
+        assertEquals("Dó Ré Mi Fá Sol Lá Si", NoteNaming.PORTUGUESE.scalePreview())
+        assertEquals("ド レ ミ ファ ソ ラ シ", NoteNaming.JAPANESE.scalePreview())
+        assertEquals("Do Re Mi Fa Sol La Si", NoteNaming.TURKISH.scalePreview())
+        assertEquals("до ре ми фа соль ля си", NoteNaming.RUSSIAN.scalePreview())
+        assertEquals("دو ري مي فا صول لا سي", NoteNaming.ARABIC.scalePreview())
     }
 
     @Test
-    fun storedNoteNamingFallsBackToSolfege() {
-        assertEquals(NoteNaming.ENGLISH, storedNoteNaming("ENGLISH"))
-        assertEquals(NoteNaming.SOLFEGE, storedNoteNaming(null))
-        assertEquals(NoteNaming.SOLFEGE, storedNoteNaming("unknown"))
+    fun unsetNoteNamingFollowsTheAppLanguage() {
+        assertEquals(NoteNaming.SOLFEGE, storedNoteNaming(null, AppLanguage.FRENCH))
+        assertEquals(NoteNaming.SOLFEGE, storedNoteNaming(null, AppLanguage.ITALIAN))
+        assertEquals(NoteNaming.SOLFEGE, storedNoteNaming(null, AppLanguage.SPANISH_LATIN_AMERICA))
+        assertEquals(NoteNaming.SOLFEGE, storedNoteNaming(null, AppLanguage.INDONESIAN))
+        assertEquals(NoteNaming.PORTUGUESE, storedNoteNaming(null, AppLanguage.PORTUGUESE_BRAZIL))
+        assertEquals(NoteNaming.ENGLISH, storedNoteNaming(null, AppLanguage.ENGLISH))
+        assertEquals(NoteNaming.ENGLISH, storedNoteNaming(null, AppLanguage.HINDI))
+        assertEquals(NoteNaming.GERMAN, storedNoteNaming(null, AppLanguage.GERMAN))
+        assertEquals(NoteNaming.JAPANESE, storedNoteNaming(null, AppLanguage.JAPANESE))
+        assertEquals(NoteNaming.TURKISH, storedNoteNaming(null, AppLanguage.TURKISH))
+        assertEquals(NoteNaming.RUSSIAN, storedNoteNaming(null, AppLanguage.RUSSIAN))
+        assertEquals(NoteNaming.ARABIC, storedNoteNaming(null, AppLanguage.ARABIC))
+        assertEquals(NoteNaming.ENGLISH, storedNoteNaming("ENGLISH", AppLanguage.FRENCH))
+        assertEquals(NoteNaming.SOLFEGE, storedNoteNaming("SOLFEGE", AppLanguage.ENGLISH))
+        assertEquals(NoteNaming.GERMAN, storedNoteNaming("unknown", AppLanguage.GERMAN))
+        AppLanguage.entries.forEach { language ->
+            assertEquals(7, language.defaultNoteNaming().scalePreview().split(" ").size)
+        }
     }
 
     @Test

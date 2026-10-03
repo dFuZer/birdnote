@@ -12,8 +12,12 @@
     <string name="language_name_it">Italiano</string>
     <string name="language_name_ja">日本語</string>
     <string name="language_name_fr">Français</string>
+    <string name="language_name_ar">العربية</string>
+    <string name="language_name_hi">हिन्दी</string>
+    <string name="language_name_ru">Русский</string>
+    <string name="language_name_tr">Türkçe</string>
     <string name="note_names">Nom des notes</string>
-    <string name="training_title">On fait quoi ?</string>
+    <string name="training_title">Que fait-on ?</string>
     <string name="notes">Notes</string>
     <string name="intervals">Intervalles</string>
     <string name="chords">Accords</string>

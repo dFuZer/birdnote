@@ -25,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,11 +38,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.StateFlow
@@ -478,25 +481,28 @@ private fun AnswerRow(
     val tuning = LayoutTuning.Quiz
     var tapped by remember { mutableStateOf<NoteName?>(null) }
     val shaken = rememberShakenButton(answerFeedback, tapped)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        NoteName.entries.forEach { name ->
-            QuizAnswerButton(
-                text = name.label(noteNaming),
-                textStyle = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                answersLocked = answersLocked,
-                shakeToken = shakeToken(shaken, name),
-                onClick = {
-                    tapped = name
-                    onAnswer(name)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = tuning.answerHorizontalMargin)
-                    .height(tuning.answerButtonHeight),
-            )
+    // Do stays on the left when the rest of the screen is right-to-left.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            NoteName.entries.forEach { name ->
+                QuizAnswerButton(
+                    text = name.label(noteNaming),
+                    textStyle = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    answersLocked = answersLocked,
+                    shakeToken = shakeToken(shaken, name),
+                    onClick = {
+                        tapped = name
+                        onAnswer(name)
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = tuning.answerHorizontalMargin)
+                        .height(tuning.answerButtonHeight),
+                )
+            }
         }
     }
 }

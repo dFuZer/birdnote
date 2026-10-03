@@ -26,6 +26,7 @@
     <string name="lets_go">Vamos lá!</string>
     <string name="stop">Parar</string>
     <string name="time_remaining">Tempo restante</string>
+    <string name="quiz_score">Pontuação %1$d</string>
     <string name="bravo">Bravo!</string>
     <string name="your_score">sua pontuação:</string>
     <string name="result_above_best">+%d em relação ao seu recorde</string>

@@ -24,14 +24,14 @@ class SettingsStore(context: Context) {
         SETTINGS_PREFS_NAME,
         Context.MODE_PRIVATE,
     )
-    private val _noteNaming = MutableStateFlow(
-        storedNoteNaming(prefs.getString(KEY_NOTE_NAMING, null)),
-    )
-    val noteNaming: StateFlow<NoteNaming> = _noteNaming.asStateFlow()
     private val _appLanguage = MutableStateFlow(
         resolveAppLanguage(prefs.getString(KEY_APP_LANGUAGE, null), systemDeviceLocale()),
     )
     val appLanguage: StateFlow<AppLanguage> = _appLanguage.asStateFlow()
+    private val _noteNaming = MutableStateFlow(
+        storedNoteNaming(prefs.getString(KEY_NOTE_NAMING, null), _appLanguage.value),
+    )
+    val noteNaming: StateFlow<NoteNaming> = _noteNaming.asStateFlow()
     private val _preferredClefs = MutableStateFlow(
         storedPreferredClefs(prefs.getString(KEY_PREFERRED_CLEFS, null)),
     )
@@ -69,6 +69,7 @@ class SettingsStore(context: Context) {
     fun setAppLanguage(language: AppLanguage) {
         prefs.edit().putString(KEY_APP_LANGUAGE, language.tag).apply()
         _appLanguage.value = language
+        _noteNaming.value = storedNoteNaming(prefs.getString(KEY_NOTE_NAMING, null), language)
     }
 
     fun togglePreferredClef(clef: Clef) {

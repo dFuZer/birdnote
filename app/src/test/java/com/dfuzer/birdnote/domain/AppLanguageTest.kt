@@ -19,12 +19,20 @@ class AppLanguageTest {
             AppLanguage.SPANISH_LATIN_AMERICA,
             resolveAppLanguage("es-419", DeviceLocale("fr", "FR")),
         )
+        assertEquals(
+            AppLanguage.ARABIC,
+            resolveAppLanguage("ar", DeviceLocale("en", "US")),
+        )
     }
 
     @Test
     fun savedChoiceMatchesTagsIgnoringCase() {
         assertEquals(AppLanguage.PORTUGUESE_BRAZIL, storedAppLanguage("pt-br"))
         assertEquals(AppLanguage.ENGLISH, storedAppLanguage("EN"))
+        assertEquals(AppLanguage.ARABIC, storedAppLanguage("AR"))
+        assertEquals(AppLanguage.HINDI, storedAppLanguage("hi"))
+        assertEquals(AppLanguage.RUSSIAN, storedAppLanguage("ru"))
+        assertEquals(AppLanguage.TURKISH, storedAppLanguage("tr"))
         assertNull(storedAppLanguage(null))
         assertNull(storedAppLanguage(""))
         assertNull(storedAppLanguage("sv"))
@@ -57,6 +65,13 @@ class AppLanguageTest {
             AppLanguage.PORTUGUESE_BRAZIL,
             resolveAppLanguage(null, DeviceLocale("pt", "BR")),
         )
+        assertEquals(AppLanguage.ARABIC, resolveAppLanguage(null, DeviceLocale("ar", "SA")))
+        assertEquals(AppLanguage.ARABIC, resolveAppLanguage(null, DeviceLocale("ar", "EG")))
+        assertEquals(AppLanguage.ARABIC, resolveAppLanguage(null, DeviceLocale("ar", "")))
+        assertEquals(AppLanguage.HINDI, resolveAppLanguage(null, DeviceLocale("hi", "IN")))
+        assertEquals(AppLanguage.RUSSIAN, resolveAppLanguage(null, DeviceLocale("ru", "RU")))
+        assertEquals(AppLanguage.RUSSIAN, resolveAppLanguage(null, DeviceLocale("ru", "")))
+        assertEquals(AppLanguage.TURKISH, resolveAppLanguage(null, DeviceLocale("tr", "TR")))
     }
 
     @Test

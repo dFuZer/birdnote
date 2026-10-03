@@ -10,7 +10,7 @@
     <string name="intervals">Intervalle</string>
     <string name="chords">Akkorde</string>
     <string name="back">Zurück</string>
-    <string name="score_best">Bester</string>
+    <string name="score_best">Rekord</string>
     <string name="score_empty">—</string>
     <string name="difficulty">Schwierigkeit</string>
     <string name="clef">Schlüssel</string>
@@ -26,6 +26,7 @@
     <string name="lets_go">Los geht\'s!</string>
     <string name="stop">Stopp</string>
     <string name="time_remaining">Verbleibende Zeit</string>
+    <string name="quiz_score">Ergebnis %1$d</string>
     <string name="bravo">Bravo!</string>
     <string name="your_score">dein Ergebnis:</string>
     <string name="result_above_best">+%d gegenüber deinem Rekord</string>
@@ -59,8 +60,8 @@
     <string name="chord_augmented">Übermäßig</string>
     <string name="chord_diminished">Vermindert</string>
     <string name="chord_dominant_7">Dominantsept</string>
-    <string name="chord_major_7">Majorsept</string>
+    <string name="chord_major_7">Großer Sept</string>
     <string name="chord_minor_7">Mollsept</string>
-    <string name="chord_half_diminished_7">Halbvermindert</string>
+    <string name="chord_half_diminished_7">Halbverminderter Sept</string>
     <string name="chord_diminished_7">Verminderter Sept</string>
 </resources>

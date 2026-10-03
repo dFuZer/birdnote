@@ -5,7 +5,7 @@
     <string name="settings">設定</string>
     <string name="language">言語</string>
     <string name="note_names">音名</string>
-    <string name="training_title">何を練習する？</string>
+    <string name="training_title">何を練習しますか？</string>
     <string name="notes">音符</string>
     <string name="intervals">音程</string>
     <string name="chords">和音</string>
@@ -26,6 +26,7 @@
     <string name="lets_go">スタート！</string>
     <string name="stop">停止</string>
     <string name="time_remaining">残り時間</string>
+    <string name="quiz_score">スコア %1$d</string>
     <string name="bravo">よくできました！</string>
     <string name="your_score">スコア：</string>
     <string name="result_above_best">自己ベストより+%d</string>

@@ -1,0 +1,67 @@
+<resources>
+    <string name="app_name">BirdNote</string>
+    <string name="train">Çalış</string>
+    <string name="my_scores">Skorlarım</string>
+    <string name="settings">Ayarlar</string>
+    <string name="language">Dil</string>
+    <string name="note_names">Nota adları</string>
+    <string name="training_title">Ne çalışalım?</string>
+    <string name="notes">Notalar</string>
+    <string name="intervals">Aralıklar</string>
+    <string name="chords">Akorlar</string>
+    <string name="back">Geri</string>
+    <string name="score_best">En iyi</string>
+    <string name="score_empty">—</string>
+    <string name="difficulty">Zorluk</string>
+    <string name="clef">Anahtar</string>
+    <string name="clefs">Anahtarlar</string>
+    <string name="clef_sol">Sol</string>
+    <string name="clef_fa">Fa</string>
+    <string name="clef_alto">Alto</string>
+    <string name="clef_tenor">Tenor</string>
+    <string name="clef_sol_fa">Sol + Fa</string>
+    <string name="preferred_clefs_title">Anahtarların</string>
+    <string name="preferred_clefs_hint">Ayarlar\'dan değiştirebilirsin.</string>
+    <string name="continue_action">Devam</string>
+    <string name="lets_go">Hadi!</string>
+    <string name="stop">Dur</string>
+    <string name="time_remaining">Kalan süre</string>
+    <string name="quiz_score">Skor %1$d</string>
+    <string name="bravo">Bravo!</string>
+    <string name="your_score">skorun:</string>
+    <string name="result_above_best">rekorundan +%d fazla</string>
+    <string name="result_short_of_best">rekorunu geçmek için %d daha</string>
+    <string name="result_first_run">Bu ilk skorun</string>
+    <string name="result_tie">Rekorunla aynı</string>
+    <string name="restart">Yeniden</string>
+    <plurals name="score_notes">
+        <item quantity="one">%d nota</item>
+        <item quantity="other">%d nota</item>
+    </plurals>
+    <plurals name="score_intervals">
+        <item quantity="one">%d aralık</item>
+        <item quantity="other">%d aralık</item>
+    </plurals>
+    <plurals name="score_chords">
+        <item quantity="one">%d akor</item>
+        <item quantity="other">%d akor</item>
+    </plurals>
+    <string name="menu">Menü</string>
+    <string name="interval_second">İkili</string>
+    <string name="interval_third">Üçlü</string>
+    <string name="interval_fourth">Dörtlü</string>
+    <string name="interval_fifth">Beşli</string>
+    <string name="interval_sixth">Altılı</string>
+    <string name="interval_seventh">Yedili</string>
+    <string name="interval_octave">Oktav</string>
+    <string name="interval_ninth">Dokuzlu</string>
+    <string name="chord_major">Majör</string>
+    <string name="chord_minor">Minör</string>
+    <string name="chord_augmented">Artık</string>
+    <string name="chord_diminished">Eksik</string>
+    <string name="chord_dominant_7">Dominant 7\'li</string>
+    <string name="chord_major_7">Majör 7\'li</string>
+    <string name="chord_minor_7">Minör 7\'li</string>
+    <string name="chord_half_diminished_7">Yarı eksik 7\'li</string>
+    <string name="chord_diminished_7">Eksik 7\'li</string>
+</resources>

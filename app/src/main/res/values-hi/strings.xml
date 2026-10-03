@@ -1,0 +1,67 @@
+<resources>
+    <string name="app_name">BirdNote</string>
+    <string name="train">अभ्यास</string>
+    <string name="my_scores">मेरे अंक</string>
+    <string name="settings">सेटिंग्स</string>
+    <string name="language">भाषा</string>
+    <string name="note_names">नोट के नाम</string>
+    <string name="training_title">क्या अभ्यास करें?</string>
+    <string name="notes">नोट</string>
+    <string name="intervals">अंतराल</string>
+    <string name="chords">कॉर्ड</string>
+    <string name="back">वापस</string>
+    <string name="score_best">सर्वश्रेष्ठ</string>
+    <string name="score_empty">—</string>
+    <string name="difficulty">कठिनाई</string>
+    <string name="clef">क्लिफ</string>
+    <string name="clefs">क्लिफ</string>
+    <string name="clef_sol">ट्रेबल</string>
+    <string name="clef_fa">बास</string>
+    <string name="clef_alto">आल्टो</string>
+    <string name="clef_tenor">टेनर</string>
+    <string name="clef_sol_fa">ट्रेबल + बास</string>
+    <string name="preferred_clefs_title">आपकी क्लिफ</string>
+    <string name="preferred_clefs_hint">इन्हें सेटिंग्स में बदला जा सकता है।</string>
+    <string name="continue_action">जारी रखें</string>
+    <string name="lets_go">चलें!</string>
+    <string name="stop">रोकें</string>
+    <string name="time_remaining">बचा समय</string>
+    <string name="quiz_score">अंक %1$d</string>
+    <string name="bravo">शाबाश!</string>
+    <string name="your_score">आपका अंक:</string>
+    <string name="result_above_best">आपके सर्वश्रेष्ठ से +%d</string>
+    <string name="result_short_of_best">सर्वश्रेष्ठ तोड़ने के लिए %d और</string>
+    <string name="result_first_run">यह आपका पहला अंक है</string>
+    <string name="result_tie">आपके सर्वश्रेष्ठ के बराबर</string>
+    <string name="restart">फिर से</string>
+    <plurals name="score_notes">
+        <item quantity="one">%d नोट</item>
+        <item quantity="other">%d नोट</item>
+    </plurals>
+    <plurals name="score_intervals">
+        <item quantity="one">%d अंतराल</item>
+        <item quantity="other">%d अंतराल</item>
+    </plurals>
+    <plurals name="score_chords">
+        <item quantity="one">%d कॉर्ड</item>
+        <item quantity="other">%d कॉर्ड</item>
+    </plurals>
+    <string name="menu">मेनू</string>
+    <string name="interval_second">द्वितीय</string>
+    <string name="interval_third">तृतीय</string>
+    <string name="interval_fourth">चतुर्थ</string>
+    <string name="interval_fifth">पंचम</string>
+    <string name="interval_sixth">षष्ठ</string>
+    <string name="interval_seventh">सप्तम</string>
+    <string name="interval_octave">सप्तक</string>
+    <string name="interval_ninth">नवम</string>
+    <string name="chord_major">मेजर</string>
+    <string name="chord_minor">माइनर</string>
+    <string name="chord_augmented">ऑगमेंटेड</string>
+    <string name="chord_diminished">डिमिनिश्ड</string>
+    <string name="chord_dominant_7">डोमिनेंट सेवन्थ</string>
+    <string name="chord_major_7">मेजर सेवन्थ</string>
+    <string name="chord_minor_7">माइनर सेवन्थ</string>
+    <string name="chord_half_diminished_7">हाफ-डिमिनिश्ड सेवन्थ</string>
+    <string name="chord_diminished_7">डिमिनिश्ड सेवन्थ</string>
+</resources>

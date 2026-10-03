@@ -11,6 +11,10 @@ enum class AppLanguage(val tag: String) {
     ITALIAN("it"),
     JAPANESE("ja"),
     FRENCH("fr"),
+    ARABIC("ar"),
+    HINDI("hi"),
+    RUSSIAN("ru"),
+    TURKISH("tr"),
 }
 
 data class DeviceLocale(
@@ -41,6 +45,10 @@ private fun DeviceLocale.toAppLanguage(): AppLanguage? = when {
         AppLanguage.SPANISH_LATIN_AMERICA
     language.equals("pt", ignoreCase = true) && region.equals("BR", ignoreCase = true) ->
         AppLanguage.PORTUGUESE_BRAZIL
+    language.equals("ar", ignoreCase = true) -> AppLanguage.ARABIC
+    language.equals("hi", ignoreCase = true) -> AppLanguage.HINDI
+    language.equals("ru", ignoreCase = true) -> AppLanguage.RUSSIAN
+    language.equals("tr", ignoreCase = true) -> AppLanguage.TURKISH
     else -> null
 }
 
