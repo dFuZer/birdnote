@@ -68,3 +68,5 @@ Install [Android Studio](https://developer.android.com/studio) (or an Android SD
 ```
 
 `assembleDebug` builds a debug APK. `test` runs unit tests. `connectedDebugAndroidTest` needs a running emulator or device.
+
+<!-- worktree-smoke-test -->
