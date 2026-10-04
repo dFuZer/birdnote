@@ -21,4 +21,4 @@ The developer subsequently requested no further tests or app runs and will perfo
 - The refactored emulator flow run stopped at a native HWUI RenderThread SIGSEGV during surface teardown in the chords flow. Its cause has not been established. It must be investigated before release; a passing device-flow result is not claimed.
 - Baseline screenshot capture succeeded. Refactored screenshot comparisons, animation frame comparisons, lifecycle/persistence instrumented checks, and physical-device performance measurements remain incomplete.
 
-The existing flow tests and added `CleanupParityTest` / `StoreCompatibilityTest` are available for manual acceptance work. Full visual, lifecycle, audio, storage-upgrade, translation/RTL, and large-text parity still requires that acceptance work.
+The existing flow tests and `StoreCompatibilityTest` are available for acceptance work. The temporary `CleanupParityTest` capture harness and seeded sequence fingerprint test were removed during the subsequent test cleanup. Full visual, lifecycle, audio, storage-upgrade, translation/RTL, and large-text parity still requires manual acceptance work.

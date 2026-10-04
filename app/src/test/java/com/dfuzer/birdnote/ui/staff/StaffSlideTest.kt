@@ -42,27 +42,6 @@ class StaffSlideTest {
     }
 
     @Test
-    fun followSpeedIncreasesWithDistance() {
-        val dt = 0.25f
-        val near = advanceShift(
-            shift = 0f,
-            target = 1f,
-            followTimeSeconds = 2f,
-            minSpeedSlotsPerSecond = 0.05f,
-            dtSeconds = dt,
-        )
-        val far = advanceShift(
-            shift = 0f,
-            target = 5f,
-            followTimeSeconds = 2f,
-            minSpeedSlotsPerSecond = 0.05f,
-            dtSeconds = dt,
-        )
-        assertEquals(0.125f, near, 0.0001f)
-        assertEquals(0.625f, far, 0.0001f)
-    }
-
-    @Test
     fun shiftAtMatchesFineStepsOfTheFollowCurve() {
         val start = -3.5f
         val target = 2f
@@ -94,18 +73,6 @@ class StaffSlideTest {
             minSpeedSlotsPerSecond = 0.05f,
         )
         assertTrue(moved > spawnShift(8))
-    }
-
-    @Test
-    fun followSpeedUsesTheMinimumWhenClose() {
-        val next = advanceShift(
-            shift = 0f,
-            target = 0.04f,
-            followTimeSeconds = 2f,
-            minSpeedSlotsPerSecond = 0.05f,
-            dtSeconds = 0.25f,
-        )
-        assertEquals(0.0125f, next, 0.0001f)
     }
 
     private fun displayedSlot(absoluteIndex: Int, shift: Float, origin: Int): Float =

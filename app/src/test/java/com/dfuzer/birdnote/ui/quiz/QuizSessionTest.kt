@@ -1,5 +1,6 @@
 package com.dfuzer.birdnote.ui.quiz
 
+import com.dfuzer.birdnote.audio.SoundTone
 import com.dfuzer.birdnote.domain.ChordConfig
 import com.dfuzer.birdnote.domain.ChordQuality
 import com.dfuzer.birdnote.domain.ClefMode
@@ -8,6 +9,9 @@ import com.dfuzer.birdnote.domain.IntervalName
 import com.dfuzer.birdnote.domain.NoteName
 import com.dfuzer.birdnote.domain.PracticeConfig
 import com.dfuzer.birdnote.domain.PracticeMode
+import com.dfuzer.birdnote.domain.PracticeChord
+import com.dfuzer.birdnote.domain.StaffInterval
+import com.dfuzer.birdnote.domain.StaffNote
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,6 +38,28 @@ class QuizSessionTest(private val mode: PracticeMode) {
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
     @After fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun answersAdvanceTheQueueAndFeedbackUsesTheAnsweredQuestion() = runTest(dispatcher) {
+        withQuiz(45) { vm, correct, wrong ->
+            val initial = vm.state.value.questions
+            val correctTones = expectedTones(initial.first())
+            correct()
+            val afterCorrect = vm.state.value
+            assertEquals(1, afterCorrect.score)
+            assertEquals(true, afterCorrect.answerFeedback?.correct)
+            assertEquals(correctTones, afterCorrect.answerFeedback?.tones)
+            assertEquals(initial.drop(1), afterCorrect.questions.dropLast(1))
+
+            val wrongTones = expectedTones(afterCorrect.questions.first())
+            wrong()
+            val afterWrong = vm.state.value
+            assertEquals(1, afterWrong.score)
+            assertEquals(false, afterWrong.answerFeedback?.correct)
+            assertEquals(wrongTones, afterWrong.answerFeedback?.tones)
+            assertEquals(afterCorrect.questions.drop(1), afterWrong.questions.dropLast(1))
+        }
+    }
 
     @Test
     fun timerTicksDoNotPublishBoardStateAndExpiryRejectsFurtherAnswers() = runTest(dispatcher) {
@@ -126,6 +152,16 @@ class QuizSessionTest(private val mode: PracticeMode) {
             PracticeMode.CHORDS -> run(QuizViewModel.chords(ChordConfig(4, ClefMode.ALTO), Random(582), duration),
                 { it.quality }, { chord -> ChordQuality.entries.first { it != chord.quality } })
         }
+    }
+
+    private fun expectedTones(question: Any?): List<SoundTone> = when (question) {
+        is StaffNote -> listOf(SoundTone(question.pitch.diatonicStep))
+        is StaffInterval -> listOf(
+            SoundTone(question.lower.diatonicStep),
+            SoundTone(question.upper.diatonicStep),
+        )
+        is PracticeChord -> question.notes.map { SoundTone(it.pitch.diatonicStep, it.accidental) }
+        else -> error("Unsupported quiz question: $question")
     }
 
     companion object {
