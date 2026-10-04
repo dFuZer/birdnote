@@ -1,6 +1,7 @@
 package com.dfuzer.birdnote
 
 import android.content.Context
+import android.content.res.Configuration
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -8,13 +9,18 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
+import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.domain.NoteName
 import com.dfuzer.birdnote.domain.NoteNaming
 import com.dfuzer.birdnote.domain.defaultNoteNaming
 import com.dfuzer.birdnote.domain.label
 import com.dfuzer.birdnote.domain.resolveAppLanguage
 import com.dfuzer.birdnote.domain.scalePreview
+import com.dfuzer.birdnote.ui.screens.labelRes
+import java.util.Locale
+import org.junit.Assert.assertSame
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -120,6 +126,33 @@ class AppFlowTest {
     }
 
     @Test
+    fun switchingLanguageUpdatesTheOpenSettingsScreen() {
+        continueFromClefChoice()
+        val activity = composeRule.activity
+        val starting = resolveAppLanguage(null, systemDeviceLocale())
+        val target = if (starting == AppLanguage.ENGLISH) AppLanguage.FRENCH else AppLanguage.ENGLISH
+        activity.getString(R.string.settings).let { title ->
+            composeRule.onNodeWithText(title).performClick()
+        }
+        val forcedNaming = NoteNaming.GERMAN
+        if (unsetNoteNaming() != forcedNaming) {
+            composeRule.onNodeWithText(unsetNoteNaming().scalePreview()).performClick()
+            composeRule.onNodeWithText(forcedNaming.scalePreview()).performClick()
+        }
+        composeRule.onNodeWithText(activity.getString(starting.labelRes())).performClick()
+        composeRule.onNodeWithText(activity.getString(target.labelRes()))
+            .performScrollTo()
+            .performClick()
+
+        assertSame(activity, composeRule.activity)
+        val localized = localizedResources(target)
+        composeRule.onNodeWithText(localized.getString(R.string.language)).assertIsDisplayed()
+        composeRule.onNodeWithText(localized.getString(R.string.note_names)).assertIsDisplayed()
+        composeRule.onNodeWithText(target.defaultNoteNaming().scalePreview()).assertIsDisplayed()
+        composeRule.onNodeWithText(forcedNaming.scalePreview()).assertDoesNotExist()
+    }
+
+    @Test
     fun settingsPersistEnglishNoteNamesOnTheQuiz() {
         continueFromClefChoice()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.settings)).performClick()
@@ -178,6 +211,12 @@ class AppFlowTest {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.notes)).performClick()
         composeRule.onNodeWithText("0").assertIsDisplayed()
     }
+
+    private fun localizedResources(language: AppLanguage) =
+        Configuration(composeRule.activity.resources.configuration).run {
+            setLocale(Locale.forLanguageTag(language.tag))
+            composeRule.activity.createConfigurationContext(this).resources
+        }
 
     private fun continueFromClefChoice() {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.continue_action))

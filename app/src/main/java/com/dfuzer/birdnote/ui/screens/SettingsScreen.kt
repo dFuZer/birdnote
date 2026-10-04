@@ -58,12 +58,6 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = stringResource(R.string.settings),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = tuning.titleBottomSpacing),
-                )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(tuning.titleBottomSpacing),
                     horizontalAlignment = Alignment.CenterHorizontally,

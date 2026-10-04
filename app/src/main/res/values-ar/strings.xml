@@ -20,9 +20,11 @@
     <string name="clef_alto">ألتو</string>
     <string name="clef_tenor">تينور</string>
     <string name="clef_sol_fa">صول + فا</string>
-    <string name="preferred_clefs_title">مفاتيحك</string>
-    <string name="preferred_clefs_hint">يمكنك تغييرها في الإعدادات.</string>
-    <string name="continue_action">متابعة</string>
+    <string name="preferred_clefs_title">أهلاً بك!</string>
+    <string name="welcome_message">لنتعلم قراءة الموسيقى معًا.</string>
+    <string name="welcome_clefs">أبقِ المفاتيح التي تريد التدرّب عليها.</string>
+    <string name="preferred_clefs_hint">يمكنك تغييرها في أي وقت من الإعدادات.</string>
+    <string name="continue_action">هيا بنا</string>
     <string name="lets_go">هيا بنا!</string>
     <string name="stop">إيقاف</string>
     <string name="time_remaining">الوقت المتبقي</string>

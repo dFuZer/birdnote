@@ -2,11 +2,9 @@ package com.dfuzer.birdnote.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -31,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -226,61 +223,7 @@ fun DifficultyButton(
 }
 
 @Composable
-fun PreferredClefToggles(
-    selected: Set<Clef>,
-    onToggle: (Clef) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val tuning = LayoutTuning.PreferredClefs
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(tuning.toggleGap),
-    ) {
-        Clef.entries.forEach { clef ->
-            val on = clef in selected
-            ClefToggle(
-                text = clef.label(),
-                selected = on,
-                enabled = !on || selected.size > 1,
-                onClick = { onToggle(clef) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun ClefToggle(
-    text: String,
-    selected: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    val commonTuning = LayoutTuning.Common
-    val tuning = LayoutTuning.PreferredClefs
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(commonTuning.buttonCornerRadius),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (selected) Highlight else DarkBlue,
-            contentColor = Neutral,
-            disabledContainerColor = if (selected) Highlight else DisabledGrey,
-            disabledContentColor = Neutral,
-        ),
-        contentPadding = PaddingValues(0.dp),
-        modifier = Modifier
-            .semantics { this.selected = selected }
-            .size(width = tuning.toggleWidth, height = tuning.toggleHeight),
-    ) {
-        FittedText(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-        )
-    }
-}
-
-@Composable
-private fun FittedText(
+internal fun FittedText(
     text: String,
     style: TextStyle,
     minFontSize: TextUnit = 13.sp,

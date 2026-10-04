@@ -20,9 +20,11 @@
     <string name="clef_alto">Альтовый</string>
     <string name="clef_tenor">Теноровый</string>
     <string name="clef_sol_fa">Скрипичный + басовый</string>
-    <string name="preferred_clefs_title">Твои ключи</string>
-    <string name="preferred_clefs_hint">Их можно изменить в настройках.</string>
-    <string name="continue_action">Продолжить</string>
+    <string name="preferred_clefs_title">Привет!</string>
+    <string name="welcome_message">Давай учиться читать ноты.</string>
+    <string name="welcome_clefs">Оставь ключи, которые хочешь учить.</string>
+    <string name="preferred_clefs_hint">Их можно в любой момент изменить в настройках.</string>
+    <string name="continue_action">Вперёд!</string>
     <string name="lets_go">Поехали!</string>
     <string name="stop">Стоп</string>
     <string name="time_remaining">Осталось времени</string>

@@ -20,9 +20,11 @@
     <string name="clef_alto">Alto</string>
     <string name="clef_tenor">Tenor</string>
     <string name="clef_sol_fa">Sol + Fa</string>
-    <string name="preferred_clefs_title">Anahtarların</string>
-    <string name="preferred_clefs_hint">Ayarlar\'dan değiştirebilirsin.</string>
-    <string name="continue_action">Devam</string>
+    <string name="preferred_clefs_title">Hoş geldin!</string>
+    <string name="welcome_message">Birlikte nota okumayı öğrenelim.</string>
+    <string name="welcome_clefs">Çalışmak istediğin anahtarları seç.</string>
+    <string name="preferred_clefs_hint">İstediğin zaman Ayarlar\'dan değiştirebilirsin.</string>
+    <string name="continue_action">Hadi başlayalım</string>
     <string name="lets_go">Hadi!</string>
     <string name="stop">Dur</string>
     <string name="time_remaining">Kalan süre</string>

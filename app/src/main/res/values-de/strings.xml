@@ -20,9 +20,11 @@
     <string name="clef_alto">Alt</string>
     <string name="clef_tenor">Tenor</string>
     <string name="clef_sol_fa">Violin + Bass</string>
-    <string name="preferred_clefs_title">Deine Schlüssel</string>
-    <string name="preferred_clefs_hint">Du kannst sie in den Einstellungen ändern.</string>
-    <string name="continue_action">Weiter</string>
+    <string name="preferred_clefs_title">Willkommen!</string>
+    <string name="welcome_message">Lass uns Noten lesen lernen.</string>
+    <string name="welcome_clefs">Behalte die Schlüssel, die du üben willst.</string>
+    <string name="preferred_clefs_hint">Du kannst sie jederzeit in den Einstellungen ändern.</string>
+    <string name="continue_action">Los geht\'s!</string>
     <string name="lets_go">Los geht\'s!</string>
     <string name="stop">Stopp</string>
     <string name="time_remaining">Verbleibende Zeit</string>

@@ -86,9 +86,9 @@ class MusicTest {
     fun preferredClefsRoundTripInClefOrder() {
         assertEquals("SOL,TENOR", preferredClefsStorage(setOf(Clef.TENOR, Clef.SOL)))
         assertEquals(setOf(Clef.SOL, Clef.TENOR), storedPreferredClefs("SOL,TENOR"))
-        assertEquals(Clef.entries.toSet(), storedPreferredClefs(null))
-        assertEquals(Clef.entries.toSet(), storedPreferredClefs(""))
-        assertEquals(Clef.entries.toSet(), storedPreferredClefs("NOPE"))
+        assertEquals(setOf(Clef.SOL, Clef.FA), storedPreferredClefs(null))
+        assertEquals(setOf(Clef.SOL, Clef.FA), storedPreferredClefs(""))
+        assertEquals(setOf(Clef.SOL, Clef.FA), storedPreferredClefs("NOPE"))
     }
 
     @Test

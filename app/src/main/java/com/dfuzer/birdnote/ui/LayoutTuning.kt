@@ -198,9 +198,19 @@ object LayoutTuning {
     }
 
     object PreferredClefs {
-        val toggleWidth = 88.dp
-        val toggleHeight = 42.dp
-        val toggleGap = 8.dp
-        val hintBottomSpacing = 16.dp
+        val contentHorizontalPadding = 24.dp
+        val contentVerticalPadding = 16.dp
+        val wideBreakpoint = 600.dp
+        val columnGap = 28.dp
+        val birdToTitle = 18.dp
+        val titleGap = 4.dp
+        val promptBottomGap = 12.dp
+        val cardGap = 12.dp
+        val cardCorner = 18.dp
+        val hintTopGap = 12.dp
+        val buttonTopGap = 14.dp
+        /** Welcome lockup bird, half of a full-column mark and never larger than this. */
+        val birdMax = 150.dp
+        const val birdWidthFraction = 0.5f
     }
 }

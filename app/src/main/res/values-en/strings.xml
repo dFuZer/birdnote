@@ -20,9 +20,11 @@
     <string name="clef_alto">Alto</string>
     <string name="clef_tenor">Tenor</string>
     <string name="clef_sol_fa">Treble + Bass</string>
-    <string name="preferred_clefs_title">Your clefs</string>
-    <string name="preferred_clefs_hint">You can change them in Settings.</string>
-    <string name="continue_action">Continue</string>
+    <string name="preferred_clefs_title">Welcome!</string>
+    <string name="welcome_message">Let\'s learn to read music.</string>
+    <string name="welcome_clefs">Keep the clefs you want to practice.</string>
+    <string name="preferred_clefs_hint">You can change these anytime in Settings.</string>
+    <string name="continue_action">Let\'s go!</string>
     <string name="lets_go">Let\'s go!</string>
     <string name="stop">Stop</string>
     <string name="time_remaining">Time remaining</string>

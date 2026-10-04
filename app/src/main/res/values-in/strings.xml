@@ -20,9 +20,11 @@
     <string name="clef_alto">Alto</string>
     <string name="clef_tenor">Tenor</string>
     <string name="clef_sol_fa">Sol + Fa</string>
-    <string name="preferred_clefs_title">Kuncimu</string>
-    <string name="preferred_clefs_hint">Kamu bisa mengubahnya di Pengaturan.</string>
-    <string name="continue_action">Lanjutkan</string>
+    <string name="preferred_clefs_title">Selamat datang!</string>
+    <string name="welcome_message">Yuk belajar membaca not.</string>
+    <string name="welcome_clefs">Pilih kunci yang ingin kamu latih.</string>
+    <string name="preferred_clefs_hint">Kamu bisa mengubahnya kapan saja di Pengaturan.</string>
+    <string name="continue_action">Ayo!</string>
     <string name="lets_go">Mulai!</string>
     <string name="stop">Berhenti</string>
     <string name="time_remaining">Sisa waktu</string>

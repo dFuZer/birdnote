@@ -32,9 +32,11 @@
     <string name="clef_alto">Alto</string>
     <string name="clef_tenor">Ténor</string>
     <string name="clef_sol_fa">Sol + Fa</string>
-    <string name="preferred_clefs_title">Tes clés</string>
+    <string name="preferred_clefs_title">Bienvenue !</string>
+    <string name="welcome_message">On va apprendre à lire la musique.</string>
+    <string name="welcome_clefs">Garde les clés que tu veux travailler.</string>
     <string name="preferred_clefs_hint">Tu pourras les changer dans Paramètres.</string>
-    <string name="continue_action">Continuer</string>
+    <string name="continue_action">C\'est parti !</string>
     <string name="lets_go">C\'est parti !</string>
     <string name="stop">Arrêter</string>
     <string name="time_remaining">Temps restant</string>

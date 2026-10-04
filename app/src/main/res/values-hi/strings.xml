@@ -20,9 +20,11 @@
     <string name="clef_alto">आल्टो</string>
     <string name="clef_tenor">टेनर</string>
     <string name="clef_sol_fa">ट्रेबल + बास</string>
-    <string name="preferred_clefs_title">आपकी क्लिफ</string>
-    <string name="preferred_clefs_hint">इन्हें सेटिंग्स में बदला जा सकता है।</string>
-    <string name="continue_action">जारी रखें</string>
+    <string name="preferred_clefs_title">स्वागत है!</string>
+    <string name="welcome_message">चलो साथ में संगीत पढ़ना सीखते हैं।</string>
+    <string name="welcome_clefs">जिन क्लिफ पर अभ्यास करना है, उन्हें रखें।</string>
+    <string name="preferred_clefs_hint">इन्हें सेटिंग्स में कभी भी बदला जा सकता है।</string>
+    <string name="continue_action">चलें!</string>
     <string name="lets_go">चलें!</string>
     <string name="stop">रोकें</string>
     <string name="time_remaining">बचा समय</string>

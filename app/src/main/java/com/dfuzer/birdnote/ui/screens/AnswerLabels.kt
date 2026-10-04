@@ -43,7 +43,7 @@ private fun ChordQuality.labelRes(): Int = when (this) {
 }
 
 @StringRes
-private fun AppLanguage.labelRes(): Int = when (this) {
+internal fun AppLanguage.labelRes(): Int = when (this) {
     AppLanguage.ENGLISH -> R.string.language_name_en
     AppLanguage.SPANISH_LATIN_AMERICA -> R.string.language_name_es
     AppLanguage.PORTUGUESE_BRAZIL -> R.string.language_name_pt

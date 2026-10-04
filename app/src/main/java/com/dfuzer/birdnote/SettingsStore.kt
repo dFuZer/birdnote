@@ -7,6 +7,7 @@ import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.domain.NoteNaming
 import com.dfuzer.birdnote.domain.PracticeMode
 import com.dfuzer.birdnote.domain.StoredSetup
+import com.dfuzer.birdnote.domain.defaultNoteNaming
 import com.dfuzer.birdnote.domain.preferredClefsStorage
 import com.dfuzer.birdnote.domain.resolveAppLanguage
 import com.dfuzer.birdnote.domain.storedNoteNaming
@@ -67,9 +68,10 @@ class SettingsStore(context: Context) {
     private fun clefKey(mode: PracticeMode) = "setup_${mode.name}_clef"
 
     fun setAppLanguage(language: AppLanguage) {
+        if (language == _appLanguage.value) return
         prefs.edit().putString(KEY_APP_LANGUAGE, language.tag).apply()
         _appLanguage.value = language
-        _noteNaming.value = storedNoteNaming(prefs.getString(KEY_NOTE_NAMING, null), language)
+        setNoteNaming(language.defaultNoteNaming())
     }
 
     fun togglePreferredClef(clef: Clef) {

@@ -159,14 +159,17 @@ fun openingClefMode(preferred: Set<Clef>, remembered: ClefMode? = null): ClefMod
     return if (remembered != null && remembered in modes) remembered else modes.first()
 }
 
+/** Treble and bass. Alto and tenor stay off until someone turns them on. */
+fun defaultPreferredClefs(): Set<Clef> = setOf(Clef.SOL, Clef.FA)
+
 fun storedPreferredClefs(value: String?): Set<Clef> {
-    if (value == null) return Clef.entries.toSet()
-    val parsed = value.split(',')
+    val parsed = value?.split(',')
+        .orEmpty()
         .map { it.trim() }
         .filter { it.isNotEmpty() }
         .mapNotNull { token -> Clef.entries.firstOrNull { it.name == token } }
         .toSet()
-    return parsed.ifEmpty { Clef.entries.toSet() }
+    return parsed.ifEmpty { defaultPreferredClefs() }
 }
 
 fun preferredClefsStorage(clefs: Set<Clef>): String {

@@ -20,9 +20,11 @@
     <string name="clef_alto">Contralto</string>
     <string name="clef_tenor">Tenor</string>
     <string name="clef_sol_fa">Sol + Fá</string>
-    <string name="preferred_clefs_title">Suas claves</string>
-    <string name="preferred_clefs_hint">Você pode mudá-las em Configurações.</string>
-    <string name="continue_action">Continuar</string>
+    <string name="preferred_clefs_title">Bem-vindo!</string>
+    <string name="welcome_message">Vamos aprender a ler música.</string>
+    <string name="welcome_clefs">Fique com as claves que você quer praticar.</string>
+    <string name="preferred_clefs_hint">Você pode mudá-las quando quiser em Configurações.</string>
+    <string name="continue_action">Vamos lá!</string>
     <string name="lets_go">Vamos lá!</string>
     <string name="stop">Parar</string>
     <string name="time_remaining">Tempo restante</string>
