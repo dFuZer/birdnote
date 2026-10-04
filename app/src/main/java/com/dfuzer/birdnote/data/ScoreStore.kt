@@ -1,4 +1,4 @@
-package com.dfuzer.birdnote
+package com.dfuzer.birdnote.data
 
 import android.content.Context
 import com.dfuzer.birdnote.domain.ClefMode

@@ -1,4 +1,4 @@
-package com.dfuzer.birdnote.domain
+package com.dfuzer.birdnote.audio
 
 import com.jcraft.jogg.Packet
 import com.jcraft.jogg.Page

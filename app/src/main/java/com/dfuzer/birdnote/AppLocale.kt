@@ -3,6 +3,7 @@ package com.dfuzer.birdnote
 import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
+import com.dfuzer.birdnote.data.SETTINGS_PREFS_NAME
 import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.domain.DeviceLocale
 import com.dfuzer.birdnote.domain.resolveAppLanguage

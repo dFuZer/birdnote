@@ -1,7 +1,7 @@
-package com.dfuzer.birdnote.domain
+package com.dfuzer.birdnote.audio
 
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import com.dfuzer.birdnote.domain.Pitch
+import com.dfuzer.birdnote.domain.pianoAssetPath
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import org.junit.Assert.assertArrayEquals
@@ -10,21 +10,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PcmTest {
-    @Test
-    fun parseWavPcmReadsMono16BitPcm() {
-        val samples = shortArrayOf(-3, 0, 12, Short.MAX_VALUE, Short.MIN_VALUE)
-        val parsed = parseWavPcm(pcmWav(samples, sampleRate = 22_050))
-        assertEquals(22_050, parsed.sampleRate)
-        assertArrayEquals(samples, parsed.samples)
-    }
-
-    @Test
-    fun parseWavPcmSkipsUnknownChunks() {
-        val samples = shortArrayOf(7, 8, 9)
-        val parsed = parseWavPcm(pcmWav(samples, extraListChunk = true))
-        assertArrayEquals(samples, parsed.samples)
-    }
-
     @Test
     fun shippedNotesAreTheQuizVorbisSet() {
         val root = listOf(
@@ -119,35 +104,4 @@ class PcmTest {
         assertTrue(sharp.size < samples.size)
         assertTrue(flat.size > samples.size)
     }
-}
-
-private fun pcmWav(
-    samples: ShortArray,
-    sampleRate: Int = 44_100,
-    extraListChunk: Boolean = false,
-): ByteArray {
-    val dataSize = samples.size * 2
-    val listSize = if (extraListChunk) 12 else 0
-    val riffSize = 4 + 8 + 16 + listSize + 8 + dataSize
-    val buf = ByteBuffer.allocate(8 + riffSize).order(ByteOrder.LITTLE_ENDIAN)
-    buf.put("RIFF".toByteArray(Charsets.US_ASCII))
-    buf.putInt(riffSize)
-    buf.put("WAVE".toByteArray(Charsets.US_ASCII))
-    buf.put("fmt ".toByteArray(Charsets.US_ASCII))
-    buf.putInt(16)
-    buf.putShort(1)
-    buf.putShort(1)
-    buf.putInt(sampleRate)
-    buf.putInt(sampleRate * 2)
-    buf.putShort(2)
-    buf.putShort(16)
-    if (extraListChunk) {
-        buf.put("LIST".toByteArray(Charsets.US_ASCII))
-        buf.putInt(4)
-        buf.put("INFO".toByteArray(Charsets.US_ASCII))
-    }
-    buf.put("data".toByteArray(Charsets.US_ASCII))
-    buf.putInt(dataSize)
-    samples.forEach { sample -> buf.putShort(sample) }
-    return buf.array()
 }

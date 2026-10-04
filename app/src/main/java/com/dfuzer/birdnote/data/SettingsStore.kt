@@ -1,6 +1,7 @@
-package com.dfuzer.birdnote
+package com.dfuzer.birdnote.data
 
 import android.content.Context
+import com.dfuzer.birdnote.KEY_APP_LANGUAGE
 import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.domain.Clef
 import com.dfuzer.birdnote.domain.ClefMode
@@ -14,6 +15,7 @@ import com.dfuzer.birdnote.domain.storedNoteNaming
 import com.dfuzer.birdnote.domain.storedPreferredClefs
 import com.dfuzer.birdnote.domain.storedSetup
 import com.dfuzer.birdnote.domain.withClefToggled
+import com.dfuzer.birdnote.systemDeviceLocale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

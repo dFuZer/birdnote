@@ -1,4 +1,4 @@
-package com.dfuzer.birdnote.ui.quiz
+package com.dfuzer.birdnote.audio
 
 import android.content.res.AssetFileDescriptor
 import android.content.res.AssetManager
@@ -7,24 +7,11 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.SoundPool
 import com.dfuzer.birdnote.domain.Pitch
-import com.dfuzer.birdnote.domain.decodeVorbisPcm
-import com.dfuzer.birdnote.domain.mixPcm
 import com.dfuzer.birdnote.domain.pianoAssetPath
-import com.dfuzer.birdnote.domain.pitchShift
 import com.dfuzer.birdnote.domain.semitones
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-
-/**
- * Master switch for quiz audio. Flip this while comparing lag.
- *
- * When false, quiz routes never construct [QuizSounds], so there is no worker
- * thread, [SoundPool], Vorbis decode, PCM cache, or [AudioTrack].
- */
-const val SOUNDS_ENABLED = true
 
 class QuizSounds(assets: AssetManager) {
     private val audioAttributes = AudioAttributes.Builder()
@@ -39,7 +26,7 @@ class QuizSounds(assets: AssetManager) {
     private val released = AtomicBoolean(false)
 
     private val descriptors = mutableListOf<AssetFileDescriptor>()
-    private val notes = ConcurrentHashMap<Int, Map<Int, ShortArray>>()
+    private val notes = mutableMapOf<Int, Map<Int, ShortArray>>()
     private var sampleRate = DEFAULT_SAMPLE_RATE
     private var wrongId: Int? = null
     private var pool: SoundPool? = null
@@ -69,7 +56,7 @@ class QuizSounds(assets: AssetManager) {
     }
 
     fun release() {
-        released.set(true)
+        if (!released.compareAndSet(false, true)) return
         playGeneration.incrementAndGet()
         worker.execute {
             stopNotes()
@@ -81,7 +68,6 @@ class QuizSounds(assets: AssetManager) {
             pool = null
         }
         worker.shutdown()
-        runCatching { worker.awaitTermination(2, TimeUnit.SECONDS) }
     }
 
     private fun load(assets: AssetManager) {

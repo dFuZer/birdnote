@@ -28,23 +28,13 @@ fun generateQueue(
     config: PracticeConfig,
     size: Int = QUEUE_SIZE,
     random: Random = Random.Default,
-): List<StaffNote> {
-    val notes = ArrayList<StaffNote>(size)
-    repeat(size) {
-        notes += generateNote(config, notes.lastOrNull(), random)
-    }
-    return notes
-}
+): List<StaffNote> = generateQuestions(size) { previous -> generateNote(config, previous, random) }
 
 fun advanceQueue(
     queue: List<StaffNote>,
     config: PracticeConfig,
     random: Random = Random.Default,
-): List<StaffNote> {
-    require(queue.isNotEmpty())
-    val remaining = queue.drop(1)
-    return remaining + generateNote(config, remaining.lastOrNull() ?: queue.last(), random)
-}
+): List<StaffNote> = advanceQuestions(queue) { previous -> generateNote(config, previous, random) }
 
 fun <T> isQueueAdvance(previous: List<T>, next: List<T>): Boolean =
     previous.size == next.size &&
@@ -71,23 +61,13 @@ fun generateIntervalQueue(
     config: IntervalConfig,
     size: Int = QUEUE_SIZE,
     random: Random = Random.Default,
-): List<StaffInterval> {
-    val intervals = ArrayList<StaffInterval>(size)
-    repeat(size) {
-        intervals += generateInterval(config, intervals.lastOrNull(), random)
-    }
-    return intervals
-}
+): List<StaffInterval> = generateQuestions(size) { previous -> generateInterval(config, previous, random) }
 
 fun advanceIntervalQueue(
     queue: List<StaffInterval>,
     config: IntervalConfig,
     random: Random = Random.Default,
-): List<StaffInterval> {
-    require(queue.isNotEmpty())
-    val remaining = queue.drop(1)
-    return remaining + generateInterval(config, remaining.lastOrNull() ?: queue.last(), random)
-}
+): List<StaffInterval> = advanceQuestions(queue) { previous -> generateInterval(config, previous, random) }
 
 fun generateInterval(
     config: IntervalConfig,
@@ -172,23 +152,13 @@ fun generateChordQueue(
     config: ChordConfig,
     size: Int = QUEUE_SIZE,
     random: Random = Random.Default,
-): List<PracticeChord> {
-    val chords = ArrayList<PracticeChord>(size)
-    repeat(size) {
-        chords += generateChord(config, chords.lastOrNull(), random)
-    }
-    return chords
-}
+): List<PracticeChord> = generateQuestions(size) { previous -> generateChord(config, previous, random) }
 
 fun advanceChordQueue(
     queue: List<PracticeChord>,
     config: ChordConfig,
     random: Random = Random.Default,
-): List<PracticeChord> {
-    require(queue.isNotEmpty())
-    val remaining = queue.drop(1)
-    return remaining + generateChord(config, remaining.lastOrNull() ?: queue.last(), random)
-}
+): List<PracticeChord> = advanceQuestions(queue) { previous -> generateChord(config, previous, random) }
 
 fun generateChord(
     config: ChordConfig,
@@ -295,4 +265,16 @@ private fun sampleRange(range: IntRange): List<Int> {
         first + 2 * span / 3,
         last,
     ).distinct()
+}
+
+private fun <Question> generateQuestions(size: Int, next: (Question?) -> Question): List<Question> {
+    val questions = ArrayList<Question>(size)
+    repeat(size) { questions += next(questions.lastOrNull()) }
+    return questions
+}
+
+private fun <Question> advanceQuestions(queue: List<Question>, next: (Question) -> Question): List<Question> {
+    require(queue.isNotEmpty())
+    val remaining = queue.drop(1)
+    return remaining + next(remaining.lastOrNull() ?: queue.last())
 }

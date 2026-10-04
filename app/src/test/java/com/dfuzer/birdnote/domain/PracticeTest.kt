@@ -125,11 +125,9 @@ class PracticeTest {
     fun everyClefModeShowsTenNotes() {
         ClefMode.entries.forEach { mode ->
             val config = PracticeConfig(1, mode)
-            val queue = generateQueue(config, mode.queueSize(), Random(3))
+            val queue = generateQueue(config, random = Random(3))
             assertEquals(QUEUE_SIZE, queue.size)
-            assertEquals(QUEUE_SIZE, mode.queueSize())
         }
-        assertEquals(QUEUE_SIZE, DOUBLE_CLEF_QUEUE_SIZE)
     }
 
     @Test

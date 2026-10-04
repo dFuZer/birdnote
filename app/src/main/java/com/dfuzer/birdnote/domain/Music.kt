@@ -121,13 +121,10 @@ data class StaffInterval(
 const val MIN_DIFFICULTY = 1
 const val MAX_DIFFICULTY = 4
 const val QUEUE_SIZE = 10
-const val DOUBLE_CLEF_QUEUE_SIZE = QUEUE_SIZE
 const val CHORD_VISIBLE_SLOTS = 2
 const val QUIZ_DURATION_SECONDS = 45
 const val MISTAKE_TIME_PENALTY_SECONDS = 3
 const val NOTE_COUNT = 7
-
-fun ClefMode.queueSize(): Int = QUEUE_SIZE
 
 fun ClefMode.clefs(): List<Clef> = when (this) {
     ClefMode.SOL -> listOf(Clef.SOL)
