@@ -1,8 +1,8 @@
 package com.dfuzer.birdnote.ui.quiz
 
-import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.domain.ChordConfig
 import com.dfuzer.birdnote.domain.ChordQuality
+import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.domain.MISTAKE_TIME_PENALTY_SECONDS
 import com.dfuzer.birdnote.domain.QUIZ_DURATION_SECONDS
 import com.dfuzer.birdnote.domain.isCorrect
@@ -39,21 +39,21 @@ class ChordQuizViewModelTest {
 
     @Test
     fun correctAnswerIncrementsScoreAndAdvances() = runTest(testDispatcher) {
-        val viewModel = ChordQuizViewModel(ChordConfig(1, ClefMode.SOL), Random(0))
+        val viewModel = QuizViewModel.chords(ChordConfig(1, ClefMode.SOL), Random(0))
         try {
-            val first = viewModel.state.value.chords.first()
+            val first = viewModel.state.value.questions.first()
             viewModel.onAnswer(first.quality)
-            assertTrue(viewModel.state.value.lastFeedbackCorrect == true)
+            assertTrue(viewModel.state.value.answerFeedback?.correct == true)
             assertEquals(1, viewModel.state.value.score)
             assertEquals(
                 first.notes.map { it.pitch.diatonicStep },
-                viewModel.state.value.answerFeedback?.diatonicSteps,
+                viewModel.state.value.answerFeedback?.tones?.map { it.diatonicStep },
             )
             assertEquals(
                 first.notes.map { it.accidental },
                 viewModel.state.value.answerFeedback?.tones?.map { it.accidental },
             )
-            assertNotEquals(first, viewModel.state.value.chords.first())
+            assertNotEquals(first, viewModel.state.value.questions.first())
         } finally {
             viewModel.stop()
         }
@@ -61,18 +61,18 @@ class ChordQuizViewModelTest {
 
     @Test
     fun incorrectAnswerAppliesPenaltyAndStillAdvances() = runTest(testDispatcher) {
-        val viewModel = ChordQuizViewModel(ChordConfig(1, ClefMode.SOL), Random(1))
+        val viewModel = QuizViewModel.chords(ChordConfig(1, ClefMode.SOL), Random(1))
         try {
-            val first = viewModel.state.value.chords.first()
+            val first = viewModel.state.value.questions.first()
             val wrong = ChordQuality.entries.first { !isCorrect(first, it) }
             viewModel.onAnswer(wrong)
-            assertEquals(false, viewModel.state.value.lastFeedbackCorrect)
+            assertEquals(false, viewModel.state.value.answerFeedback?.correct)
             assertEquals(0, viewModel.state.value.score)
             assertEquals(
                 (QUIZ_DURATION_SECONDS - MISTAKE_TIME_PENALTY_SECONDS) * 1000L,
                 viewModel.remainingMillis.value,
             )
-            assertNotEquals(first, viewModel.state.value.chords.first())
+            assertNotEquals(first, viewModel.state.value.questions.first())
         } finally {
             viewModel.stop()
         }
@@ -80,7 +80,7 @@ class ChordQuizViewModelTest {
 
     @Test
     fun timerExpiryFinishesTheQuiz() = runTest(testDispatcher) {
-        val viewModel = ChordQuizViewModel(
+        val viewModel = QuizViewModel.chords(
             config = ChordConfig(2, ClefMode.FA),
             random = Random(2),
             durationSeconds = 3,

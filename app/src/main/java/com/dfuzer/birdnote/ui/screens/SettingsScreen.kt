@@ -30,6 +30,10 @@ import com.dfuzer.birdnote.domain.Clef
 import com.dfuzer.birdnote.domain.NoteNaming
 import com.dfuzer.birdnote.domain.scalePreview
 import com.dfuzer.birdnote.ui.LayoutTuning
+import com.dfuzer.birdnote.ui.components.AppButton
+import com.dfuzer.birdnote.ui.components.BackButton
+import com.dfuzer.birdnote.ui.components.DecoratedScreen
+import com.dfuzer.birdnote.ui.components.label
 import com.dfuzer.birdnote.ui.theme.DarkBlue
 
 @Composable

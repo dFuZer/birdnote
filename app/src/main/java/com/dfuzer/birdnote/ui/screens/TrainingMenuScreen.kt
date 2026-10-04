@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.dfuzer.birdnote.R
 import com.dfuzer.birdnote.ui.LayoutTuning
+import com.dfuzer.birdnote.ui.components.BackButton
+import com.dfuzer.birdnote.ui.components.DecoratedScreen
 
 @Composable
 fun TrainingMenuScreen(

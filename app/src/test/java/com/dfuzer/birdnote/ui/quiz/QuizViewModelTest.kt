@@ -39,16 +39,16 @@ class QuizViewModelTest {
 
     @Test
     fun correctAnswerIncrementsScoreAndAdvanceChangesQueue() = runTest(testDispatcher) {
-        val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL), Random(0))
+        val viewModel = QuizViewModel.notes(PracticeConfig(1, ClefMode.SOL), Random(0))
         try {
-            val first = viewModel.state.value.notes.first()
+            val first = viewModel.state.value.questions.first()
             viewModel.onAnswer(first.pitch.noteName)
-            assertTrue(viewModel.state.value.lastFeedbackCorrect == true)
+            assertTrue(viewModel.state.value.answerFeedback?.correct == true)
             assertEquals(true, viewModel.state.value.answerFeedback?.correct)
-            assertEquals(listOf(first.pitch.diatonicStep), viewModel.state.value.answerFeedback?.diatonicSteps)
+            assertEquals(listOf(first.pitch.diatonicStep), viewModel.state.value.answerFeedback?.tones?.map { it.diatonicStep })
             assertEquals(1, viewModel.state.value.score)
-            assertFalse(viewModel.state.value.answersLocked)
-            assertNotEquals(first, viewModel.state.value.notes.first())
+            assertFalse(viewModel.state.value.finished)
+            assertNotEquals(first, viewModel.state.value.questions.first())
         } finally {
             viewModel.stop()
         }
@@ -56,20 +56,20 @@ class QuizViewModelTest {
 
     @Test
     fun incorrectAnswerDoesNotIncrementScoreButStillAdvances() = runTest(testDispatcher) {
-        val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL), Random(1))
+        val viewModel = QuizViewModel.notes(PracticeConfig(1, ClefMode.SOL), Random(1))
         try {
-            val first = viewModel.state.value.notes.first()
+            val first = viewModel.state.value.questions.first()
             val wrong = NoteName.entries.first { !isCorrect(first, it) }
             viewModel.onAnswer(wrong)
-            assertEquals(false, viewModel.state.value.lastFeedbackCorrect)
+            assertEquals(false, viewModel.state.value.answerFeedback?.correct)
             assertEquals(false, viewModel.state.value.answerFeedback?.correct)
             assertEquals(0, viewModel.state.value.score)
             assertEquals(
                 (QUIZ_DURATION_SECONDS - MISTAKE_TIME_PENALTY_SECONDS) * 1000L,
                 viewModel.remainingMillis.value,
             )
-            assertFalse(viewModel.state.value.answersLocked)
-            assertNotEquals(first, viewModel.state.value.notes.first())
+            assertFalse(viewModel.state.value.finished)
+            assertNotEquals(first, viewModel.state.value.questions.first())
         } finally {
             viewModel.stop()
         }
@@ -77,7 +77,7 @@ class QuizViewModelTest {
 
     @Test
     fun timerExpiryFinishesTheQuiz() = runTest(testDispatcher) {
-        val viewModel = QuizViewModel(
+        val viewModel = QuizViewModel.notes(
             config = PracticeConfig(2, ClefMode.FA),
             random = Random(2),
             durationSeconds = 3,
@@ -95,7 +95,7 @@ class QuizViewModelTest {
 
     @Test
     fun timerTickLeavesTheBoardUnchanged() = runTest(testDispatcher) {
-        val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL), Random(5))
+        val viewModel = QuizViewModel.notes(PracticeConfig(1, ClefMode.SOL), Random(5))
         try {
             val before = viewModel.state.value
             advanceTimeBy(50)
@@ -109,18 +109,18 @@ class QuizViewModelTest {
 
     @Test
     fun mistakeThatExhaustsTimeFinishesTheQuiz() = runTest(testDispatcher) {
-        val viewModel = QuizViewModel(
+        val viewModel = QuizViewModel.notes(
             config = PracticeConfig(1, ClefMode.SOL),
             random = Random(4),
             durationSeconds = 2,
         )
         try {
-            val first = viewModel.state.value.notes.first()
+            val first = viewModel.state.value.questions.first()
             val wrong = NoteName.entries.first { !isCorrect(first, it) }
             viewModel.onAnswer(wrong)
             assertTrue(viewModel.state.value.finished)
             assertEquals(0L, viewModel.remainingMillis.value)
-            assertTrue(viewModel.state.value.answersLocked)
+            assertTrue(viewModel.state.value.finished)
         } finally {
             viewModel.stop()
         }
@@ -128,7 +128,7 @@ class QuizViewModelTest {
 
     @Test
     fun stopFinishesImmediately() = runTest(testDispatcher) {
-        val viewModel = QuizViewModel(PracticeConfig(1, ClefMode.SOL_FA), Random(3))
+        val viewModel = QuizViewModel.notes(PracticeConfig(1, ClefMode.SOL_FA), Random(3))
         viewModel.stop()
         assertTrue(viewModel.state.value.finished)
     }

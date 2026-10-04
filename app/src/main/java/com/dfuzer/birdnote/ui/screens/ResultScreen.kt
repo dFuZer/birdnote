@@ -18,6 +18,8 @@ import com.dfuzer.birdnote.R
 import com.dfuzer.birdnote.domain.BestComparison
 import com.dfuzer.birdnote.domain.compareToBest
 import com.dfuzer.birdnote.ui.LayoutTuning
+import com.dfuzer.birdnote.ui.components.AppButton
+import com.dfuzer.birdnote.ui.components.DecoratedScreen
 
 @Composable
 fun ResultScreen(

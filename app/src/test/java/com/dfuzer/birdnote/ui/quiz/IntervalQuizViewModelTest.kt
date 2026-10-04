@@ -38,17 +38,17 @@ class IntervalQuizViewModelTest {
 
     @Test
     fun correctAnswerIncrementsScoreAndAdvances() = runTest(testDispatcher) {
-        val viewModel = IntervalQuizViewModel(IntervalConfig(1), Random(0))
+        val viewModel = QuizViewModel.intervals(IntervalConfig(1), Random(0))
         try {
-            val first = viewModel.state.value.intervals.first()
+            val first = viewModel.state.value.questions.first()
             viewModel.onAnswer(first.name)
-            assertTrue(viewModel.state.value.lastFeedbackCorrect == true)
+            assertTrue(viewModel.state.value.answerFeedback?.correct == true)
             assertEquals(1, viewModel.state.value.score)
             assertEquals(
                 listOf(first.lower.diatonicStep, first.upper.diatonicStep),
-                viewModel.state.value.answerFeedback?.diatonicSteps,
+                viewModel.state.value.answerFeedback?.tones?.map { it.diatonicStep },
             )
-            assertNotEquals(first, viewModel.state.value.intervals.first())
+            assertNotEquals(first, viewModel.state.value.questions.first())
         } finally {
             viewModel.stop()
         }
@@ -56,18 +56,18 @@ class IntervalQuizViewModelTest {
 
     @Test
     fun incorrectAnswerAppliesPenaltyAndStillAdvances() = runTest(testDispatcher) {
-        val viewModel = IntervalQuizViewModel(IntervalConfig(1), Random(1))
+        val viewModel = QuizViewModel.intervals(IntervalConfig(1), Random(1))
         try {
-            val first = viewModel.state.value.intervals.first()
+            val first = viewModel.state.value.questions.first()
             val wrong = IntervalName.entries.first { !isCorrect(first, it) }
             viewModel.onAnswer(wrong)
-            assertEquals(false, viewModel.state.value.lastFeedbackCorrect)
+            assertEquals(false, viewModel.state.value.answerFeedback?.correct)
             assertEquals(0, viewModel.state.value.score)
             assertEquals(
                 (QUIZ_DURATION_SECONDS - MISTAKE_TIME_PENALTY_SECONDS) * 1000L,
                 viewModel.remainingMillis.value,
             )
-            assertNotEquals(first, viewModel.state.value.intervals.first())
+            assertNotEquals(first, viewModel.state.value.questions.first())
         } finally {
             viewModel.stop()
         }
@@ -75,7 +75,7 @@ class IntervalQuizViewModelTest {
 
     @Test
     fun timerExpiryFinishesTheQuiz() = runTest(testDispatcher) {
-        val viewModel = IntervalQuizViewModel(
+        val viewModel = QuizViewModel.intervals(
             config = IntervalConfig(2),
             random = Random(2),
             durationSeconds = 3,

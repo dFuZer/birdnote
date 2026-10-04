@@ -1,28 +1,30 @@
 package com.dfuzer.birdnote.ui.navigation
 
 import android.os.Bundle
+import androidx.annotation.PluralsRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.dfuzer.birdnote.R
-import com.dfuzer.birdnote.ScoreStore
-import com.dfuzer.birdnote.SettingsStore
+import com.dfuzer.birdnote.data.ScoreStore
+import com.dfuzer.birdnote.data.SettingsStore
 import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.domain.ChordConfig
 import com.dfuzer.birdnote.domain.Clef
 import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.domain.IntervalConfig
-import com.dfuzer.birdnote.domain.bestScore
-import com.dfuzer.birdnote.domain.clefModesFor
 import com.dfuzer.birdnote.domain.NoteNaming
 import com.dfuzer.birdnote.domain.PracticeConfig
 import com.dfuzer.birdnote.domain.PracticeMode
+import com.dfuzer.birdnote.domain.bestScore
+import com.dfuzer.birdnote.domain.clefModesFor
 import com.dfuzer.birdnote.ui.screens.ChordQuizRoute
 import com.dfuzer.birdnote.ui.screens.ChordSetupScreen
 import com.dfuzer.birdnote.ui.screens.HomeScreen
@@ -176,21 +178,14 @@ fun BirdNoteNavHost(
                 navArgument("clefMode") { type = NavType.StringType },
             ),
         ) { entry ->
-            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
-            val clefMode = ClefMode.valueOf(entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name)
+            val difficulty = entry.arguments.difficulty()
+            val clefMode = entry.arguments.clefMode()
             QuizRoute(
                 config = PracticeConfig(difficulty, clefMode),
                 noteNaming = noteNaming,
                 onFinished = { score ->
-                    val previousBest = bestScore(
-                        scoreStore.scores.value,
-                        PracticeMode.NOTES,
-                        difficulty,
-                        clefMode,
-                    )
-                    scoreStore.record(PracticeMode.NOTES, difficulty, clefMode, score)
-                    navController.navigate(Routes.result(difficulty, clefMode, score, previousBest)) {
-                        popUpTo(Routes.QUIZ) { inclusive = true }
+                    navController.finishQuiz(scoreStore, PracticeMode.NOTES, difficulty, clefMode, score, Routes.QUIZ) { previousBest ->
+                        Routes.result(difficulty, clefMode, score, previousBest)
                     }
                 },
             )
@@ -201,19 +196,12 @@ fun BirdNoteNavHost(
                 navArgument("difficulty") { type = NavType.IntType },
             ),
         ) { entry ->
-            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
+            val difficulty = entry.arguments.difficulty()
             IntervalQuizRoute(
                 config = IntervalConfig(difficulty),
                 onFinished = { score ->
-                    val previousBest = bestScore(
-                        scoreStore.scores.value,
-                        PracticeMode.INTERVALS,
-                        difficulty,
-                        null,
-                    )
-                    scoreStore.record(PracticeMode.INTERVALS, difficulty, null, score)
-                    navController.navigate(Routes.intervalResult(difficulty, score, previousBest)) {
-                        popUpTo(Routes.INTERVAL_QUIZ) { inclusive = true }
+                    navController.finishQuiz(scoreStore, PracticeMode.INTERVALS, difficulty, null, score, Routes.INTERVAL_QUIZ) { previousBest ->
+                        Routes.intervalResult(difficulty, score, previousBest)
                     }
                 },
             )
@@ -225,111 +213,74 @@ fun BirdNoteNavHost(
                 navArgument("clefMode") { type = NavType.StringType },
             ),
         ) { entry ->
-            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
-            val clefMode = ClefMode.valueOf(
-                entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name,
-            )
+            val difficulty = entry.arguments.difficulty()
+            val clefMode = entry.arguments.clefMode()
             ChordQuizRoute(
                 config = ChordConfig(difficulty, clefMode),
                 onFinished = { score ->
-                    val previousBest = bestScore(
-                        scoreStore.scores.value,
-                        PracticeMode.CHORDS,
-                        difficulty,
-                        clefMode,
-                    )
-                    scoreStore.record(PracticeMode.CHORDS, difficulty, clefMode, score)
-                    navController.navigate(Routes.chordResult(difficulty, clefMode, score, previousBest)) {
-                        popUpTo(Routes.CHORD_QUIZ) { inclusive = true }
+                    navController.finishQuiz(scoreStore, PracticeMode.CHORDS, difficulty, clefMode, score, Routes.CHORD_QUIZ) { previousBest ->
+                        Routes.chordResult(difficulty, clefMode, score, previousBest)
                     }
                 },
             )
         }
-        composable(
-            route = Routes.RESULT,
-            arguments = listOf(
-                navArgument("difficulty") { type = NavType.IntType },
-                navArgument("clefMode") { type = NavType.StringType },
-                navArgument("score") { type = NavType.IntType },
-                navArgument("previousBest") {
-                    type = NavType.IntType
-                    defaultValue = NO_STORED_BEST
-                },
-            ),
-        ) { entry ->
-            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
-            val clefMode = ClefMode.valueOf(entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name)
-            val score = entry.arguments?.getInt("score") ?: 0
-            ResultScreen(
-                score = score,
-                previousBest = previousBestArg(entry.arguments),
-                onRestartClick = {
-                    navController.navigate(Routes.quiz(difficulty, clefMode)) {
-                        popUpTo(Routes.RESULT) { inclusive = true }
-                    }
-                },
-                onMenuClick = {
-                    navController.popBackStack(Routes.HOME, inclusive = false)
-                },
-            )
+        resultDestination(Routes.RESULT, navController, R.plurals.score_notes) { arguments ->
+            Routes.quiz(arguments.difficulty(), arguments.clefMode())
         }
-        composable(
-            route = Routes.INTERVAL_RESULT,
-            arguments = listOf(
-                navArgument("difficulty") { type = NavType.IntType },
-                navArgument("score") { type = NavType.IntType },
-                navArgument("previousBest") {
-                    type = NavType.IntType
-                    defaultValue = NO_STORED_BEST
-                },
-            ),
-        ) { entry ->
-            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
-            val score = entry.arguments?.getInt("score") ?: 0
-            ResultScreen(
-                score = score,
-                previousBest = previousBestArg(entry.arguments),
-                scorePluralRes = R.plurals.score_intervals,
-                onRestartClick = {
-                    navController.navigate(Routes.intervalQuiz(difficulty)) {
-                        popUpTo(Routes.INTERVAL_RESULT) { inclusive = true }
-                    }
-                },
-                onMenuClick = {
-                    navController.popBackStack(Routes.HOME, inclusive = false)
-                },
-            )
+        resultDestination(Routes.INTERVAL_RESULT, navController, R.plurals.score_intervals) { arguments ->
+            Routes.intervalQuiz(arguments.difficulty())
         }
-        composable(
-            route = Routes.CHORD_RESULT,
-            arguments = listOf(
-                navArgument("difficulty") { type = NavType.IntType },
-                navArgument("clefMode") { type = NavType.StringType },
-                navArgument("score") { type = NavType.IntType },
-                navArgument("previousBest") {
-                    type = NavType.IntType
-                    defaultValue = NO_STORED_BEST
-                },
-            ),
-        ) { entry ->
-            val difficulty = entry.arguments?.getInt("difficulty") ?: 1
-            val clefMode = ClefMode.valueOf(
-                entry.arguments?.getString("clefMode") ?: ClefMode.SOL.name,
-            )
-            val score = entry.arguments?.getInt("score") ?: 0
-            ResultScreen(
-                score = score,
-                previousBest = previousBestArg(entry.arguments),
-                scorePluralRes = R.plurals.score_chords,
-                onRestartClick = {
-                    navController.navigate(Routes.chordQuiz(difficulty, clefMode)) {
-                        popUpTo(Routes.CHORD_RESULT) { inclusive = true }
-                    }
-                },
-                onMenuClick = {
-                    navController.popBackStack(Routes.HOME, inclusive = false)
-                },
-            )
+        resultDestination(Routes.CHORD_RESULT, navController, R.plurals.score_chords) { arguments ->
+            Routes.chordQuiz(arguments.difficulty(), arguments.clefMode())
         }
+    }
+}
+
+private fun Bundle?.difficulty(): Int = this?.getInt("difficulty") ?: 1
+
+private fun Bundle?.clefMode(): ClefMode =
+    ClefMode.valueOf(this?.getString("clefMode") ?: ClefMode.SOL.name)
+
+private fun NavHostController.finishQuiz(
+    scoreStore: ScoreStore,
+    mode: PracticeMode,
+    difficulty: Int,
+    clefMode: ClefMode?,
+    score: Int,
+    quizRoute: String,
+    resultRoute: (previousBest: Int?) -> String,
+) {
+    val previousBest = bestScore(scoreStore.scores.value, mode, difficulty, clefMode)
+    scoreStore.record(mode, difficulty, clefMode, score)
+    navigate(resultRoute(previousBest)) { popUpTo(quizRoute) { inclusive = true } }
+}
+
+private fun NavGraphBuilder.resultDestination(
+    route: String,
+    navController: NavHostController,
+    @PluralsRes scorePluralRes: Int,
+    restartRoute: (Bundle?) -> String,
+) {
+    composable(
+        route = route,
+        arguments = buildList {
+            add(navArgument("difficulty") { type = NavType.IntType })
+            if ("{clefMode}" in route) add(navArgument("clefMode") { type = NavType.StringType })
+            add(navArgument("score") { type = NavType.IntType })
+            add(navArgument("previousBest") {
+                type = NavType.IntType
+                defaultValue = NO_STORED_BEST
+            })
+        },
+    ) { entry ->
+        ResultScreen(
+            score = entry.arguments?.getInt("score") ?: 0,
+            previousBest = previousBestArg(entry.arguments),
+            scorePluralRes = scorePluralRes,
+            onRestartClick = {
+                navController.navigate(restartRoute(entry.arguments)) { popUpTo(route) { inclusive = true } }
+            },
+            onMenuClick = { navController.popBackStack(Routes.HOME, inclusive = false) },
+        )
     }
 }

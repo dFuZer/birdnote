@@ -76,6 +76,11 @@ import coil3.compose.AsyncImage
 import com.dfuzer.birdnote.R
 import com.dfuzer.birdnote.domain.Clef
 import com.dfuzer.birdnote.ui.LayoutTuning
+import com.dfuzer.birdnote.ui.components.AppButton
+import com.dfuzer.birdnote.ui.components.DecoratedScreen
+import com.dfuzer.birdnote.ui.components.FittedText
+import com.dfuzer.birdnote.ui.components.label
+import com.dfuzer.birdnote.ui.staff.assetName
 import com.dfuzer.birdnote.ui.staff.glyphBox
 import com.dfuzer.birdnote.ui.theme.BirdTeal
 import com.dfuzer.birdnote.ui.theme.DarkBlue
@@ -595,12 +600,6 @@ private fun motionEnabled(): Boolean {
             1f,
         ) > 0f
     }
-}
-
-private fun Clef.assetName(): String = when (this) {
-    Clef.SOL -> "key-sol.svg"
-    Clef.FA -> "key-fa.svg"
-    Clef.ALTO, Clef.TENOR -> "key-ut.svg"
 }
 
 /** Staff line counted up from the bottom: the note each clef names. */

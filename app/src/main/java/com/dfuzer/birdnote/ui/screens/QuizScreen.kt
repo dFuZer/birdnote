@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -47,12 +47,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.flow.StateFlow
 import com.dfuzer.birdnote.R
+import com.dfuzer.birdnote.audio.AnswerFeedback
+import com.dfuzer.birdnote.audio.QuizSounds
 import com.dfuzer.birdnote.domain.CHORD_VISIBLE_SLOTS
-import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.domain.ChordConfig
 import com.dfuzer.birdnote.domain.ChordQuality
+import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.domain.IntervalConfig
 import com.dfuzer.birdnote.domain.IntervalName
 import com.dfuzer.birdnote.domain.NoteName
@@ -65,19 +66,15 @@ import com.dfuzer.birdnote.domain.StaffNote
 import com.dfuzer.birdnote.domain.chordQualitiesFor
 import com.dfuzer.birdnote.domain.intervalNamesFor
 import com.dfuzer.birdnote.domain.label
-import com.dfuzer.birdnote.domain.queueSize
 import com.dfuzer.birdnote.ui.LayoutTuning
-import com.dfuzer.birdnote.ui.quiz.AnswerFeedback
-import com.dfuzer.birdnote.ui.quiz.ChordQuizViewModel
-import com.dfuzer.birdnote.ui.quiz.IntervalQuizViewModel
-import com.dfuzer.birdnote.ui.quiz.QuizSounds
 import com.dfuzer.birdnote.ui.quiz.QuizViewModel
-import com.dfuzer.birdnote.ui.quiz.SOUNDS_ENABLED
+import com.dfuzer.birdnote.ui.staff.StaffChord
 import com.dfuzer.birdnote.ui.staff.StaffSurface
 import com.dfuzer.birdnote.ui.staff.asChord
 import com.dfuzer.birdnote.ui.theme.DarkBlue
 import com.dfuzer.birdnote.ui.theme.LightBlue
 import com.dfuzer.birdnote.ui.theme.Neutral
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun QuizRoute(
@@ -85,99 +82,23 @@ fun QuizRoute(
     noteNaming: NoteNaming,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuizViewModel = viewModel(factory = QuizViewModel.factory(config)),
+    viewModel: QuizViewModel<StaffNote, NoteName> = viewModel(factory = QuizViewModel.factory { QuizViewModel.notes(config) }),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val sounds = rememberQuizSounds()
-    var didNavigate by remember { mutableStateOf(false) }
-    LaunchedEffect(state.finished) {
-        if (state.finished && !didNavigate) {
-            didNavigate = true
-            onFinished(state.score)
-        }
-    }
-    if (sounds != null) {
-        LaunchedEffect(state.answerFeedback?.id) {
-            state.answerFeedback?.let(sounds::play)
-        }
-    }
-    QuizScreen(
-        notes = state.notes,
+    QuizEffects(state.finished, state.score, state.answerFeedback, onFinished)
+    QuizScaffold(
+        questions = state.questions,
+        toChord = { it.asChord() },
         score = state.score,
-        answerFeedback = state.answerFeedback,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
-        answersLocked = state.answersLocked,
         clefMode = config.clefMode,
         difficulty = config.difficulty,
-        noteNaming = noteNaming,
-        onAnswer = viewModel::onAnswer,
+        visibleCount = QUEUE_SIZE,
         onStop = viewModel::stop,
         modifier = modifier,
-    )
-}
-
-@Composable
-fun QuizScreen(
-    notes: List<StaffNote>,
-    score: Int,
-    answerFeedback: AnswerFeedback?,
-    remainingMillis: StateFlow<Long>,
-    durationMillis: Long,
-    answersLocked: Boolean,
-    clefMode: ClefMode,
-    difficulty: Int,
-    noteNaming: NoteNaming,
-    onAnswer: (NoteName) -> Unit,
-    onStop: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val tuning = LayoutTuning.Quiz
-    val visibleCount = clefMode.queueSize()
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(LightBlue)
-            .padding(
-                horizontal = tuning.horizontalPadding,
-                vertical = tuning.verticalPadding,
-            ),
     ) {
-        QuizTopBar(
-            score = score,
-            remainingMillis = remainingMillis,
-            durationMillis = durationMillis,
-            onStop = onStop,
-        )
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        Card(
-            shape = RoundedCornerShape(tuning.staffCornerRadius),
-            colors = CardDefaults.cardColors(containerColor = Neutral),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-        ) {
-            StaffSurface(
-                notes = notes,
-                toChords = { queued -> queued.map { it.asChord() } },
-                clefMode = clefMode,
-                difficulty = difficulty,
-                visibleCount = visibleCount,
-                followTimeMillis = tuning.noteFollowTimeMillis,
-                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(tuning.staffInnerPadding),
-            )
-        }
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        AnswerRow(
-            answersLocked = answersLocked,
-            noteNaming = noteNaming,
-            answerFeedback = answerFeedback,
-            onAnswer = onAnswer,
-        )
+        AnswerRow(state.finished, noteNaming, state.answerFeedback, viewModel::onAnswer)
     }
 }
 
@@ -186,95 +107,23 @@ fun IntervalQuizRoute(
     config: IntervalConfig,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: IntervalQuizViewModel = viewModel(factory = IntervalQuizViewModel.factory(config)),
+    viewModel: QuizViewModel<StaffInterval, IntervalName> = viewModel(factory = QuizViewModel.factory { QuizViewModel.intervals(config) }),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val sounds = rememberQuizSounds()
-    var didNavigate by remember { mutableStateOf(false) }
-    LaunchedEffect(state.finished) {
-        if (state.finished && !didNavigate) {
-            didNavigate = true
-            onFinished(state.score)
-        }
-    }
-    if (sounds != null) {
-        LaunchedEffect(state.answerFeedback?.id) {
-            state.answerFeedback?.let(sounds::play)
-        }
-    }
-    IntervalQuizScreen(
-        intervals = state.intervals,
+    QuizEffects(state.finished, state.score, state.answerFeedback, onFinished)
+    QuizScaffold(
+        questions = state.questions,
+        toChord = { it.asChord() },
         score = state.score,
-        answerFeedback = state.answerFeedback,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
-        answersLocked = state.answersLocked,
+        clefMode = ClefMode.SOL,
         difficulty = config.difficulty,
-        onAnswer = viewModel::onAnswer,
+        visibleCount = QUEUE_SIZE,
         onStop = viewModel::stop,
         modifier = modifier,
-    )
-}
-
-@Composable
-fun IntervalQuizScreen(
-    intervals: List<StaffInterval>,
-    score: Int,
-    answerFeedback: AnswerFeedback?,
-    remainingMillis: StateFlow<Long>,
-    durationMillis: Long,
-    answersLocked: Boolean,
-    difficulty: Int,
-    onAnswer: (IntervalName) -> Unit,
-    onStop: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val tuning = LayoutTuning.Quiz
-    val visibleCount = QUEUE_SIZE
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(LightBlue)
-            .padding(
-                horizontal = tuning.horizontalPadding,
-                vertical = tuning.verticalPadding,
-            ),
     ) {
-        QuizTopBar(
-            score = score,
-            remainingMillis = remainingMillis,
-            durationMillis = durationMillis,
-            onStop = onStop,
-        )
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        Card(
-            shape = RoundedCornerShape(tuning.staffCornerRadius),
-            colors = CardDefaults.cardColors(containerColor = Neutral),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-        ) {
-            StaffSurface(
-                notes = intervals,
-                toChords = { queued -> queued.map { it.asChord() } },
-                clefMode = ClefMode.SOL,
-                difficulty = difficulty,
-                visibleCount = visibleCount,
-                followTimeMillis = tuning.noteFollowTimeMillis,
-                minSpeedSlotsPerSecond = tuning.noteFollowMinSpeedSlotsPerSecond,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(tuning.staffInnerPadding),
-            )
-        }
-        Spacer(Modifier.height(tuning.staffVerticalGap))
-        IntervalAnswerGrid(
-            difficulty = difficulty,
-            answersLocked = answersLocked,
-            answerFeedback = answerFeedback,
-            onAnswer = onAnswer,
-        )
+        IntervalAnswerGrid(config.difficulty, state.finished, state.answerFeedback, viewModel::onAnswer)
     }
 }
 
@@ -283,53 +132,61 @@ fun ChordQuizRoute(
     config: ChordConfig,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ChordQuizViewModel = viewModel(factory = ChordQuizViewModel.factory(config)),
+    viewModel: QuizViewModel<PracticeChord, ChordQuality> = viewModel(factory = QuizViewModel.factory { QuizViewModel.chords(config) }),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val sounds = rememberQuizSounds()
-    var didNavigate by remember { mutableStateOf(false) }
-    LaunchedEffect(state.finished) {
-        if (state.finished && !didNavigate) {
-            didNavigate = true
-            onFinished(state.score)
-        }
-    }
-    if (sounds != null) {
-        LaunchedEffect(state.answerFeedback?.id) {
-            state.answerFeedback?.let(sounds::play)
-        }
-    }
-    ChordQuizScreen(
-        chords = state.chords,
+    QuizEffects(state.finished, state.score, state.answerFeedback, onFinished)
+    QuizScaffold(
+        questions = state.questions,
+        toChord = { it.asChord() },
         score = state.score,
-        answerFeedback = state.answerFeedback,
         remainingMillis = viewModel.remainingMillis,
         durationMillis = state.durationMillis,
-        answersLocked = state.answersLocked,
-        difficulty = config.difficulty,
         clefMode = config.clefMode,
-        onAnswer = viewModel::onAnswer,
+        difficulty = config.difficulty,
+        visibleCount = CHORD_VISIBLE_SLOTS,
         onStop = viewModel::stop,
         modifier = modifier,
-    )
+    ) {
+        ChordAnswerGrid(config.difficulty, state.finished, state.answerFeedback, viewModel::onAnswer)
+    }
 }
 
 @Composable
-fun ChordQuizScreen(
-    chords: List<PracticeChord>,
+private fun QuizEffects(
+    finished: Boolean,
     score: Int,
-    answerFeedback: AnswerFeedback?,
+    feedback: AnswerFeedback?,
+    onFinished: (Int) -> Unit,
+) {
+    val sounds = rememberQuizSounds()
+    var didNavigate by remember { mutableStateOf(false) }
+    LaunchedEffect(finished) {
+        if (finished && !didNavigate) {
+            didNavigate = true
+            onFinished(score)
+        }
+    }
+    LaunchedEffect(feedback?.id) {
+        feedback?.let(sounds::play)
+    }
+}
+
+@Composable
+private fun <Question> QuizScaffold(
+    questions: List<Question>,
+    toChord: (Question) -> StaffChord,
+    score: Int,
     remainingMillis: StateFlow<Long>,
     durationMillis: Long,
-    answersLocked: Boolean,
-    difficulty: Int,
     clefMode: ClefMode,
-    onAnswer: (ChordQuality) -> Unit,
+    difficulty: Int,
+    visibleCount: Int,
     onStop: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
+    answers: @Composable () -> Unit,
 ) {
     val tuning = LayoutTuning.Quiz
-    val visibleCount = CHORD_VISIBLE_SLOTS
 
     Column(
         modifier = modifier
@@ -355,8 +212,8 @@ fun ChordQuizScreen(
                 .weight(1f),
         ) {
             StaffSurface(
-                notes = chords,
-                toChords = { queued -> queued.map { it.asChord() } },
+                notes = questions,
+                toChords = { queued -> queued.map(toChord) },
                 clefMode = clefMode,
                 difficulty = difficulty,
                 visibleCount = visibleCount,
@@ -368,12 +225,7 @@ fun ChordQuizScreen(
             )
         }
         Spacer(Modifier.height(tuning.staffVerticalGap))
-        ChordAnswerGrid(
-            difficulty = difficulty,
-            answersLocked = answersLocked,
-            answerFeedback = answerFeedback,
-            onAnswer = onAnswer,
-        )
+        answers()
     }
 }
 
@@ -514,10 +366,51 @@ private fun IntervalAnswerGrid(
     answerFeedback: AnswerFeedback?,
     onAnswer: (IntervalName) -> Unit,
 ) {
+    AnswerGrid(
+        answers = intervalNamesFor(difficulty),
+        columns = LayoutTuning.Quiz.intervalAnswerColumns,
+        label = { it.label() },
+        textStyle = MaterialTheme.typography.labelLarge,
+        maxLines = 1,
+        answersLocked = answersLocked,
+        answerFeedback = answerFeedback,
+        onAnswer = onAnswer,
+    )
+}
+
+@Composable
+private fun ChordAnswerGrid(
+    difficulty: Int,
+    answersLocked: Boolean,
+    answerFeedback: AnswerFeedback?,
+    onAnswer: (ChordQuality) -> Unit,
+) {
+    val answers = chordQualitiesFor(difficulty)
+    AnswerGrid(
+        answers = answers,
+        columns = chordAnswerColumns(answers.size),
+        label = { it.label() },
+        textStyle = MaterialTheme.typography.labelSmall,
+        maxLines = 2,
+        answersLocked = answersLocked,
+        answerFeedback = answerFeedback,
+        onAnswer = onAnswer,
+    )
+}
+
+@Composable
+private fun <Answer> AnswerGrid(
+    answers: List<Answer>,
+    columns: Int,
+    label: @Composable (Answer) -> String,
+    textStyle: TextStyle,
+    maxLines: Int,
+    answersLocked: Boolean,
+    answerFeedback: AnswerFeedback?,
+    onAnswer: (Answer) -> Unit,
+) {
     val tuning = LayoutTuning.Quiz
-    val answers = intervalNamesFor(difficulty)
-    val columns = tuning.intervalAnswerColumns
-    var tapped by remember { mutableStateOf<IntervalName?>(null) }
+    var tapped by remember { mutableStateOf<Answer?>(null) }
     val shaken = rememberShakenButton(answerFeedback, tapped)
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -527,9 +420,9 @@ private fun IntervalAnswerGrid(
             Row(modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { name ->
                     QuizAnswerButton(
-                        text = name.label(),
-                        textStyle = MaterialTheme.typography.labelLarge,
-                        maxLines = 1,
+                        text = label(name),
+                        textStyle = textStyle,
+                        maxLines = maxLines,
                         answersLocked = answersLocked,
                         shakeToken = shakeToken(shaken, name),
                         onClick = {
@@ -553,57 +446,8 @@ private fun IntervalAnswerGrid(
         }
     }
 }
-
 @Composable
-private fun ChordAnswerGrid(
-    difficulty: Int,
-    answersLocked: Boolean,
-    answerFeedback: AnswerFeedback?,
-    onAnswer: (ChordQuality) -> Unit,
-) {
-    val tuning = LayoutTuning.Quiz
-    val answers = chordQualitiesFor(difficulty)
-    val columns = chordAnswerColumns(answers.size)
-    var tapped by remember { mutableStateOf<ChordQuality?>(null) }
-    val shaken = rememberShakenButton(answerFeedback, tapped)
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(tuning.answerRowGap),
-    ) {
-        answers.chunked(columns).forEach { rowItems ->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                rowItems.forEach { quality ->
-                    QuizAnswerButton(
-                        text = quality.label(),
-                        textStyle = MaterialTheme.typography.labelSmall,
-                        maxLines = 2,
-                        answersLocked = answersLocked,
-                        shakeToken = shakeToken(shaken, quality),
-                        onClick = {
-                            tapped = quality
-                            onAnswer(quality)
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = tuning.answerHorizontalMargin)
-                            .height(tuning.answerButtonHeight),
-                    )
-                }
-                repeat(columns - rowItems.size) {
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = tuning.answerHorizontalMargin),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun rememberQuizSounds(): QuizSounds? {
-    if (!SOUNDS_ENABLED) return null
+private fun rememberQuizSounds(): QuizSounds {
     val context = LocalContext.current
     val sounds = remember(context) { QuizSounds(context.assets) }
     DisposableEffect(sounds) {
