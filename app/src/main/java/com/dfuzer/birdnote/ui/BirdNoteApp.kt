@@ -17,8 +17,8 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
-import com.dfuzer.birdnote.ScoreStore
-import com.dfuzer.birdnote.SettingsStore
+import com.dfuzer.birdnote.data.ScoreStore
+import com.dfuzer.birdnote.data.SettingsStore
 import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.ui.navigation.BirdNoteNavHost
 import com.dfuzer.birdnote.ui.screens.PreferredClefsScreen

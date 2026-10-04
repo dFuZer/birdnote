@@ -11,6 +11,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
+import com.dfuzer.birdnote.data.SCORES_PREFS_NAME
+import com.dfuzer.birdnote.data.SETTINGS_PREFS_NAME
 import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.domain.NoteName
 import com.dfuzer.birdnote.domain.NoteNaming
@@ -194,8 +196,8 @@ class AppFlowTest {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_fa)).assertIsDisplayed()
-        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_alto)).assertIsDisplayed()
-        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_tenor)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_alto)).assertDoesNotExist()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_tenor)).assertDoesNotExist()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.clef_sol_fa)).assertIsDisplayed()
         composeRule.onNodeWithText("0").assertIsDisplayed()
 

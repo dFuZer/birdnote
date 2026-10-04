@@ -15,6 +15,9 @@ import com.dfuzer.birdnote.domain.pitchRange
 import com.dfuzer.birdnote.domain.previewChords
 import com.dfuzer.birdnote.domain.previewIntervals
 import com.dfuzer.birdnote.domain.previewNotes
+import com.dfuzer.birdnote.ui.screens.chordPreviewColumnCount
+import com.dfuzer.birdnote.ui.screens.chordTileMotions
+import com.dfuzer.birdnote.ui.screens.easedTileFrame
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -175,7 +178,6 @@ class SetupPreviewEaseTest {
             model = model,
             visibleSlotCount = null,
             noteAreaExtraLeftPaddingInLineSpaces = 1f,
-            extendStaffLinesToEnd = false,
             compactVertical = false,
             staffScaleOverride = null,
             centerVertically = false,

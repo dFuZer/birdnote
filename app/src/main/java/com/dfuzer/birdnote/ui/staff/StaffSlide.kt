@@ -5,7 +5,6 @@ import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.ln
-import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -17,28 +16,7 @@ internal fun spawnShift(visibleCount: Int): Float =
     1f - visibleCount.coerceAtLeast(1).toFloat()
 
 /**
- * Moves [shift] toward [target]. Speed is the remaining distance divided by
- * [followTimeSeconds], and never slower than [minSpeedSlotsPerSecond].
- */
-internal fun advanceShift(
-    shift: Float,
-    target: Float,
-    followTimeSeconds: Float,
-    minSpeedSlotsPerSecond: Float,
-    dtSeconds: Float,
-): Float {
-    val remaining = target - shift
-    val distance = abs(remaining)
-    if (distance == 0f) return shift
-    val tau = followTimeSeconds.coerceAtLeast(0.001f)
-    val speed = max(minSpeedSlotsPerSecond, distance / tau)
-    val step = speed * dtSeconds
-    if (step >= distance) return target
-    return shift + sign(remaining) * step
-}
-
-/**
- * Position after [elapsedSeconds] of [advanceShift].
+ * Position after [elapsedSeconds] on the follow curve.
  *
  * Speed is the remaining distance divided by [followTimeSeconds], and never
  * slower than [minSpeedSlotsPerSecond]. A late frame samples the same curve.

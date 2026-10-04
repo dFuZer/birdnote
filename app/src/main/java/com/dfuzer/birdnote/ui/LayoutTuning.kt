@@ -149,7 +149,6 @@ object LayoutTuning {
         const val stemDownFromStaffStep = 4
 
         const val noteHeadSvgWidth = 8
-        const val noteHeadSvgHeight = 7
         const val noteHeadEllipseRx = 4.35f
         const val noteHeadEllipseRy = 2.9f
         const val noteHeadRotationDegrees = -33.33f

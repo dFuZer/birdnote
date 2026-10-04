@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntSize
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
@@ -28,17 +29,15 @@ import com.dfuzer.birdnote.domain.Accidental
 import com.dfuzer.birdnote.domain.Clef
 import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.ui.LayoutTuning
-import java.util.concurrent.ConcurrentLinkedQueue
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import kotlinx.coroutines.runBlocking
 
 /**
  * Quiz staff drawn on a [Surface] whose buffers are posted from a render thread.
  *
- * The composable only publishes the latest note list. [android.view.Surface.lockHardwareCanvas]
+ * The composable publishes ordered note and configuration updates. [android.view.Surface.lockHardwareCanvas]
  * and [android.view.Surface.unlockCanvasAndPost] run on that thread, so a busy main thread does
  * not hold the next staff frame. The surface sits in the card's inner padding, which matches the
  * card corner radius, so the rectangular buffer stays inside the rounded card.
@@ -58,25 +57,15 @@ fun <T> StaffSurface(
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
-    val session = remember {
-        StaffSession(
-            context = appContext,
-            toChords = toChords,
-            clefMode = clefMode,
-            difficulty = difficulty,
-            visibleCount = visibleCount,
-            followTimeMillis = followTimeMillis,
-            minSpeedSlotsPerSecond = minSpeedSlotsPerSecond,
-        )
-    }
+    val mailbox = remember { StaffMailbox<T>() }
     SideEffect {
-        session.publish(
-            notes = notes,
-            clefMode = clefMode,
-            difficulty = difficulty,
-            visibleCount = visibleCount,
-            followTimeMillis = followTimeMillis,
-            minSpeedSlotsPerSecond = minSpeedSlotsPerSecond,
+        mailbox.submit(
+            StaffUpdate(
+                notes = notes,
+                config = StaffRenderConfig(
+                    clefMode, difficulty, visibleCount, followTimeMillis, minSpeedSlotsPerSecond,
+                ),
+            ),
         )
     }
     AndroidExternalSurface(
@@ -89,7 +78,7 @@ fun <T> StaffSurface(
                 val thread = HandlerThread("StaffRender")
                 thread.start()
                 val handler = Handler(thread.looper)
-                val renderer = StaffRenderer(session, handler, thread)
+                val renderer = StaffRenderer(appContext, mailbox, toChords, handler, thread)
                 renderer.resize(width, height)
                 handler.post { renderer.loop(surface) }
                 surface.onChanged { changedWidth, changedHeight ->
@@ -104,67 +93,19 @@ fun <T> StaffSurface(
     )
 }
 
-private class StaffSession<T>(
-    val context: Context,
-    val toChords: (List<T>) -> List<StaffChord>,
-    clefMode: ClefMode,
-    difficulty: Int,
-    visibleCount: Int,
-    followTimeMillis: Int,
-    minSpeedSlotsPerSecond: Float,
-) {
-    val mailbox = StaffMailbox<T>()
-
-    @Volatile var clefMode: ClefMode = clefMode
-    @Volatile var difficulty: Int = difficulty
-    @Volatile var visibleCount: Int = visibleCount
-    @Volatile var followTimeMillis: Int = followTimeMillis
-    @Volatile var minSpeedSlotsPerSecond: Float = minSpeedSlotsPerSecond
-
-    fun publish(
-        notes: List<T>,
-        clefMode: ClefMode,
-        difficulty: Int,
-        visibleCount: Int,
-        followTimeMillis: Int,
-        minSpeedSlotsPerSecond: Float,
-    ) {
-        this.clefMode = clefMode
-        this.difficulty = difficulty
-        this.visibleCount = visibleCount
-        this.followTimeMillis = followTimeMillis
-        this.minSpeedSlotsPerSecond = minSpeedSlotsPerSecond
-        mailbox.submit(notes)
-    }
-}
-
-private class StaffMailbox<T> {
-    private val pending = ConcurrentLinkedQueue<List<T>>()
-
-    fun submit(notes: List<T>) {
-        pending.add(notes)
-    }
-
-    fun drainInto(out: MutableList<List<T>>) {
-        out.clear()
-        while (true) {
-            out.add(pending.poll() ?: return)
-        }
-    }
-}
-
 private class StaffRenderer<T>(
-    private val session: StaffSession<T>,
+    context: Context,
+    private val mailbox: StaffMailbox<T>,
+    private val toChords: (List<T>) -> List<StaffChord>,
     private val handler: Handler,
     private val thread: HandlerThread,
 ) {
     private val alive = AtomicBoolean(true)
-    private val stopped = AtomicBoolean(false)
-    private val width = AtomicInteger(0)
-    private val height = AtomicInteger(0)
+    @Volatile private var size = IntSize.Zero
     private val belt = StaffBelt<T>()
-    private val pendingNotes = ArrayList<List<T>>()
-    private val sprites = StaffSprites(session.context)
+    private val pendingUpdates = ArrayList<StaffUpdate<T>>()
+    private var config: StaffRenderConfig? = null
+    private val sprites = StaffSprites(context)
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -177,17 +118,12 @@ private class StaffRenderer<T>(
     private var plate: Bitmap? = null
     private var strip: Bitmap? = null
     private var highlights: List<HighlightRect> = emptyList()
-    private var builtWidth = 0
-    private var builtHeight = 0
-    private var builtClef: ClefMode? = null
-    private var builtDifficulty = Int.MIN_VALUE
-    private var builtVisible = Int.MIN_VALUE
-    private var builtNotes: List<T>? = null
+    private var geometryKey: StaffGeometryKey? = null
+    private var contentKey: StaffContentKey<T>? = null
     private var released = false
 
     fun resize(nextWidth: Int, nextHeight: Int) {
-        width.set(nextWidth)
-        height.set(nextHeight)
+        size = IntSize(nextWidth, nextHeight)
     }
 
     fun loop(surface: Surface) {
@@ -208,8 +144,7 @@ private class StaffRenderer<T>(
     }
 
     fun stop() {
-        if (!stopped.compareAndSet(false, true)) return
-        alive.set(false)
+        if (!alive.compareAndSet(true, false)) return
         handler.post { release() }
         thread.quitSafely()
     }
@@ -223,20 +158,23 @@ private class StaffRenderer<T>(
         }
         val nowSeconds = frameTimeNanos / NANOS_PER_SECOND
         lastFrameNanos = frameTimeNanos
-        session.mailbox.drainInto(pendingNotes)
-        val visibleCount = session.visibleCount
-        for (incoming in pendingNotes) {
-            belt.offer(incoming, visibleCount, nowSeconds, frameSeconds)
+        mailbox.drainInto(pendingUpdates)
+        if (config == null && pendingUpdates.isEmpty()) mailbox.latest?.let(pendingUpdates::add)
+        for (incoming in pendingUpdates) {
+            config = incoming.config
+            belt.offer(incoming.notes, incoming.config.visibleCount, nowSeconds, frameSeconds)
         }
+        val config = config ?: return
         belt.advance(
             nowSeconds,
-            session.followTimeMillis.coerceAtLeast(1) / 1_000f,
-            session.minSpeedSlotsPerSecond,
+            config.followTimeMillis.coerceAtLeast(1) / 1_000f,
+            config.minSpeedSlotsPerSecond,
         )
-        val surfaceWidth = width.get()
-        val surfaceHeight = height.get()
+        val surfaceSize = size
+        val surfaceWidth = surfaceSize.width
+        val surfaceHeight = surfaceSize.height
         if (surfaceWidth <= 0 || surfaceHeight <= 0) return
-        ensureCaches(surfaceWidth, surfaceHeight)
+        ensureCaches(surfaceWidth, surfaceHeight, config)
         val plateBitmap = plate ?: return
         val stripBitmap = strip ?: return
         val staff = geometry ?: return
@@ -270,25 +208,19 @@ private class StaffRenderer<T>(
         }
     }
 
-    private fun ensureCaches(surfaceWidth: Int, surfaceHeight: Int) {
-        val clefMode = session.clefMode
-        val difficulty = session.difficulty
-        val visibleCount = session.visibleCount
-        val geometryChanged = geometry == null ||
-            builtWidth != surfaceWidth ||
-            builtHeight != surfaceHeight ||
-            builtClef != clefMode ||
-            builtDifficulty != difficulty ||
-            builtVisible != visibleCount
-        if (geometryChanged) {
+    private fun ensureCaches(surfaceWidth: Int, surfaceHeight: Int, config: StaffRenderConfig) {
+        val nextGeometryKey = StaffGeometryKey(
+            surfaceWidth, surfaceHeight, config.clefMode, config.difficulty, config.visibleCount,
+        )
+        if (geometryKey != nextGeometryKey) {
             val nextGeometry = staffGeometry(
                 size = Size(surfaceWidth.toFloat(), surfaceHeight.toFloat()),
                 model = StaffRenderModel(
-                    clefMode = clefMode,
+                    clefMode = config.clefMode,
                     chords = emptyList(),
-                    difficulty = difficulty,
+                    difficulty = config.difficulty,
                 ),
-                visibleSlotCount = visibleCount,
+                visibleSlotCount = config.visibleCount,
                 noteAreaExtraLeftPaddingInLineSpaces = 0f,
                 compactVertical = false,
             )
@@ -299,19 +231,16 @@ private class StaffRenderer<T>(
             glyphs = nextGlyphs
             plate?.recycle()
             plate = nextPlate
-            builtWidth = surfaceWidth
-            builtHeight = surfaceHeight
-            builtClef = clefMode
-            builtDifficulty = difficulty
-            builtVisible = visibleCount
-            builtNotes = null
+            geometryKey = nextGeometryKey
+            contentKey = null
         }
         val staff = geometry ?: return
         val drawnGlyphs = glyphs ?: return
-        if (builtNotes === belt.notes && strip != null) return
-        val chords = session.toChords(belt.notes)
+        val nextContentKey = StaffContentKey(belt.notes, belt.highlightIndex)
+        if (contentKey == nextContentKey && strip != null) return
+        val chords = toChords(belt.notes)
         val chordDraws = cacheChordDraws(
-            StaffRenderModel(clefMode, chords, difficulty),
+            StaffRenderModel(config.clefMode, chords, config.difficulty),
             staff,
         )
         highlights = highlightRects(
@@ -329,7 +258,7 @@ private class StaffRenderer<T>(
         )
         strip?.recycle()
         strip = nextStrip
-        builtNotes = belt.notes
+        contentKey = nextContentKey
     }
 
     private fun drawPlate(
@@ -467,35 +396,18 @@ private class StaffRenderer<T>(
             }
         }
         for (accidental in layout.accidentals) {
-            val glyph = when (accidental.accidental) {
-                Accidental.SHARP -> AccidentalSprite(
-                    bitmap = glyphs.sharp,
-                    width = lineSpacing * tuning.sharpWidthInLineSpaces,
-                    height = lineSpacing * tuning.sharpHeightInLineSpaces,
-                    centerYOffset = 0f,
-                )
-                Accidental.FLAT -> AccidentalSprite(
-                    bitmap = glyphs.flat,
-                    width = lineSpacing * tuning.flatWidthInLineSpaces,
-                    height = lineSpacing * tuning.flatHeightInLineSpaces,
-                    centerYOffset = lineSpacing * tuning.flatCenterYOffsetInLineSpaces,
-                )
-                Accidental.NATURAL -> AccidentalSprite(
-                    bitmap = glyphs.natural,
-                    width = lineSpacing * tuning.naturalWidthInLineSpaces,
-                    height = lineSpacing * tuning.naturalHeightInLineSpaces,
-                    centerYOffset = 0f,
-                )
-                Accidental.NONE -> continue
-            }
-            val centerY = yForStep(accidental.step.toFloat(), bottomLineY, lineSpacing) + glyph.centerYOffset
+            val glyph = accidental.accidental.glyph() ?: continue
+            val glyphWidth = lineSpacing * glyph.widthInLineSpaces
+            val glyphHeight = lineSpacing * glyph.heightInLineSpaces
+            val centerY = yForStep(accidental.step.toFloat(), bottomLineY, lineSpacing) +
+                lineSpacing * glyph.centerYOffsetInLineSpaces
             destRect.set(
-                accidental.x - glyph.width / 2f,
-                centerY - glyph.height / 2f,
-                accidental.x + glyph.width / 2f,
-                centerY + glyph.height / 2f,
+                accidental.x - glyphWidth / 2f,
+                centerY - glyphHeight / 2f,
+                accidental.x + glyphWidth / 2f,
+                centerY + glyphHeight / 2f,
             )
-            canvas.drawBitmap(glyph.bitmap, null, destRect, bitmapPaint)
+            canvas.drawBitmap(glyphs.bitmapFor(accidental.accidental), null, destRect, bitmapPaint)
         }
     }
 
@@ -583,13 +495,6 @@ private fun fillSurface(surface: Surface) {
     }
 }
 
-private class AccidentalSprite(
-    val bitmap: Bitmap,
-    val width: Float,
-    val height: Float,
-    val centerYOffset: Float,
-)
-
 private class StaffGlyphs(
     val note: Bitmap,
     val sharp: Bitmap,
@@ -603,6 +508,13 @@ private class StaffGlyphs(
         Clef.SOL -> treble
         Clef.FA -> bass
         Clef.ALTO, Clef.TENOR -> cClef
+    }
+
+    fun bitmapFor(accidental: Accidental): Bitmap = when (accidental) {
+        Accidental.SHARP -> sharp
+        Accidental.FLAT -> flat
+        Accidental.NATURAL -> natural
+        Accidental.NONE -> error("No glyph for an unaltered note")
     }
 }
 
@@ -623,37 +535,23 @@ private class StaffSprites(context: Context) {
                 spacing * tuning.noteWidthInLineSpaces,
                 spacing * tuning.noteHeightInLineSpaces,
             ),
-            sharp = load(
-                tuning.sharpAsset,
-                spacing * tuning.sharpWidthInLineSpaces,
-                spacing * tuning.sharpHeightInLineSpaces,
-            ),
-            flat = load(
-                tuning.flatAsset,
-                spacing * tuning.flatWidthInLineSpaces,
-                spacing * tuning.flatHeightInLineSpaces,
-            ),
-            natural = load(
-                tuning.naturalAsset,
-                spacing * tuning.naturalWidthInLineSpaces,
-                spacing * tuning.naturalHeightInLineSpaces,
-            ),
-            treble = load(
-                "key-sol.svg",
-                spacing * tuning.trebleClefWidthInLineSpaces,
-                spacing * tuning.trebleClefHeightInLineSpaces,
-            ),
-            bass = load(
-                "key-fa.svg",
-                spacing * tuning.bassClefWidthInLineSpaces,
-                spacing * tuning.bassClefHeightInLineSpaces,
-            ),
-            cClef = load(
-                "key-ut.svg",
-                spacing * tuning.cClefWidthInLineSpaces,
-                spacing * tuning.cClefHeightInLineSpaces,
-            ),
+            sharp = loadAccidental(Accidental.SHARP, spacing),
+            flat = loadAccidental(Accidental.FLAT, spacing),
+            natural = loadAccidental(Accidental.NATURAL, spacing),
+            treble = loadClef(Clef.SOL, spacing),
+            bass = loadClef(Clef.FA, spacing),
+            cClef = loadClef(Clef.ALTO, spacing),
         )
+    }
+
+    private fun loadAccidental(accidental: Accidental, spacing: Float): Bitmap {
+        val glyph = checkNotNull(accidental.glyph())
+        return load(glyph.asset, spacing * glyph.widthInLineSpaces, spacing * glyph.heightInLineSpaces)
+    }
+
+    private fun loadClef(clef: Clef, spacing: Float): Bitmap {
+        val box = clef.glyphBox()
+        return load(clef.assetName(), spacing * box.widthInLineSpaces, spacing * box.heightInLineSpaces)
     }
 
     private fun load(assetName: String, widthPx: Float, heightPx: Float): Bitmap {

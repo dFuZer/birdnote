@@ -1,5 +1,8 @@
 package com.dfuzer.birdnote.ui.staff
 
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.sign
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -107,4 +110,25 @@ class StaffSlideTest {
 
     private fun displayedSlot(absoluteIndex: Int, shift: Float, origin: Int): Float =
         (absoluteIndex - origin) - slideOffsetSlots(shift, origin)
+}
+
+/**
+ * Moves [shift] toward [target]. Speed is the remaining distance divided by
+ * [followTimeSeconds], and never slower than [minSpeedSlotsPerSecond].
+ */
+private fun advanceShift(
+    shift: Float,
+    target: Float,
+    followTimeSeconds: Float,
+    minSpeedSlotsPerSecond: Float,
+    dtSeconds: Float,
+): Float {
+    val remaining = target - shift
+    val distance = abs(remaining)
+    if (distance == 0f) return shift
+    val tau = followTimeSeconds.coerceAtLeast(0.001f)
+    val speed = max(minSpeedSlotsPerSecond, distance / tau)
+    val step = speed * dtSeconds
+    if (step >= distance) return target
+    return shift + sign(remaining) * step
 }
