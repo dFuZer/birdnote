@@ -100,7 +100,7 @@ internal fun staffGeometry(
     noteAreaExtraLeftPaddingInLineSpaces: Float,
     compactVertical: Boolean,
     staffScaleOverride: Float? = null,
-    centerVertically: Boolean = false,
+    verticalCenter: Float = 0f,
 ): StaffGeometry {
     val clefs = model.clefMode.clefs()
     val tuning = LayoutTuning.Staff
@@ -142,10 +142,12 @@ internal fun staffGeometry(
     val bottomLineYs = clefs.indices.map { staffIndex ->
         val blockTop = paddingY + staffIndex * (blockHeight + gap)
         val blockCenterY = blockTop + blockHeight / 2f
-        if (compactVertical && !centerVertically) {
-            blockTop + blockHeight - ledgerBelow * (lineSpacing / 2f)
+        val centeredY = blockCenterY + 2f * lineSpacing
+        if (!compactVertical) {
+            centeredY
         } else {
-            blockCenterY + 2f * lineSpacing
+            val anchoredY = blockTop + blockHeight - ledgerBelow * (lineSpacing / 2f)
+            anchoredY + (centeredY - anchoredY) * verticalCenter.coerceIn(0f, 1f)
         }
     }
     return StaffGeometry(

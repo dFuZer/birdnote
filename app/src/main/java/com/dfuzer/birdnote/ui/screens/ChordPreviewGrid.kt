@@ -1,8 +1,11 @@
 package com.dfuzer.birdnote.ui.screens
 
 import com.dfuzer.birdnote.domain.ChordQuality
+import com.dfuzer.birdnote.domain.MIN_DIFFICULTY
 import com.dfuzer.birdnote.domain.PracticeChord
 import com.dfuzer.birdnote.ui.LayoutTuning
+import com.dfuzer.birdnote.ui.staff.chordPreviewStaffScale
+import com.dfuzer.birdnote.ui.staff.lineSpacingForHeight
 
 internal data class ChordGridTarget(
     val chords: List<PracticeChord>,
@@ -33,6 +36,11 @@ internal data class TileFrame(
     val height: Float,
     val alpha: Float,
     val scale: Float,
+)
+
+internal data class ChordTileStaffEase(
+    val staffScale: Float,
+    val verticalCenter: Float,
 )
 
 internal fun chordPreviewColumnCount(count: Int): Int {
@@ -90,6 +98,59 @@ internal fun chordTileMotions(
             toSlot = null,
         )
     } + staying
+}
+
+internal fun settledStaffHeightPx(
+    slotHeightPx: Float,
+    tileHeightPx: Float,
+    staffHeightPx: Float,
+): Float = (slotHeightPx - (tileHeightPx - staffHeightPx).coerceAtLeast(0f)).coerceAtLeast(0f)
+
+internal fun easedChordTileStaff(
+    fromDifficulty: Int?,
+    toDifficulty: Int?,
+    fraction: Float,
+    fromStaffHeightPx: Float,
+    toStaffHeightPx: Float,
+    staffHeightPx: Float,
+    notesSingleStaffHeightPx: Float,
+): ChordTileStaffEase {
+    val startDifficulty = fromDifficulty ?: toDifficulty
+    val endDifficulty = toDifficulty ?: fromDifficulty
+    if (startDifficulty == null || endDifficulty == null) {
+        return ChordTileStaffEase(staffScale = 1f, verticalCenter = 0f)
+    }
+    val move = when {
+        fromDifficulty == null -> 1f
+        toDifficulty == null -> 0f
+        else -> fraction.coerceIn(0f, 1f)
+    }
+    val startScale = chordPreviewStaffScale(
+        startDifficulty,
+        fromStaffHeightPx,
+        notesSingleStaffHeightPx,
+    )
+    val endScale = chordPreviewStaffScale(
+        endDifficulty,
+        toStaffHeightPx,
+        notesSingleStaffHeightPx,
+    )
+    val startSpacing = lineSpacingForHeight(fromStaffHeightPx, compactVertical = true) * startScale
+    val endSpacing = lineSpacingForHeight(toStaffHeightPx, compactVertical = true) * endScale
+    val currentSpacing = lineSpacingForHeight(staffHeightPx, compactVertical = true)
+    val staffScale = if (currentSpacing <= 0f) {
+        lerp(startScale, endScale, move)
+    } else {
+        lerp(startSpacing, endSpacing, move) / currentSpacing
+    }
+    return ChordTileStaffEase(
+        staffScale = staffScale,
+        verticalCenter = lerp(
+            if (startDifficulty == MIN_DIFFICULTY) 1f else 0f,
+            if (endDifficulty == MIN_DIFFICULTY) 1f else 0f,
+            move,
+        ),
+    )
 }
 
 internal fun easedTileFrame(

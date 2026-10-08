@@ -57,6 +57,7 @@ class PublicationReadinessTest {
         compose.runOnIdle { assertEquals(false, prefs.getBoolean("sound_enabled", true)) }
         compose.activityRule.scenario.recreate()
         compose.runOnIdle { assertEquals(false, prefs.getBoolean("sound_enabled", true)) }
+        compose.onNodeWithText("Source code").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("How to play").performScrollTo().performClick()
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Open-source licenses").performScrollTo().performClick()

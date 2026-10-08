@@ -25,10 +25,10 @@
     <string name="welcome_clefs">Wähle die Notenschlüssel, mit denen du üben möchtest.</string>
     <string name="preferred_clefs_hint">Du kannst sie jederzeit in den Einstellungen ändern.</string>
     <string name="welcome_promise_title">Schön, dass du da bist.</string>
-    <string name="welcome_promise_body">Wir mögen unsere Nutzer. BirdNote ist kostenlos, ohne Werbung, und das bleibt so.</string>
-    <string name="welcome_promise_free">Kostenlos</string>
+    <string name="welcome_promise_body">BirdNote ist kostenlos, ohne Werbung, und das bleibt immer so.</string>
+    <string name="welcome_promise_open_source">Open Source</string>
     <string name="welcome_promise_no_ads">Keine Werbung</string>
-    <string name="welcome_promise_forever">Für immer</string>
+    <string name="welcome_promise_no_paywall">Nichts kostet extra</string>
     <string name="welcome_promise_continue">Danke!</string>
     <string name="continue_action">Los geht\'s!</string>
     <string name="lets_go">Los geht\'s!</string>
@@ -84,5 +84,6 @@
     <string name="accidental_flat">Be</string>
     <string name="accidental_natural">Auflösungszeichen</string>
     <string name="licenses">Open-Source-Lizenzen</string>
+    <string name="source_code">Quellcode</string>
     <string name="close">Schließen</string>
 </resources>

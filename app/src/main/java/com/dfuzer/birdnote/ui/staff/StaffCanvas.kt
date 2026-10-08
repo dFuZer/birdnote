@@ -47,7 +47,8 @@ fun StaffCanvas(
     noteAreaExtraLeftPaddingInLineSpaces: Float = 0f,
     compactVertical: Boolean = false,
     staffScaleOverride: Float? = null,
-    centerVertically: Boolean = false,
+    verticalCenter: Float = 0f,
+    animateSetupChanges: Boolean = true,
 ) {
     val trebleClef = rememberStaffSvgPainter(Clef.SOL.assetName(), width = 38, height = 109)
     val bassClef = rememberStaffSvgPainter(Clef.FA.assetName(), width = 49, height = 57)
@@ -71,18 +72,19 @@ fun StaffCanvas(
     val painters = remember(trebleClef, bassClef, cClef, note, sharp, flat, natural) {
         StaffPainters(trebleClef, bassClef, cClef, note, sharp, flat, natural)
     }
-    EasingStaffCanvas(
-        request = StaffDrawRequest(
-            model = model,
-            visibleSlotCount = visibleSlotCount,
-            noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
-            compactVertical = compactVertical,
-            staffScaleOverride = staffScaleOverride,
-            centerVertically = centerVertically,
-        ),
-        painters = painters,
-        modifier = modifier,
+    val request = StaffDrawRequest(
+        model = model,
+        visibleSlotCount = visibleSlotCount,
+        noteAreaExtraLeftPaddingInLineSpaces = noteAreaExtraLeftPaddingInLineSpaces,
+        compactVertical = compactVertical,
+        staffScaleOverride = staffScaleOverride,
+        verticalCenter = verticalCenter,
     )
+    if (animateSetupChanges) {
+        EasingStaffCanvas(request, painters, modifier)
+    } else {
+        StaticStaffCanvas(request, painters, modifier)
+    }
 }
 
 @Composable
@@ -102,6 +104,26 @@ private fun EasingStaffCanvas(
                     from = setupPreviewPose(size, from),
                     to = setupPreviewPose(size, to),
                     fraction = fraction,
+                ),
+                painters,
+            )
+        },
+    )
+}
+
+@Composable
+private fun StaticStaffCanvas(
+    request: StaffDrawRequest,
+    painters: StaffPainters,
+    modifier: Modifier,
+) {
+    Spacer(
+        modifier = modifier.drawBehind {
+            drawEasedPreview(
+                easeSetupPreview(
+                    from = setupPreviewPose(size, request),
+                    to = setupPreviewPose(size, request),
+                    fraction = 1f,
                 ),
                 painters,
             )

@@ -23,7 +23,7 @@ internal data class StaffDrawRequest(
     val noteAreaExtraLeftPaddingInLineSpaces: Float,
     val compactVertical: Boolean,
     val staffScaleOverride: Float?,
-    val centerVertically: Boolean,
+    val verticalCenter: Float,
 )
 
 internal class SetupEase<T>(initial: T) {
@@ -151,7 +151,7 @@ internal fun setupPreviewPose(
         noteAreaExtraLeftPaddingInLineSpaces = request.noteAreaExtraLeftPaddingInLineSpaces,
         compactVertical = request.compactVertical,
         staffScaleOverride = request.staffScaleOverride,
-        centerVertically = request.centerVertically,
+        verticalCenter = request.verticalCenter,
     )
     val right = size.width - geometry.paddingX
     val staves = geometry.clefs.mapIndexed { staffIndex, clef ->

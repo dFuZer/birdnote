@@ -32,13 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -181,16 +177,16 @@ private fun PromisePanel(
             verticalArrangement = Arrangement.spacedBy(tuning.cardGap, Alignment.CenterVertically),
         ) {
             PromiseCard(
-                label = stringResource(R.string.welcome_promise_free),
-                icon = PromiseIcon.Free,
-            )
-            PromiseCard(
                 label = stringResource(R.string.welcome_promise_no_ads),
                 icon = PromiseIcon.NoAds,
             )
             PromiseCard(
-                label = stringResource(R.string.welcome_promise_forever),
-                icon = PromiseIcon.Forever,
+                label = stringResource(R.string.welcome_promise_no_paywall),
+                icon = PromiseIcon.NoPaywall,
+            )
+            PromiseCard(
+                label = stringResource(R.string.welcome_promise_open_source),
+                icon = PromiseIcon.OpenSource,
             )
         }
         Spacer(Modifier.height(tuning.buttonTopGap))
@@ -201,7 +197,11 @@ private fun PromisePanel(
     }
 }
 
-private enum class PromiseIcon { Free, NoAds, Forever }
+private enum class PromiseIcon(val asset: String) {
+    OpenSource("book-open.svg"),
+    NoAds("play-off.svg"),
+    NoPaywall("lock-open.svg"),
+}
 
 @Composable
 private fun PromiseCard(
@@ -222,9 +222,19 @@ private fun PromiseCard(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Canvas(Modifier.size(36.dp)) {
-            drawCircle(BirdTeal.copy(alpha = 0.16f))
-            drawPromiseIcon(icon)
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(BirdTeal.copy(alpha = 0.16f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(
+                model = "${ASSET_ROOT}${icon.asset}",
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                colorFilter = ColorFilter.tint(StaffBlue),
+                modifier = Modifier.size(22.dp),
+            )
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             FittedText(
@@ -294,42 +304,6 @@ private fun PromiseBird(
             drawCircle(BirdTeal)
             val heart = heartPath(size)
             drawPath(heart, Neutral)
-        }
-    }
-}
-
-private fun DrawScope.drawPromiseIcon(icon: PromiseIcon) {
-    val color = StaffBlue
-    val stroke = Stroke(width = size.minDimension * 0.09f, cap = StrokeCap.Round)
-    when (icon) {
-        PromiseIcon.Free -> {
-            val heart = heartPath(size)
-            drawPath(heart, BirdTeal)
-        }
-        PromiseIcon.NoAds -> {
-            val inset = size.minDimension * 0.22f
-            drawRoundRect(
-                color = color,
-                topLeft = Offset(inset, inset * 1.15f),
-                size = Size(size.width - inset * 2f, size.height - inset * 2.3f),
-                cornerRadius = CornerRadius(size.minDimension * 0.08f),
-                style = stroke,
-            )
-            drawLine(
-                color = BirdTeal,
-                start = Offset(inset * 0.85f, size.height - inset * 0.85f),
-                end = Offset(size.width - inset * 0.85f, inset * 0.85f),
-                strokeWidth = stroke.width,
-                cap = StrokeCap.Round,
-            )
-        }
-        PromiseIcon.Forever -> {
-            val y = size.height * 0.5f
-            val r = size.minDimension * 0.16f
-            val left = Offset(size.width * 0.36f, y)
-            val right = Offset(size.width * 0.64f, y)
-            drawCircle(color = color, radius = r, center = left, style = stroke)
-            drawCircle(color = color, radius = r, center = right, style = stroke)
         }
     }
 }

@@ -180,7 +180,7 @@ class SetupPreviewEaseTest {
             noteAreaExtraLeftPaddingInLineSpaces = 1f,
             compactVertical = false,
             staffScaleOverride = null,
-            centerVertically = false,
+            verticalCenter = 0f,
         ),
     )
 

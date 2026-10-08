@@ -25,10 +25,10 @@
     <string name="welcome_clefs">Выбери ключи, с которыми хочешь тренироваться.</string>
     <string name="preferred_clefs_hint">Их можно в любой момент изменить в настройках.</string>
     <string name="welcome_promise_title">Мы рады, что ты здесь.</string>
-    <string name="welcome_promise_body">Мы любим наших пользователей. BirdNote бесплатный, без рекламы — и таким останется.</string>
-    <string name="welcome_promise_free">Бесплатно</string>
+    <string name="welcome_promise_body">BirdNote бесплатный, без рекламы, и таким останется всегда.</string>
+    <string name="welcome_promise_open_source">Открытый код</string>
     <string name="welcome_promise_no_ads">Без рекламы</string>
-    <string name="welcome_promise_forever">Навсегда</string>
+    <string name="welcome_promise_no_paywall">Без платного доступа</string>
     <string name="welcome_promise_continue">Спасибо!</string>
     <string name="continue_action">Поехали!</string>
     <string name="lets_go">Поехали!</string>
@@ -90,5 +90,6 @@
     <string name="accidental_flat">Бемоль</string>
     <string name="accidental_natural">Бекар</string>
     <string name="licenses">Лицензии открытого ПО</string>
+    <string name="source_code">Исходный код</string>
     <string name="close">Закрыть</string>
 </resources>

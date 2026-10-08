@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.IntOffset
 import com.dfuzer.birdnote.domain.ChordConfig
 import com.dfuzer.birdnote.domain.Clef
 import com.dfuzer.birdnote.domain.ClefMode
-import com.dfuzer.birdnote.domain.MIN_DIFFICULTY
 import com.dfuzer.birdnote.domain.PracticeChord
 import com.dfuzer.birdnote.domain.clefs
 import com.dfuzer.birdnote.domain.openingClefMode
@@ -40,7 +39,6 @@ import com.dfuzer.birdnote.ui.components.label
 import com.dfuzer.birdnote.ui.staff.StaffCanvas
 import com.dfuzer.birdnote.ui.staff.StaffRenderModel
 import com.dfuzer.birdnote.ui.staff.asChord
-import com.dfuzer.birdnote.ui.staff.chordPreviewStaffScale
 import com.dfuzer.birdnote.ui.staff.rememberSetupEase
 import com.dfuzer.birdnote.ui.theme.DarkBlue
 import kotlin.math.roundToInt
@@ -103,11 +101,21 @@ fun ChordSetupScreen(
                     )
                     if (frame.alpha <= 0f) return@forEach
                     val chord = motion.toChord ?: motion.fromChord ?: return@forEach
-                    val tileDifficulty = motion.toDifficulty ?: motion.fromDifficulty ?: difficulty
+                    val fromHeight = motion.fromSlot?.let {
+                        chordGridRect(it, widthPx, heightPx, gapPx).height
+                    } ?: frame.height
+                    val toHeight = motion.toSlot?.let {
+                        chordGridRect(it, widthPx, heightPx, gapPx).height
+                    } ?: frame.height
                     key(motion.quality) {
                         ChordPreviewTile(
                             chord = chord,
-                            difficulty = tileDifficulty,
+                            fromDifficulty = motion.fromDifficulty,
+                            toDifficulty = motion.toDifficulty,
+                            fraction = fraction,
+                            fromTileHeightPx = fromHeight,
+                            toTileHeightPx = toHeight,
+                            tileHeightPx = frame.height,
                             notesSingleStaffHeightPx = notesSingleStaffHeightPx,
                             modifier = Modifier
                                 .offset {
@@ -136,7 +144,12 @@ fun ChordSetupScreen(
 @Composable
 private fun ChordPreviewTile(
     chord: PracticeChord,
-    difficulty: Int,
+    fromDifficulty: Int?,
+    toDifficulty: Int?,
+    fraction: Float,
+    fromTileHeightPx: Float,
+    toTileHeightPx: Float,
+    tileHeightPx: Float,
     notesSingleStaffHeightPx: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -152,7 +165,24 @@ private fun ChordPreviewTile(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            val tileHeightPx = with(density) { maxHeight.toPx() }
+            val staffHeightPx = with(density) { maxHeight.toPx() }
+            val staff = easedChordTileStaff(
+                fromDifficulty = fromDifficulty,
+                toDifficulty = toDifficulty,
+                fraction = fraction,
+                fromStaffHeightPx = settledStaffHeightPx(
+                    fromTileHeightPx,
+                    tileHeightPx,
+                    staffHeightPx,
+                ),
+                toStaffHeightPx = settledStaffHeightPx(
+                    toTileHeightPx,
+                    tileHeightPx,
+                    staffHeightPx,
+                ),
+                staffHeightPx = staffHeightPx,
+                notesSingleStaffHeightPx = notesSingleStaffHeightPx,
+            )
             StaffCanvas(
                 model = StaffRenderModel(
                     clefMode = chord.clef.toMode(),
@@ -160,12 +190,9 @@ private fun ChordPreviewTile(
                 ),
                 visibleSlotCount = 1,
                 compactVertical = true,
-                staffScaleOverride = chordPreviewStaffScale(
-                    difficulty = difficulty,
-                    tileHeightPx = tileHeightPx,
-                    notesSingleStaffHeightPx = notesSingleStaffHeightPx,
-                ),
-                centerVertically = difficulty == MIN_DIFFICULTY,
+                staffScaleOverride = staff.staffScale,
+                verticalCenter = staff.verticalCenter,
+                animateSetupChanges = false,
                 noteAreaExtraLeftPaddingInLineSpaces =
                     tuning.previewNoteAreaExtraLeftPaddingInLineSpaces,
                 modifier = Modifier.fillMaxSize(),

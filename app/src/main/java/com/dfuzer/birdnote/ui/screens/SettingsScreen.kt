@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -81,6 +82,8 @@ import com.dfuzer.birdnote.ui.theme.Neutral
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+private const val SOURCE_CODE_URL = "https://github.com/dFuZer/birdnote"
+
 @Composable
 fun SettingsScreen(
     noteNaming: NoteNaming,
@@ -96,6 +99,7 @@ fun SettingsScreen(
 ) {
     val common = LayoutTuning.Common
     val tuning = LayoutTuning.Settings
+    val uriHandler = LocalUriHandler.current
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showLicenses by rememberSaveable { mutableStateOf(false) }
     if (showHelp) HelpDialog { showHelp = false }
@@ -131,6 +135,9 @@ fun SettingsScreen(
                     onSoundEnabledChange = onSoundEnabledChange,
                     onHowToPlay = { showHelp = true },
                     onLicenses = { showLicenses = true },
+                    onSourceCode = {
+                        runCatching { uriHandler.openUri(SOURCE_CODE_URL) }
+                    },
                     modifier = Modifier
                         .widthIn(max = tuning.panelMaxWidth)
                         .fillMaxWidth(),
@@ -159,6 +166,7 @@ private fun SettingsPanel(
     onSoundEnabledChange: (Boolean) -> Unit,
     onHowToPlay: () -> Unit,
     onLicenses: () -> Unit,
+    onSourceCode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tuning = LayoutTuning.Settings
@@ -217,6 +225,10 @@ private fun SettingsPanel(
                 SettingsActionButton(
                     text = stringResource(R.string.licenses),
                     onClick = onLicenses,
+                )
+                SettingsActionButton(
+                    text = stringResource(R.string.source_code),
+                    onClick = onSourceCode,
                 )
             }
         }
