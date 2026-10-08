@@ -22,19 +22,14 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title>Dotted eighth note stem up.svg - modified for BirdNote</dc:title>
+        <dc:creator>JLTB34; PianistHere</dc:creator>
+        <dc:source>https://commons.wikimedia.org/wiki/File:Dotted_eighth_note_stem_up.svg</dc:source>
+        <dc:description>Dot removed; SVG transformed, cropped and recolored. Modified version under CC BY-SA 4.0. See ATTRIBUTIONS.txt.</dc:description>
         <cc:license
-           rdf:resource="https://creativecommons.org/publicdomain/mark/1.0/" />
+           rdf:resource="https://creativecommons.org/licenses/by-sa/4.0/" />
       </cc:Work>
-      <cc:License
-         rdf:about="https://creativecommons.org/publicdomain/mark/1.0/">
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#Reproduction" />
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#Distribution" />
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
-      </cc:License>
+
     </rdf:RDF>
   </metadata>
   <defs

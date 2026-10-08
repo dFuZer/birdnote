@@ -1,5 +1,6 @@
 package com.dfuzer.birdnote.ui.quiz
 
+import androidx.lifecycle.SavedStateHandle
 import com.dfuzer.birdnote.audio.SoundTone
 import com.dfuzer.birdnote.domain.ChordConfig
 import com.dfuzer.birdnote.domain.ChordQuality
@@ -58,6 +59,19 @@ class QuizSessionTest(private val mode: PracticeMode) {
             assertEquals(false, afterWrong.answerFeedback?.correct)
             assertEquals(wrongTones, afterWrong.answerFeedback?.tones)
             assertEquals(afterCorrect.questions.drop(1), afterWrong.questions.dropLast(1))
+        }
+    }
+
+    @Test
+    fun timerTicksDoNotPersistRemainingUntilPause() = runTest(dispatcher) {
+        val saved = SavedStateHandle()
+        withQuiz(45, saved) { vm, _, _ ->
+            advanceTimeBy(1_000)
+            runCurrent()
+            assertEquals(44_000L, vm.remainingMillis.value)
+            assertEquals(45_000L, saved.get<Long>("remaining"))
+            vm.pause()
+            assertEquals(44_000L, saved.get<Long>("remaining"))
         }
     }
 
@@ -132,8 +146,72 @@ class QuizSessionTest(private val mode: PracticeMode) {
         }
     }
 
+    @Test
+    fun pausePreservesTimeAndRejectsAnswersUntilResumed() = runTest(dispatcher) {
+        withQuiz(45) { vm, correct, _ ->
+            advanceTimeBy(1_000)
+            runCurrent()
+            vm.pause()
+            val remaining = vm.remainingMillis.value
+            val score = vm.state.value.score
+            advanceTimeBy(20_000)
+            runCurrent()
+            correct()
+            assertEquals(remaining, vm.remainingMillis.value)
+            assertEquals(score, vm.state.value.score)
+            vm.resume()
+            advanceTimeBy(1_000)
+            runCurrent()
+            assertEquals(remaining - 1_000, vm.remainingMillis.value)
+            correct()
+            assertEquals(score + 1, vm.state.value.score)
+        }
+    }
+
+    @Test
+    fun delayedTickUsesElapsedTimeAndLateAnswerCannotScore() = runTest(dispatcher) {
+        var clock = 0L
+        withQuiz(45, clock = { clock }) { vm, correct, _ ->
+            clock = 5_000
+            advanceTimeBy(50)
+            runCurrent()
+            assertEquals(40_000L, vm.remainingMillis.value)
+            clock = 46_000
+            correct()
+            assertTrue(vm.state.value.finished)
+            assertEquals(0, vm.state.value.score)
+        }
+    }
+
+    @Test
+    fun recreationRestoresQueueScoreAndPausedTimeWithoutReplayingSound() = runTest(dispatcher) {
+        val saved = SavedStateHandle()
+        withQuiz(45, saved) { vm, correct, wrong ->
+            correct()
+            wrong()
+            advanceTimeBy(1_000)
+            runCurrent()
+            vm.pause()
+            val questions = vm.state.value.questions
+            val remaining = vm.remainingMillis.value
+            val snapshot = SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) })
+            withQuiz(45, snapshot) { restored, answer, _ ->
+                assertEquals(questions, restored.state.value.questions)
+                assertEquals(1, restored.state.value.score)
+                assertEquals(remaining, restored.remainingMillis.value)
+                assertTrue(restored.state.value.paused)
+                assertEquals(null, restored.state.value.answerFeedback)
+                restored.resume()
+                answer()
+                assertEquals(2, restored.state.value.score)
+            }
+        }
+    }
+
     private fun withQuiz(
         duration: Int,
+        savedState: SavedStateHandle = SavedStateHandle(),
+        clock: () -> Long = { dispatcher.scheduler.currentTime },
         check: (QuizViewModel<*, *>, correct: () -> Unit, wrong: () -> Unit) -> Unit,
     ) {
         fun <Q, A> run(vm: QuizViewModel<Q, A>, answer: (Q) -> A, wrong: (Q) -> A) {
@@ -145,11 +223,11 @@ class QuizSessionTest(private val mode: PracticeMode) {
             }
         }
         when (mode) {
-            PracticeMode.NOTES -> run(QuizViewModel.notes(PracticeConfig(4, ClefMode.SOL_FA), Random(582), duration),
+            PracticeMode.NOTES -> run(QuizViewModel.notes(PracticeConfig(4, ClefMode.SOL_FA), Random(582), duration, savedState = savedState, nowMillis = clock),
                 { it.pitch.noteName }, { note -> NoteName.entries.first { it != note.pitch.noteName } })
-            PracticeMode.INTERVALS -> run(QuizViewModel.intervals(IntervalConfig(4), Random(582), duration),
+            PracticeMode.INTERVALS -> run(QuizViewModel.intervals(IntervalConfig(4), Random(582), duration, savedState = savedState, nowMillis = clock),
                 { it.name }, { interval -> IntervalName.entries.first { it != interval.name } })
-            PracticeMode.CHORDS -> run(QuizViewModel.chords(ChordConfig(4, ClefMode.ALTO), Random(582), duration),
+            PracticeMode.CHORDS -> run(QuizViewModel.chords(ChordConfig(4, ClefMode.ALTO), Random(582), duration, savedState = savedState, nowMillis = clock),
                 { it.quality }, { chord -> ChordQuality.entries.first { it != chord.quality } })
         }
     }

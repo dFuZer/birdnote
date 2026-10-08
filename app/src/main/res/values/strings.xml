@@ -4,18 +4,18 @@
     <string name="my_scores">Mes scores</string>
     <string name="settings">Paramètres</string>
     <string name="language">Langue</string>
-    <string name="language_name_en">English</string>
-    <string name="language_name_es">Español (Latinoamérica)</string>
-    <string name="language_name_pt">Português (Brasil)</string>
-    <string name="language_name_id">Bahasa Indonesia</string>
-    <string name="language_name_de">Deutsch</string>
-    <string name="language_name_it">Italiano</string>
-    <string name="language_name_ja">日本語</string>
-    <string name="language_name_fr">Français</string>
-    <string name="language_name_ar">العربية</string>
-    <string name="language_name_hi">हिन्दी</string>
-    <string name="language_name_ru">Русский</string>
-    <string name="language_name_tr">Türkçe</string>
+    <string name="language_name_en" translatable="false">English</string>
+    <string name="language_name_es" translatable="false">Español (Latinoamérica)</string>
+    <string name="language_name_pt" translatable="false">Português (Brasil)</string>
+    <string name="language_name_id" translatable="false">Bahasa Indonesia</string>
+    <string name="language_name_de" translatable="false">Deutsch</string>
+    <string name="language_name_it" translatable="false">Italiano</string>
+    <string name="language_name_ja" translatable="false">日本語</string>
+    <string name="language_name_fr" translatable="false">Français</string>
+    <string name="language_name_ar" translatable="false">العربية</string>
+    <string name="language_name_hi" translatable="false">हिन्दी</string>
+    <string name="language_name_ru" translatable="false">Русский</string>
+    <string name="language_name_tr" translatable="false">Türkçe</string>
     <string name="note_names">Noms des notes</string>
     <string name="training_title">Que veux-tu travailler ?</string>
     <string name="notes">Notes</string>
@@ -23,7 +23,7 @@
     <string name="chords">Accords</string>
     <string name="back">Retour</string>
     <string name="score_best">Record</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Difficulté</string>
     <string name="clef">Clé</string>
     <string name="clefs">Clés</string>
@@ -36,6 +36,12 @@
     <string name="welcome_message">Apprenons à lire la musique ensemble.</string>
     <string name="welcome_clefs">Choisis les clés que tu veux travailler.</string>
     <string name="preferred_clefs_hint">Tu pourras les changer à tout moment dans les paramètres.</string>
+    <string name="welcome_promise_title">Merci d\'être là.</string>
+    <string name="welcome_promise_body">On tient à toi. BirdNote est gratuit, sans pub, et ça le restera. Toujours.</string>
+    <string name="welcome_promise_free">Gratuit</string>
+    <string name="welcome_promise_no_ads">Sans pub</string>
+    <string name="welcome_promise_forever">Pour toujours</string>
+    <string name="welcome_promise_continue">Merci !</string>
     <string name="continue_action">C\'est parti !</string>
     <string name="lets_go">C\'est parti !</string>
     <string name="stop">Arrêter</string>
@@ -78,11 +84,17 @@
     <string name="chord_minor_7">7e mineure</string>
     <string name="chord_half_diminished_7">7e demi-diminuée</string>
     <string name="chord_diminished_7">7e diminuée</string>
-    <string name="note_do">Do</string>
-    <string name="note_re">Ré</string>
-    <string name="note_mi">Mi</string>
-    <string name="note_fa">Fa</string>
-    <string name="note_sol">Sol</string>
-    <string name="note_la">La</string>
-    <string name="note_si">Si</string>
+    <string name="sound_enabled">Son</string>
+    <string name="how_to_play">Comment jouer</string>
+    <string name="help_body">Lis l’élément surligné et choisis son nom. Notes : identifie la note. Intervalles : compte la distance entre les notes en incluant les deux extrémités. Accords : identifie le type d’accord. Une manche dure 45 secondes ; une erreur coûte 3 secondes. La manche se met en pause quand tu quittes l’application.</string>
+    <string name="seconds_remaining">%1$d secondes restantes</string>
+    <string name="staff_line">Ligne %1$d depuis le bas</string>
+    <string name="staff_space">Espace %1$d depuis le bas</string>
+    <string name="staff_above">%1$d positions au-dessus de la ligne supérieure</string>
+    <string name="staff_below">%1$d positions sous la ligne inférieure</string>
+    <string name="accidental_sharp">Dièse</string>
+    <string name="accidental_flat">Bémol</string>
+    <string name="accidental_natural">Bécarre</string>
+    <string name="licenses">Licences libres</string>
+    <string name="close">Fermer</string>
 </resources>

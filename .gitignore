@@ -13,4 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
-/docs
+/docs/*
+
+# Never commit release signing material.
+*.jks
+*.keystore
+keystore.properties

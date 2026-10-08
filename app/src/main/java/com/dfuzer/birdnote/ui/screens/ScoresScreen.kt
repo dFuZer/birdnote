@@ -1,13 +1,16 @@
 package com.dfuzer.birdnote.ui.screens
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -59,6 +63,41 @@ fun ScoresScreen(
     var modeName by rememberSaveable { mutableStateOf(PracticeMode.NOTES.name) }
     val mode = PracticeMode.valueOf(modeName)
     DecoratedScreen(modifier = modifier) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight)
+                    .padding(
+                        horizontal = common.screenHorizontalPadding,
+                        vertical = common.screenVerticalPadding,
+                    ),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.my_scores),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = tuning.titleBottomSpacing),
+                )
+                ModeSwitcher(
+                    selected = mode,
+                    onSelect = { modeName = it.name },
+                    modifier = Modifier
+                        .panelWidth()
+                        .padding(bottom = tuning.sectionGap),
+                )
+                ScoresTableSlot(
+                    selected = mode,
+                    scores = scores,
+                    clefModes = clefModes,
+                    modifier = Modifier.panelWidth(),
+                )
+            }
+        }
+        // Above the scrolling column, so this corner stays tappable when the title overlaps it.
         BackButton(
             label = stringResource(R.string.back),
             onClick = onBackClick,
@@ -66,36 +105,6 @@ fun ScoresScreen(
                 .align(Alignment.TopStart)
                 .padding(common.backButtonMargin),
         )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal = common.screenHorizontalPadding,
-                    vertical = common.screenVerticalPadding,
-                ),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.my_scores),
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = tuning.titleBottomSpacing),
-            )
-            ModeSwitcher(
-                selected = mode,
-                onSelect = { modeName = it.name },
-                modifier = Modifier
-                    .panelWidth()
-                    .padding(bottom = tuning.sectionGap),
-            )
-            ScoresTable(
-                mode = mode,
-                scores = scores,
-                clefModes = clefModes,
-                modifier = Modifier.panelWidth(),
-            )
-        }
     }
 }
 
@@ -152,6 +161,27 @@ private fun ModeButton(
 }
 
 @Composable
+private fun ScoresTableSlot(
+    selected: PracticeMode,
+    scores: Map<String, Int>,
+    clefModes: List<ClefMode>,
+    modifier: Modifier = Modifier,
+) {
+    SubcomposeLayout(modifier) { constraints ->
+        val tables = PracticeMode.entries.associateWith { mode ->
+            subcompose(mode) {
+                ScoresTable(mode = mode, scores = scores, clefModes = clefModes)
+            }.map { measurable -> measurable.measure(constraints) }
+        }
+        val width = tables.values.maxOf { placeables -> placeables.maxOf { it.width } }
+        val height = tables.values.maxOf { placeables -> placeables.maxOf { it.height } }
+        layout(width, height) {
+            tables.getValue(selected).forEach { placeable -> placeable.placeRelative(0, 0) }
+        }
+    }
+}
+
+@Composable
 private fun ScoresTable(
     mode: PracticeMode,
     scores: Map<String, Int>,
@@ -172,7 +202,6 @@ private fun ScoresTable(
                 .fillMaxWidth()
                 .padding(tuning.tablePadding),
         ) {
-            DifficultyCaption()
             TableRow(
                 label = if (mode == PracticeMode.INTERVALS) "" else stringResource(R.string.clef),
                 cells = difficulties.map { level ->
@@ -193,22 +222,6 @@ private fun ScoresTable(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun DifficultyCaption() {
-    val tuning = LayoutTuning.Scores
-    val columnCount = MAX_DIFFICULTY - MIN_DIFFICULTY + 1
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.weight(tuning.clefColumnWeight))
-        Text(
-            text = stringResource(R.string.difficulty),
-            modifier = Modifier.weight(tuning.scoreColumnWeight * columnCount),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium,
-            color = DarkBlue,
-        )
     }
 }
 

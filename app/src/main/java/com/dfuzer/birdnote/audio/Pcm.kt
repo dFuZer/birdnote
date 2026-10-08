@@ -1,5 +1,8 @@
 package com.dfuzer.birdnote.audio
 
+import com.dfuzer.birdnote.domain.Pitch
+import com.dfuzer.birdnote.domain.chromaticSemitone
+import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -43,4 +46,24 @@ fun mixPcm(voices: List<ShortArray>): ShortArray {
             .toShort()
     }
     return mixed
+}
+
+const val MIN_QUIZ_STEP = 14
+const val MAX_QUIZ_STEP = 42
+
+fun nearestNaturalStep(chromatic: Int): Int =
+    (MIN_QUIZ_STEP..MAX_QUIZ_STEP).minBy { step ->
+        abs(chromaticSemitone(Pitch(step)) - chromatic)
+    }
+
+/** Black keys get one resample; enharmonics reuse a natural or that single buffer. */
+fun fillMissingChromatics(notes: MutableMap<Int, ShortArray>) {
+    if (notes.isEmpty()) return
+    for (chromatic in notes.keys.min()..notes.keys.max()) {
+        if (chromatic in notes) continue
+        val step = nearestNaturalStep(chromatic)
+        val natural = chromaticSemitone(Pitch(step))
+        val source = notes[natural] ?: continue
+        notes[chromatic] = pitchShift(source, chromatic - natural)
+    }
 }

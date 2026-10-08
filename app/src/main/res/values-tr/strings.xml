@@ -11,7 +11,7 @@
     <string name="chords">Akorlar</string>
     <string name="back">Geri</string>
     <string name="score_best">Rekor</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Zorluk</string>
     <string name="clef">Anahtar</string>
     <string name="clefs">Anahtarlar</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Birlikte nota okumayı öğrenelim.</string>
     <string name="welcome_clefs">Alıştırma yapmak istediğin anahtarları seç.</string>
     <string name="preferred_clefs_hint">Bunları istediğin zaman ayarlardan değiştirebilirsin.</string>
+    <string name="welcome_promise_title">Burada olmana sevindik.</string>
+    <string name="welcome_promise_body">Kullanıcılarımızı seviyoruz. BirdNote ücretsiz, reklamsız ve hep öyle kalacak.</string>
+    <string name="welcome_promise_free">Ücretsiz</string>
+    <string name="welcome_promise_no_ads">Reklamsız</string>
+    <string name="welcome_promise_forever">Her zaman</string>
+    <string name="welcome_promise_continue">Teşekkürler!</string>
     <string name="continue_action">Hadi başlayalım!</string>
     <string name="lets_go">Hadi başlayalım!</string>
     <string name="stop">Dur</string>
@@ -66,4 +72,17 @@
     <string name="chord_minor_7">Minör 7\'li</string>
     <string name="chord_half_diminished_7">Yarı eksik 7\'li</string>
     <string name="chord_diminished_7">Eksik 7\'li</string>
+    <string name="sound_enabled">Ses</string>
+    <string name="how_to_play">Nasıl oynanır</string>
+    <string name="help_body">Vurgulanan öğeyi oku ve adını seç. Notalar: notayı tanı. Aralıklar: iki notayı da dahil ederek mesafeyi say. Akorlar: akor türünü tanı. Her tur 45 saniyedir; yanlış cevap 3 saniye kaybettirir. Uygulamadan çıkınca tur duraklar.</string>
+    <string name="seconds_remaining">%1$d saniye kaldı</string>
+    <string name="staff_line">Alttan %1$d. çizgi</string>
+    <string name="staff_space">Alttan %1$d. boşluk</string>
+    <string name="staff_above">Üst çizginin %1$d nota adımı üstünde</string>
+    <string name="staff_below">Alt çizginin %1$d nota adımı altında</string>
+    <string name="accidental_sharp">Diyez</string>
+    <string name="accidental_flat">Bemol</string>
+    <string name="accidental_natural">Bekar</string>
+    <string name="licenses">Açık kaynak lisansları</string>
+    <string name="close">Kapat</string>
 </resources>

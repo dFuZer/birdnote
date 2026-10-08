@@ -1,5 +1,11 @@
 package com.dfuzer.birdnote.ui.components
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -73,21 +79,40 @@ internal fun SetupScreen(
             val notesSingleStaffHeightPx = with(LocalDensity.current) {
                 (maxHeight - tuning.previewInnerPadding * 2).toPx()
             }
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(tuning.columnsGap),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            val availableHeight = maxHeight
+            if (maxWidth >= 600.dp && maxWidth > maxHeight) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(tuning.columnsGap),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(tuning.controlsWeight)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(tuning.controlsGap),
+                        content = controls,
+                    )
+                    Card(
+                        shape = RoundedCornerShape(tuning.previewCornerRadius),
+                        colors = CardDefaults.cardColors(containerColor = Neutral),
+                        modifier = Modifier.weight(tuning.previewWeight).fillMaxSize(),
+                    ) { preview(notesSingleStaffHeightPx.coerceAtLeast(1f)) }
+                }
+            } else {
                 Column(
-                    modifier = Modifier.weight(tuning.controlsWeight).widthIn(max = tuning.controlsMaxWidth),
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(tuning.controlsGap),
-                    content = controls,
-                )
-                Card(
-                    shape = RoundedCornerShape(tuning.previewCornerRadius),
-                    colors = CardDefaults.cardColors(containerColor = Neutral),
-                    modifier = Modifier.weight(tuning.previewWeight).fillMaxSize(),
-                ) { preview(notesSingleStaffHeightPx) }
+                ) {
+                    controls()
+                    val previewHeight = (availableHeight * 0.5f).coerceAtLeast(200.dp)
+                    Card(
+                        shape = RoundedCornerShape(tuning.previewCornerRadius),
+                        colors = CardDefaults.cardColors(containerColor = Neutral),
+                        modifier = Modifier.fillMaxWidth().height(previewHeight),
+                    ) {
+                        preview(with(LocalDensity.current) { previewHeight.toPx() })
+                    }
+                }
             }
         }
         AppButton(
@@ -109,7 +134,7 @@ internal fun DifficultyControls(difficulty: Int, onDifficultyChange: (Int) -> Un
         style = MaterialTheme.typography.titleMedium,
         color = DarkBlue,
     )
-    Row(horizontalArrangement = Arrangement.spacedBy(tuning.difficultyGap)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(tuning.difficultyGap), verticalArrangement = Arrangement.spacedBy(tuning.difficultyGap)) {
         (MIN_DIFFICULTY..MAX_DIFFICULTY).forEach { level ->
             DifficultyButton(
                 selected = difficulty == level,

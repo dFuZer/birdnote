@@ -37,13 +37,16 @@ import kotlinx.coroutines.runBlocking
 /**
  * Quiz staff drawn on a [Surface] whose buffers are posted from a render thread.
  *
- * The composable publishes ordered note and configuration updates. [android.view.Surface.lockHardwareCanvas]
- * and [android.view.Surface.unlockCanvasAndPost] run on that thread, so a busy main thread does
- * not hold the next staff frame. The surface sits in the card's inner padding, which matches the
- * card corner radius, so the rectangular buffer stays inside the rounded card.
+ * The composable publishes ordered note and configuration updates.
+ * [android.view.Surface.lockHardwareCanvas] and [android.view.Surface.unlockCanvasAndPost] run on
+ * that thread, so a busy main thread does not hold the next staff frame. The surface sits in the
+ * card's inner padding, which matches the card corner radius, so the rectangular buffer stays
+ * inside the rounded card.
  *
- * The first buffer is the card color, posted before any sprite work. An opaque surface with no
- * buffer is black, and a recycled buffer can still hold the previous exercise.
+ * Hardware canvases present through the BufferQueue, not HWUI layers. Cached plate/glyph bitmaps
+ * keep CPU painting off the present path. The first buffer is the card color, posted before any
+ * sprite work. An opaque surface with no buffer is black, and a recycled buffer can still hold
+ * the previous exercise.
  */
 @Composable
 fun <T> StaffSurface(
@@ -178,7 +181,7 @@ private class StaffRenderer<T>(
         val plateBitmap = plate ?: return
         val stripBitmap = strip ?: return
         val staff = geometry ?: return
-        val canvas = surface.lockHardwareCanvas()
+        val canvas = lockPostedCanvas(surface) ?: return
         try {
             canvas.drawColor(STAFF_BACKGROUND)
             val offset = -slideOffsetSlots(belt.shift, belt.origin) * staff.slotWidth
@@ -204,7 +207,11 @@ private class StaffRenderer<T>(
             canvas.drawBitmap(stripBitmap, 0f, 0f, bitmapPaint)
             canvas.restore()
         } finally {
-            surface.unlockCanvasAndPost(canvas)
+            try {
+                surface.unlockCanvasAndPost(canvas)
+            } catch (_: RuntimeException) {
+                // The surface was destroyed while this buffer was locked.
+            }
         }
     }
 
@@ -248,16 +255,15 @@ private class StaffRenderer<T>(
             chordDraws,
             staff.lineSpacing,
         )
-        val nextStrip = drawStrip(
+        strip = drawStrip(
             staff = staff,
             drawnGlyphs = drawnGlyphs,
             chordDraws = chordDraws,
             noteCount = belt.notes.size,
             surfaceWidth = surfaceWidth,
             surfaceHeight = surfaceHeight,
+            previous = strip,
         )
-        strip?.recycle()
-        strip = nextStrip
         contentKey = nextContentKey
     }
 
@@ -298,10 +304,12 @@ private class StaffRenderer<T>(
         noteCount: Int,
         surfaceWidth: Int,
         surfaceHeight: Int,
+        previous: Bitmap?,
     ): Bitmap {
         val contentWidth = staff.notesStartX + (noteCount + 1) * staff.slotWidth
         val bitmapWidth = ceil(maxOf(surfaceWidth.toFloat(), contentWidth)).toInt().coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(bitmapWidth, surfaceHeight.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+        val bitmapHeight = surfaceHeight.coerceAtLeast(1)
+        val bitmap = reusableBitmap(previous, bitmapWidth, bitmapHeight)
         val canvas = Canvas(bitmap)
         for (chordDraw in chordDraws) {
             drawChord(canvas, chordDraw, staff.lineSpacing, drawnGlyphs)
@@ -477,13 +485,17 @@ private class StaffRenderer<T>(
 
 private const val STAFF_BACKGROUND = 0xFFF6F6F6.toInt()
 
-private fun fillSurface(surface: Surface) {
-    if (!surface.isValid) return
-    val canvas = try {
+private fun lockPostedCanvas(surface: Surface): Canvas? {
+    if (!surface.isValid) return null
+    return try {
         surface.lockHardwareCanvas()
     } catch (_: RuntimeException) {
-        return
+        null
     }
+}
+
+private fun fillSurface(surface: Surface) {
+    val canvas = lockPostedCanvas(surface) ?: return
     try {
         canvas.drawColor(STAFF_BACKGROUND)
     } finally {
@@ -493,6 +505,15 @@ private fun fillSurface(surface: Surface) {
             // The surface was destroyed while this buffer was locked.
         }
     }
+}
+
+private fun reusableBitmap(previous: Bitmap?, width: Int, height: Int): Bitmap {
+    if (previous != null && !previous.isRecycled && previous.width == width && previous.height == height) {
+        previous.eraseColor(0)
+        return previous
+    }
+    previous?.recycle()
+    return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 }
 
 private class StaffGlyphs(

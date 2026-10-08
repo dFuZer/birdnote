@@ -11,7 +11,7 @@
     <string name="chords">कॉर्ड</string>
     <string name="back">वापस</string>
     <string name="score_best">सबसे अच्छा स्कोर</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">कठिनाई का स्तर</string>
     <string name="clef">क्लेफ़</string>
     <string name="clefs">क्लेफ़</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">आइए, साथ मिलकर संगीत के नोट पढ़ना सीखें।</string>
     <string name="welcome_clefs">वे क्लेफ़ चुनें जिनमें आप अभ्यास करना चाहते हैं।</string>
     <string name="preferred_clefs_hint">आप इन्हें सेटिंग्स में कभी भी बदल सकते हैं।</string>
+    <string name="welcome_promise_title">तुम्हारे आने से हमें खुशी हुई।</string>
+    <string name="welcome_promise_body">हम अपने उपयोगकर्ताओं से प्यार करते हैं। यह ऐप मुफ़्त है, बिना विज्ञापन, और हमेशा ऐसा ही रहेगा।</string>
+    <string name="welcome_promise_free">मुफ़्त</string>
+    <string name="welcome_promise_no_ads">बिना विज्ञापन</string>
+    <string name="welcome_promise_forever">हमेशा</string>
+    <string name="welcome_promise_continue">धन्यवाद!</string>
     <string name="continue_action">शुरू करें!</string>
     <string name="lets_go">शुरू करें!</string>
     <string name="stop">रोकें</string>
@@ -66,4 +72,17 @@
     <string name="chord_minor_7">माइनर सेवन्थ</string>
     <string name="chord_half_diminished_7">हाफ-डिमिनिश्ड सेवन्थ</string>
     <string name="chord_diminished_7">डिमिनिश्ड सेवन्थ</string>
+    <string name="sound_enabled">ध्वनि</string>
+    <string name="how_to_play">कैसे खेलें</string>
+    <string name="help_body">हाइलाइट किए गए चिह्न को पढ़ें और उसका नाम चुनें। स्वर: स्वर पहचानें। अंतराल: दोनों स्वरों को शामिल करके दूरी गिनें। कॉर्ड: कॉर्ड का प्रकार पहचानें। हर दौर 45 सेकंड का है; गलत उत्तर पर 3 सेकंड कम होते हैं। ऐप छोड़ने पर दौर रुक जाता है।</string>
+    <string name="seconds_remaining">%1$d सेकंड शेष</string>
+    <string name="staff_line">नीचे से रेखा %1$d</string>
+    <string name="staff_space">नीचे से स्थान %1$d</string>
+    <string name="staff_above">ऊपरी रेखा से %1$d स्वर कदम ऊपर</string>
+    <string name="staff_below">निचली रेखा से %1$d स्वर कदम नीचे</string>
+    <string name="accidental_sharp">शार्प</string>
+    <string name="accidental_flat">फ्लैट</string>
+    <string name="accidental_natural">नैचुरल</string>
+    <string name="licenses">ओपन सोर्स लाइसेंस</string>
+    <string name="close">बंद करें</string>
 </resources>

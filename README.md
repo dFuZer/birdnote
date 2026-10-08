@@ -41,7 +41,7 @@ The project is a single Android application module, `:app`, package `com.dfuzer.
 | Navigation | Navigation Compose. Home → training menu → setup → quiz → result. |
 | Persistence | Concrete `SharedPreferences` stores in `data/`: settings, preferred clefs, last setups, and best scores. |
 | Notation | Compose canvas on setup. During a quiz the staff is drawn on its own surface so scrolling stays smooth. Glyphs come from SVG (Coil). |
-| Audio | Short piano samples, decoded with JOrbis. A wrong answer uses a separate clip. |
+| Audio | Short piano samples, decoded by Android MediaCodec. A wrong answer uses a separate clip. |
 | Tests | JUnit 4 for domain and view-model logic. Espresso and Compose UI tests for flows on a device or emulator. |
 
 Pitch, clef, and scoring live in `domain/` as plain Kotlin, so they can be tested without Android or Compose. Screens in `ui/` render domain results and forward user events. One typed quiz implementation owns each quiz session, with concrete note, interval, and chord configuration functions.
@@ -79,3 +79,5 @@ Compose owns controls and setup previews. Quiz notation is published as ordered,
 Preview animation and quiz rendering share geometry, chord placement, and glyph specifications, with small drawing functions for each canvas backend. Audio decoding, sample caching, mixing, playback, and cleanup stay on one audio worker. Navigation keeps the existing route strings, while persistence keeps the existing preference files and serialized keys.
 
 Unit tests cover music rules, practice generation, scoring, quiz sessions, staff geometry and animation, and audio decoding and mixing. `QuizSessionTest` checks all three practice modes through a shared parameterized suite. Instrumented tests cover app navigation, settings, storage compatibility, and audio cleanup. Visual and surface lifecycle checks require manual acceptance testing.
+
+Release signing and acceptance requirements are documented in [docs/RELEASE.md](docs/RELEASE.md).

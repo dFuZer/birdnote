@@ -11,7 +11,7 @@
     <string name="chords">和音</string>
     <string name="back">戻る</string>
     <string name="score_best">自己ベスト</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">難易度</string>
     <string name="clef">音部記号</string>
     <string name="clefs">音部記号</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">いっしょに楽譜を読めるようになろう。</string>
     <string name="welcome_clefs">練習したい音部記号を選んでね。</string>
     <string name="preferred_clefs_hint">設定でいつでも変えられるよ。</string>
+    <string name="welcome_promise_title">来てくれてありがとう。</string>
+    <string name="welcome_promise_body">このアプリは無料で、広告もなく、これからもずっとそうです。</string>
+    <string name="welcome_promise_free">無料</string>
+    <string name="welcome_promise_no_ads">広告なし</string>
+    <string name="welcome_promise_forever">ずっと</string>
+    <string name="welcome_promise_continue">ありがとう！</string>
     <string name="continue_action">はじめよう！</string>
     <string name="lets_go">スタート！</string>
     <string name="stop">やめる</string>
@@ -63,4 +69,17 @@
     <string name="chord_minor_7">短七の和音</string>
     <string name="chord_half_diminished_7">半減七の和音</string>
     <string name="chord_diminished_7">減七の和音</string>
+    <string name="sound_enabled">サウンド</string>
+    <string name="how_to_play">遊び方</string>
+    <string name="help_body">強調された項目を読み、名前を選びます。音符：音名を答えます。音程：両端の音を含めて距離を数えます。和音：和音の種類を答えます。1回45秒で、誤答すると3秒減ります。アプリを離れると一時停止します。</string>
+    <string name="seconds_remaining">残り%1$d秒</string>
+    <string name="staff_line">下から%1$d番目の線</string>
+    <string name="staff_space">下から%1$d番目の間</string>
+    <string name="staff_above">最上線から%1$d音上</string>
+    <string name="staff_below">最下線から%1$d音下</string>
+    <string name="accidental_sharp">シャープ</string>
+    <string name="accidental_flat">フラット</string>
+    <string name="accidental_natural">ナチュラル</string>
+    <string name="licenses">オープンソースライセンス</string>
+    <string name="close">閉じる</string>
 </resources>

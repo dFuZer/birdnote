@@ -138,7 +138,7 @@ A crash in this app, a missing control, or copy that does not match the test pla
 Write the same report in the chat and in a GitHub comment. The comment has to stand on its own: quote the strings the device showed. Local screenshot paths are only for the chat.
 
 ```markdown
-## Device pass — pass|fail
+## Device pass - pass|fail
 
 Tested `<sha>` on the Medium Phone emulator.
 

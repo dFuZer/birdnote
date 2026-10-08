@@ -11,7 +11,7 @@
     <string name="chords">Akor</string>
     <string name="back">Kembali</string>
     <string name="score_best">Rekor</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Tingkat kesulitan</string>
     <string name="clef">Kunci</string>
     <string name="clefs">Kunci</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Yuk, belajar membaca not bersama!</string>
     <string name="welcome_clefs">Pilih kunci yang ingin kamu gunakan untuk latihan.</string>
     <string name="preferred_clefs_hint">Kamu bisa mengubahnya kapan saja di Pengaturan.</string>
+    <string name="welcome_promise_title">Senang kamu di sini.</string>
+    <string name="welcome_promise_body">Kami sayang pengguna kami. Aplikasinya gratis, tanpa iklan, dan akan selalu begitu.</string>
+    <string name="welcome_promise_free">Gratis</string>
+    <string name="welcome_promise_no_ads">Tanpa iklan</string>
+    <string name="welcome_promise_forever">Selamanya</string>
+    <string name="welcome_promise_continue">Terima kasih!</string>
     <string name="continue_action">Yuk, mulai!</string>
     <string name="lets_go">Yuk, mulai!</string>
     <string name="stop">Berhenti</string>
@@ -63,4 +69,17 @@
     <string name="chord_minor_7">Minor 7</string>
     <string name="chord_half_diminished_7">Setengah diperkecil 7</string>
     <string name="chord_diminished_7">Diperkecil 7</string>
+    <string name="sound_enabled">Suara</string>
+    <string name="how_to_play">Cara bermain</string>
+    <string name="help_body">Baca bagian yang disorot dan pilih namanya. Nada: kenali nada. Interval: hitung jarak termasuk kedua nada. Akor: kenali jenis akor. Setiap ronde berlangsung 45 detik; jawaban salah mengurangi 3 detik. Ronde dijeda saat keluar dari aplikasi.</string>
+    <string name="seconds_remaining">Sisa %1$d detik</string>
+    <string name="staff_line">Garis ke-%1$d dari bawah</string>
+    <string name="staff_space">Spasi ke-%1$d dari bawah</string>
+    <string name="staff_above">%1$d langkah nada di atas garis teratas</string>
+    <string name="staff_below">%1$d langkah nada di bawah garis terbawah</string>
+    <string name="accidental_sharp">Kres</string>
+    <string name="accidental_flat">Mol</string>
+    <string name="accidental_natural">Natural</string>
+    <string name="licenses">Lisensi sumber terbuka</string>
+    <string name="close">Tutup</string>
 </resources>

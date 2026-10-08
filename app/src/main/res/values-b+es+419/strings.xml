@@ -11,7 +11,7 @@
     <string name="chords">Acordes</string>
     <string name="back">Volver</string>
     <string name="score_best">Récord</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Dificultad</string>
     <string name="clef">Clave</string>
     <string name="clefs">Claves</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Aprendamos a leer música juntos.</string>
     <string name="welcome_clefs">Elige las claves que quieres practicar.</string>
     <string name="preferred_clefs_hint">Puedes cambiarlas cuando quieras en Ajustes.</string>
+    <string name="welcome_promise_title">Qué alegría que estés aquí.</string>
+    <string name="welcome_promise_body">Queremos a quienes usan la app. BirdNote es gratis, sin anuncios, y siempre lo será.</string>
+    <string name="welcome_promise_free">Gratis</string>
+    <string name="welcome_promise_no_ads">Sin anuncios</string>
+    <string name="welcome_promise_forever">Para siempre</string>
+    <string name="welcome_promise_continue">¡Gracias!</string>
     <string name="continue_action">¡Vamos!</string>
     <string name="lets_go">¡Vamos!</string>
     <string name="stop">Parar</string>
@@ -66,4 +72,17 @@
     <string name="chord_minor_7">7.ª menor</string>
     <string name="chord_half_diminished_7">7.ª semidisminuida</string>
     <string name="chord_diminished_7">7.ª disminuida</string>
+    <string name="sound_enabled">Sonido</string>
+    <string name="how_to_play">Cómo jugar</string>
+    <string name="help_body">Lee el elemento resaltado y elige su nombre. Notas: identifica la nota. Intervalos: cuenta la distancia incluyendo ambas notas. Acordes: identifica el tipo de acorde. Cada ronda dura 45 segundos; un error resta 3 segundos. La ronda se pausa al salir de la aplicación.</string>
+    <string name="seconds_remaining">Quedan %1$d segundos</string>
+    <string name="staff_line">Línea %1$d desde abajo</string>
+    <string name="staff_space">Espacio %1$d desde abajo</string>
+    <string name="staff_above">%1$d posiciones sobre la línea superior</string>
+    <string name="staff_below">%1$d posiciones bajo la línea inferior</string>
+    <string name="accidental_sharp">Sostenido</string>
+    <string name="accidental_flat">Bemol</string>
+    <string name="accidental_natural">Becuadro</string>
+    <string name="licenses">Licencias de código abierto</string>
+    <string name="close">Cerrar</string>
 </resources>

@@ -2,13 +2,21 @@ package com.dfuzer.birdnote.ui
 
 import android.content.res.Configuration
 import android.view.View
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -17,11 +25,13 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.dfuzer.birdnote.BirdNoteApplication
 import com.dfuzer.birdnote.data.ScoreStore
 import com.dfuzer.birdnote.data.SettingsStore
 import com.dfuzer.birdnote.domain.AppLanguage
 import com.dfuzer.birdnote.ui.navigation.BirdNoteNavHost
 import com.dfuzer.birdnote.ui.screens.PreferredClefsScreen
+import com.dfuzer.birdnote.ui.screens.WelcomePromiseScreen
 import com.dfuzer.birdnote.ui.theme.LightBlue
 import com.dfuzer.birdnote.withLocale
 
@@ -35,6 +45,10 @@ fun BirdNoteApp() {
     val appLanguage by settingsStore.appLanguage.collectAsStateWithLifecycle()
     val preferredClefs by settingsStore.preferredClefs.collectAsStateWithLifecycle()
     val preferredClefsChosen by settingsStore.preferredClefsChosen.collectAsStateWithLifecycle()
+    val soundEnabled by settingsStore.soundEnabled.collectAsStateWithLifecycle()
+    LaunchedEffect(soundEnabled) {
+        (context.applicationContext as BirdNoteApplication).setSoundEnabled(soundEnabled)
+    }
     ProvideAppLanguage(appLanguage) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -54,12 +68,32 @@ fun BirdNoteApp() {
                     modifier = Modifier.padding(innerPadding),
                 )
             } else {
-                PreferredClefsScreen(
-                    selected = preferredClefs,
-                    onToggle = settingsStore::togglePreferredClef,
-                    onContinue = settingsStore::confirmPreferredClefs,
-                    modifier = Modifier.padding(innerPadding),
-                )
+                var showPromise by rememberSaveable { mutableStateOf(false) }
+                AnimatedContent(
+                    targetState = showPromise,
+                    transitionSpec = {
+                        if (targetState) {
+                            slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+                        } else {
+                            slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+                        }
+                    },
+                    modifier = Modifier.padding(innerPadding).fillMaxSize(),
+                    label = "welcome-step",
+                ) { promise ->
+                    if (promise) {
+                        WelcomePromiseScreen(
+                            onContinue = settingsStore::confirmPreferredClefs,
+                            onBack = { showPromise = false },
+                        )
+                    } else {
+                        PreferredClefsScreen(
+                            selected = preferredClefs,
+                            onToggle = settingsStore::togglePreferredClef,
+                            onContinue = { showPromise = true },
+                        )
+                    }
+                }
             }
         }
     }

@@ -11,7 +11,7 @@
     <string name="chords">Chords</string>
     <string name="back">Back</string>
     <string name="score_best">Personal best</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Difficulty</string>
     <string name="clef">Clef</string>
     <string name="clefs">Clefs</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Let\'s learn to read music together.</string>
     <string name="welcome_clefs">Choose the clefs you want to practice.</string>
     <string name="preferred_clefs_hint">You can change them anytime in Settings.</string>
+    <string name="welcome_promise_title">We\'re glad you\'re here.</string>
+    <string name="welcome_promise_body">We love our users. BirdNote is free, with no ads, and it always will be.</string>
+    <string name="welcome_promise_free">Free</string>
+    <string name="welcome_promise_no_ads">No ads</string>
+    <string name="welcome_promise_forever">Always</string>
+    <string name="welcome_promise_continue">Thank you!</string>
     <string name="continue_action">Let\'s go!</string>
     <string name="lets_go">Let\'s go!</string>
     <string name="stop">Stop</string>
@@ -66,4 +72,17 @@
     <string name="chord_minor_7">Minor 7th</string>
     <string name="chord_half_diminished_7">Half-diminished 7th</string>
     <string name="chord_diminished_7">Diminished 7th</string>
+    <string name="sound_enabled">Sound</string>
+    <string name="how_to_play">How to play</string>
+    <string name="help_body">Read the highlighted item and tap its name. Notes: identify the note. Intervals: count the distance between the notes, including both ends. Chords: identify the chord quality. Each round lasts 45 seconds; a wrong answer costs 3 seconds. Rounds pause when you leave the app.</string>
+    <string name="seconds_remaining">%1$d seconds remaining</string>
+    <string name="staff_line">Line %1$d from the bottom</string>
+    <string name="staff_space">Space %1$d from the bottom</string>
+    <string name="staff_above">%1$d staff steps above the top line</string>
+    <string name="staff_below">%1$d staff steps below the bottom line</string>
+    <string name="accidental_sharp">Sharp</string>
+    <string name="accidental_flat">Flat</string>
+    <string name="accidental_natural">Natural</string>
+    <string name="licenses">Open-source licenses</string>
+    <string name="close">Close</string>
 </resources>

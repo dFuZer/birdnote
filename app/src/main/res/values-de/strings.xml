@@ -11,7 +11,7 @@
     <string name="chords">Akkorde</string>
     <string name="back">Zurück</string>
     <string name="score_best">Rekord</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Schwierigkeit</string>
     <string name="clef">Notenschlüssel</string>
     <string name="clefs">Notenschlüssel</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Lass uns gemeinsam Noten lesen lernen.</string>
     <string name="welcome_clefs">Wähle die Notenschlüssel, mit denen du üben möchtest.</string>
     <string name="preferred_clefs_hint">Du kannst sie jederzeit in den Einstellungen ändern.</string>
+    <string name="welcome_promise_title">Schön, dass du da bist.</string>
+    <string name="welcome_promise_body">Wir mögen unsere Nutzer. BirdNote ist kostenlos, ohne Werbung, und das bleibt so.</string>
+    <string name="welcome_promise_free">Kostenlos</string>
+    <string name="welcome_promise_no_ads">Keine Werbung</string>
+    <string name="welcome_promise_forever">Für immer</string>
+    <string name="welcome_promise_continue">Danke!</string>
     <string name="continue_action">Los geht\'s!</string>
     <string name="lets_go">Los geht\'s!</string>
     <string name="stop">Stopp</string>
@@ -66,4 +72,17 @@
     <string name="chord_minor_7">Mollseptakkord</string>
     <string name="chord_half_diminished_7">Halbverminderter Septakkord</string>
     <string name="chord_diminished_7">Verminderter Septakkord</string>
+    <string name="sound_enabled">Ton</string>
+    <string name="how_to_play">Spielanleitung</string>
+    <string name="help_body">Lies das markierte Element und tippe auf seinen Namen. Noten: erkenne die Note. Intervalle: zähle den Abstand einschließlich beider Noten. Akkorde: erkenne den Akkordtyp. Eine Runde dauert 45 Sekunden; eine falsche Antwort kostet 3 Sekunden. Beim Verlassen der App pausiert die Runde.</string>
+    <string name="seconds_remaining">Noch %1$d Sekunden</string>
+    <string name="staff_line">Linie %1$d von unten</string>
+    <string name="staff_space">Zwischenraum %1$d von unten</string>
+    <string name="staff_above">%1$d Notenschritte über der obersten Linie</string>
+    <string name="staff_below">%1$d Notenschritte unter der untersten Linie</string>
+    <string name="accidental_sharp">Kreuz</string>
+    <string name="accidental_flat">Be</string>
+    <string name="accidental_natural">Auflösungszeichen</string>
+    <string name="licenses">Open-Source-Lizenzen</string>
+    <string name="close">Schließen</string>
 </resources>

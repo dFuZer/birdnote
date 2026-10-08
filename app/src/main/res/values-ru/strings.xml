@@ -11,7 +11,7 @@
     <string name="chords">Аккорды</string>
     <string name="back">Назад</string>
     <string name="score_best">Рекорд</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Сложность</string>
     <string name="clef">Ключ</string>
     <string name="clefs">Ключи</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Давай вместе учиться читать ноты.</string>
     <string name="welcome_clefs">Выбери ключи, с которыми хочешь тренироваться.</string>
     <string name="preferred_clefs_hint">Их можно в любой момент изменить в настройках.</string>
+    <string name="welcome_promise_title">Мы рады, что ты здесь.</string>
+    <string name="welcome_promise_body">Мы любим наших пользователей. BirdNote бесплатный, без рекламы — и таким останется.</string>
+    <string name="welcome_promise_free">Бесплатно</string>
+    <string name="welcome_promise_no_ads">Без рекламы</string>
+    <string name="welcome_promise_forever">Навсегда</string>
+    <string name="welcome_promise_continue">Спасибо!</string>
     <string name="continue_action">Поехали!</string>
     <string name="lets_go">Поехали!</string>
     <string name="stop">Стоп</string>
@@ -72,4 +78,17 @@
     <string name="chord_minor_7">Малый минорный септаккорд</string>
     <string name="chord_half_diminished_7">Полууменьшённый септаккорд</string>
     <string name="chord_diminished_7">Уменьшённый септаккорд</string>
+    <string name="sound_enabled">Звук</string>
+    <string name="how_to_play">Как играть</string>
+    <string name="help_body">Прочитай выделенный элемент и выбери его название. Ноты: определи ноту. Интервалы: посчитай расстояние, включая обе ноты. Аккорды: определи тип аккорда. Раунд длится 45 секунд; ошибка отнимает 3 секунды. При выходе из приложения раунд приостанавливается.</string>
+    <string name="seconds_remaining">Осталось секунд: %1$d</string>
+    <string name="staff_line">Линия %1$d снизу</string>
+    <string name="staff_space">Промежуток %1$d снизу</string>
+    <string name="staff_above">На %1$d ступеней выше верхней линии</string>
+    <string name="staff_below">На %1$d ступеней ниже нижней линии</string>
+    <string name="accidental_sharp">Диез</string>
+    <string name="accidental_flat">Бемоль</string>
+    <string name="accidental_natural">Бекар</string>
+    <string name="licenses">Лицензии открытого ПО</string>
+    <string name="close">Закрыть</string>
 </resources>

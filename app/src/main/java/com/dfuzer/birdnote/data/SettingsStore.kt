@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 internal const val SETTINGS_PREFS_NAME = "birdnote_settings"
+internal const val KEY_SOUND_ENABLED = "sound_enabled"
 
 class SettingsStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(
@@ -43,6 +44,14 @@ class SettingsStore(context: Context) {
         prefs.getBoolean(KEY_PREFERRED_CLEFS_CHOSEN, false),
     )
     val preferredClefsChosen: StateFlow<Boolean> = _preferredClefsChosen.asStateFlow()
+
+    private val _soundEnabled = MutableStateFlow(prefs.getBoolean(KEY_SOUND_ENABLED, true))
+    val soundEnabled: StateFlow<Boolean> = _soundEnabled.asStateFlow()
+
+    fun setSoundEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_SOUND_ENABLED, enabled).apply()
+        _soundEnabled.value = enabled
+    }
 
     fun setNoteNaming(naming: NoteNaming) {
         prefs.edit().putString(KEY_NOTE_NAMING, naming.name).apply()

@@ -11,7 +11,7 @@
     <string name="chords">Accordi</string>
     <string name="back">Indietro</string>
     <string name="score_best">Record</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Difficoltà</string>
     <string name="clef">Chiave</string>
     <string name="clefs">Chiavi</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Impariamo a leggere la musica insieme.</string>
     <string name="welcome_clefs">Scegli le chiavi con cui vuoi esercitarti.</string>
     <string name="preferred_clefs_hint">Puoi cambiarle quando vuoi nelle impostazioni.</string>
+    <string name="welcome_promise_title">Siamo felici che tu sia qui.</string>
+    <string name="welcome_promise_body">Teniamo a te. BirdNote è gratis, senza pubblicità, e lo sarà sempre.</string>
+    <string name="welcome_promise_free">Gratis</string>
+    <string name="welcome_promise_no_ads">Senza pubblicità</string>
+    <string name="welcome_promise_forever">Per sempre</string>
+    <string name="welcome_promise_continue">Grazie!</string>
     <string name="continue_action">Si parte!</string>
     <string name="lets_go">Si parte!</string>
     <string name="stop">Stop</string>
@@ -66,4 +72,17 @@
     <string name="chord_minor_7">7ª minore</string>
     <string name="chord_half_diminished_7">7ª semidiminuita</string>
     <string name="chord_diminished_7">7ª diminuita</string>
+    <string name="sound_enabled">Suono</string>
+    <string name="how_to_play">Come giocare</string>
+    <string name="help_body">Leggi l’elemento evidenziato e scegli il suo nome. Note: identifica la nota. Intervalli: conta la distanza includendo entrambe le note. Accordi: identifica il tipo di accordo. Ogni sessione dura 45 secondi; un errore costa 3 secondi. La sessione si mette in pausa quando esci dall’app.</string>
+    <string name="seconds_remaining">%1$d secondi rimanenti</string>
+    <string name="staff_line">Linea %1$d dal basso</string>
+    <string name="staff_space">Spazio %1$d dal basso</string>
+    <string name="staff_above">%1$d posizioni sopra la linea superiore</string>
+    <string name="staff_below">%1$d posizioni sotto la linea inferiore</string>
+    <string name="accidental_sharp">Diesis</string>
+    <string name="accidental_flat">Bemolle</string>
+    <string name="accidental_natural">Bequadro</string>
+    <string name="licenses">Licenze open source</string>
+    <string name="close">Chiudi</string>
 </resources>

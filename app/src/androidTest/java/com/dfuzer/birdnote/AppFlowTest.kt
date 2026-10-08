@@ -8,8 +8,12 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.swipeUp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.dfuzer.birdnote.data.SCORES_PREFS_NAME
 import com.dfuzer.birdnote.data.SETTINGS_PREFS_NAME
@@ -44,6 +48,55 @@ class AppFlowTest {
 
     @get:Rule(order = 1)
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun backArrowsReceiveTouchOnEveryScreen() {
+        continueFromClefChoice()
+        val activity = composeRule.activity
+        val train = activity.getString(R.string.train)
+        val trainingTitle = activity.getString(R.string.training_title)
+        val back = activity.getString(R.string.back)
+
+        // Semantics performClick bypasses hit testing and would miss an overlapping scroll container.
+        fun tapBack() {
+            composeRule.onNodeWithContentDescription(back)
+                .assertIsDisplayed()
+                .performTouchInput { click() }
+        }
+
+        composeRule.onNodeWithText(train).performClick()
+        composeRule.onNodeWithContentDescription(back)
+            .assertIsDisplayed()
+            .performTouchInput {
+                click()
+                click()
+            }
+        composeRule.onNodeWithText(train).assertIsDisplayed()
+
+        listOf(R.string.my_scores, R.string.settings).forEach { destination ->
+            composeRule.onNodeWithText(activity.getString(destination)).performClick()
+            tapBack()
+            composeRule.onNodeWithText(train).assertIsDisplayed()
+            composeRule.onNodeWithText(activity.getString(destination)).performClick()
+            composeRule.onRoot().performTouchInput { swipeUp() }
+            tapBack()
+            composeRule.onNodeWithText(train).assertIsDisplayed()
+        }
+
+        composeRule.onNodeWithText(train).performClick()
+        listOf(R.string.notes, R.string.intervals, R.string.chords).forEach { mode ->
+            composeRule.onNodeWithText(activity.getString(mode)).performClick()
+            tapBack()
+            composeRule.onNodeWithText(trainingTitle).assertIsDisplayed()
+            composeRule.onNodeWithText(activity.getString(mode)).performClick()
+            composeRule.onRoot().performTouchInput { swipeUp() }
+            tapBack()
+            composeRule.onNodeWithText(trainingTitle).assertIsDisplayed()
+        }
+        composeRule.onRoot().performTouchInput { swipeUp() }
+        tapBack()
+        composeRule.onNodeWithText(train).assertIsDisplayed()
+    }
 
     @Test
     fun notesTrainingFlowReachesResultsAndCanRestartOrReturnHome() {
@@ -222,6 +275,8 @@ class AppFlowTest {
 
     private fun continueFromClefChoice() {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.continue_action))
+            .performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.welcome_promise_continue))
             .performClick()
     }
 

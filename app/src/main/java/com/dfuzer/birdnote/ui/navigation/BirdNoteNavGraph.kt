@@ -89,6 +89,7 @@ fun BirdNoteNavHost(
     modifier: Modifier = Modifier,
 ) {
     val clefModes = clefModesFor(preferredClefs)
+    val soundEnabled by settingsStore.soundEnabled.collectAsStateWithLifecycle()
     NavHost(
         navController = navController,
         startDestination = Routes.HOME,
@@ -106,18 +107,20 @@ fun BirdNoteNavHost(
             ScoresScreen(
                 scores = scores,
                 clefModes = clefModes,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.goBack() },
             )
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(
+                soundEnabled = soundEnabled,
+                onSoundEnabledChange = settingsStore::setSoundEnabled,
                 noteNaming = noteNaming,
                 onNoteNamingChange = onNoteNamingChange,
                 appLanguage = appLanguage,
                 onAppLanguageChange = onAppLanguageChange,
                 preferredClefs = preferredClefs,
                 onPreferredClefToggle = onPreferredClefToggle,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.goBack() },
             )
         }
         composable(Routes.TRAINING) {
@@ -125,7 +128,7 @@ fun BirdNoteNavHost(
                 onNotesClick = { navController.navigate(Routes.SETUP) },
                 onIntervalsClick = { navController.navigate(Routes.INTERVAL_SETUP) },
                 onChordsClick = { navController.navigate(Routes.CHORD_SETUP) },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.goBack() },
             )
         }
         composable(Routes.SETUP) {
@@ -140,7 +143,7 @@ fun BirdNoteNavHost(
                 onStartClick = { difficulty, clefMode ->
                     navController.navigate(Routes.quiz(difficulty, clefMode))
                 },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.goBack() },
             )
         }
         composable(Routes.INTERVAL_SETUP) {
@@ -153,7 +156,7 @@ fun BirdNoteNavHost(
                 onStartClick = { difficulty ->
                     navController.navigate(Routes.intervalQuiz(difficulty))
                 },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.goBack() },
             )
         }
         composable(Routes.CHORD_SETUP) {
@@ -168,7 +171,7 @@ fun BirdNoteNavHost(
                 onStartClick = { difficulty, clefMode ->
                     navController.navigate(Routes.chordQuiz(difficulty, clefMode))
                 },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.goBack() },
             )
         }
         composable(
@@ -181,6 +184,7 @@ fun BirdNoteNavHost(
             val difficulty = entry.arguments.difficulty()
             val clefMode = entry.arguments.clefMode()
             QuizRoute(
+                soundEnabled = soundEnabled,
                 config = PracticeConfig(difficulty, clefMode),
                 noteNaming = noteNaming,
                 onFinished = { score ->
@@ -198,6 +202,7 @@ fun BirdNoteNavHost(
         ) { entry ->
             val difficulty = entry.arguments.difficulty()
             IntervalQuizRoute(
+                soundEnabled = soundEnabled,
                 config = IntervalConfig(difficulty),
                 onFinished = { score ->
                     navController.finishQuiz(scoreStore, PracticeMode.INTERVALS, difficulty, null, score, Routes.INTERVAL_QUIZ) { previousBest ->
@@ -216,6 +221,7 @@ fun BirdNoteNavHost(
             val difficulty = entry.arguments.difficulty()
             val clefMode = entry.arguments.clefMode()
             ChordQuizRoute(
+                soundEnabled = soundEnabled,
                 config = ChordConfig(difficulty, clefMode),
                 onFinished = { score ->
                     navController.finishQuiz(scoreStore, PracticeMode.CHORDS, difficulty, clefMode, score, Routes.CHORD_QUIZ) { previousBest ->
@@ -234,6 +240,11 @@ fun BirdNoteNavHost(
             Routes.chordQuiz(arguments.difficulty(), arguments.clefMode())
         }
     }
+}
+
+/** Pops one destination, but never the graph root — a second Back would otherwise blank the host. */
+private fun NavHostController.goBack() {
+    if (previousBackStackEntry != null) popBackStack()
 }
 
 private fun Bundle?.difficulty(): Int = this?.getInt("difficulty") ?: 1

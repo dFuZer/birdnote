@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -31,6 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,8 +68,11 @@ fun DecoratedScreen(
         val shortSide = minOf(maxWidth, maxHeight)
         val background = LayoutTuning.Background
         val pianoSize = shortSide * if (homePlacement) background.pianoHomeSize else background.pianoStandardSize
-        val scoreWidth = maxWidth * if (homePlacement) background.scoreHomeWidth else background.scoreStandardWidth
-        val scoreHeight = maxHeight * if (homePlacement) background.scoreHomeHeight else background.scoreStandardHeight
+        val scoreWidth = minOf(
+            maxWidth * if (homePlacement) background.scoreHomeWidth else background.scoreStandardWidth,
+            shortSide * background.scoreMaxSize,
+        )
+        val scoreHeight = scoreWidth / background.scoreAspectRatio
         val noteSize = shortSide * if (homePlacement) background.noteHomeSize else background.noteStandardSize
 
         AsyncImage(
@@ -88,9 +94,10 @@ fun DecoratedScreen(
             modifier = Modifier
                 .width(scoreWidth)
                 .height(scoreHeight)
-                .align(Alignment.CenterEnd)
+                .align(Alignment.BottomEnd)
                 .offset(
                     x = scoreWidth * if (homePlacement) background.scoreHomeX else background.scoreStandardX,
+                    y = -shortSide * background.scoreBottomInset,
                 ),
         )
         AsyncImage(
@@ -112,8 +119,8 @@ fun DecoratedScreen(
 @Composable
 fun AppButton(
     text: String,
-    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
     enabled: Boolean = true,
     containerColor: Color = DarkBlue,
     textStyle: TextStyle = MaterialTheme.typography.labelLarge,
@@ -136,7 +143,7 @@ fun AppButton(
         ),
         modifier = modifier
             .widthIn(min = tuning.buttonMinWidth, max = tuning.buttonMaxWidth)
-            .height(tuning.buttonHeight),
+            .heightIn(min = tuning.buttonHeight),
     ) {
         FittedText(text = text, style = textStyle)
     }
@@ -158,6 +165,8 @@ fun BackButton(
         ),
         contentPadding = PaddingValues(),
         modifier = modifier
+            // Full-screen scroll containers must stay below this navigation control for hit testing.
+            .zIndex(1f)
             .size(tuning.backButtonSize)
             .semantics { contentDescription = label },
     ) {
@@ -209,10 +218,10 @@ fun DifficultyButton(
             contentColor = Neutral,
         ),
         contentPadding = PaddingValues(0.dp),
-        modifier = Modifier.size(
-            width = tuning.difficultyButtonWidth,
-            height = tuning.difficultyButtonHeight,
-        ),
+        modifier = Modifier
+            .width(tuning.difficultyButtonWidth)
+            .heightIn(min = tuning.difficultyButtonHeight)
+            .semantics { this.selected = selected },
     ) {
         Text(
             text = text,

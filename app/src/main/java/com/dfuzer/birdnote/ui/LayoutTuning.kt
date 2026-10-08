@@ -16,12 +16,13 @@ object LayoutTuning {
         const val pianoStandardX = -0.28f
         const val pianoY = -0.34f
 
-        const val scoreHomeWidth = 0.35f
-        const val scoreStandardWidth = 0.30f
-        const val scoreHomeHeight = 0.72f
-        const val scoreStandardHeight = 0.62f
-        const val scoreHomeX = 0.0f
-        const val scoreStandardX = 0.28f
+        const val scoreHomeWidth = 0.38f
+        const val scoreStandardWidth = 0.34f
+        const val scoreMaxSize = 0.85f
+        const val scoreAspectRatio = 1894f / 766f
+        const val scoreBottomInset = 0.12f
+        const val scoreHomeX = 0.12f
+        const val scoreStandardX = 0.20f
 
         const val noteHomeSize = 0.36f
         const val noteStandardSize = 0.30f
@@ -107,6 +108,18 @@ object LayoutTuning {
         val contentPadding = 20.dp
         val scoreBottomSpacing = 22.dp
         val buttonGap = 7.dp
+    }
+
+    object Settings {
+        val panelMaxWidth = 760.dp
+        val cardCorner = 12.dp
+        val cardPadding = 14.dp
+        val rowMinHeight = 48.dp
+        val chipMinWidth = 112.dp
+        val chipMaxWidth = 196.dp
+        val actionMinHeight = 40.dp
+        const val preferencesWeight = 1.7f
+        const val actionsWeight = 0.7f
     }
 
     object Scores {
@@ -211,5 +224,18 @@ object LayoutTuning {
         /** Welcome lockup bird, half of a full-column mark and never larger than this. */
         val birdMax = 150.dp
         const val birdWidthFraction = 0.5f
+    }
+
+    object WelcomePromise {
+        val contentHorizontalPadding = 24.dp
+        val contentVerticalPadding = 16.dp
+        val wideBreakpoint = 600.dp
+        val columnGap = 28.dp
+        val titleGap = 8.dp
+        val birdMax = 168.dp
+        const val birdWidthFraction = 0.48f
+        val cardGap = 10.dp
+        val cardCorner = 18.dp
+        val buttonTopGap = 16.dp
     }
 }

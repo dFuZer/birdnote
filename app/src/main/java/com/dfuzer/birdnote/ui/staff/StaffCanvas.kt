@@ -32,6 +32,7 @@ import kotlin.math.roundToInt
 private class StaffPainters(
     val trebleClef: Painter,
     val bassClef: Painter,
+    val cClef: Painter,
     val note: Painter,
     val sharp: Painter,
     val flat: Painter,
@@ -50,6 +51,7 @@ fun StaffCanvas(
 ) {
     val trebleClef = rememberStaffSvgPainter(Clef.SOL.assetName(), width = 38, height = 109)
     val bassClef = rememberStaffSvgPainter(Clef.FA.assetName(), width = 49, height = 57)
+    val cClef = rememberStaffSvgPainter(Clef.ALTO.assetName(), width = 50, height = 70)
     val note = rememberStaffSvgPainter("note.svg", width = 20, height = 64)
     val sharp = rememberStaffSvgPainter(
         LayoutTuning.Staff.sharpAsset,
@@ -66,8 +68,8 @@ fun StaffCanvas(
         width = LayoutTuning.Staff.accidentalRasterWidth,
         height = LayoutTuning.Staff.accidentalRasterHeight,
     )
-    val painters = remember(trebleClef, bassClef, note, sharp, flat, natural) {
-        StaffPainters(trebleClef, bassClef, note, sharp, flat, natural)
+    val painters = remember(trebleClef, bassClef, cClef, note, sharp, flat, natural) {
+        StaffPainters(trebleClef, bassClef, cClef, note, sharp, flat, natural)
     }
     EasingStaffCanvas(
         request = StaffDrawRequest(
@@ -139,7 +141,11 @@ private fun DrawScope.drawEasedPreview(
                     left = staff.left,
                     bottomLineY = staff.bottomLineY,
                     lineSpacing = staff.lineSpacing,
-                    painter = if (clef.clef == Clef.SOL) painters.trebleClef else painters.bassClef,
+                    painter = when (clef.clef) {
+                        Clef.SOL -> painters.trebleClef
+                        Clef.FA -> painters.bassClef
+                        Clef.ALTO, Clef.TENOR -> painters.cClef
+                    },
                 )
             }
         }

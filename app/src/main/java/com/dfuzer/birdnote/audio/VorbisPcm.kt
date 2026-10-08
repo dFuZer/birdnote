@@ -1,119 +1,90 @@
 package com.dfuzer.birdnote.audio
 
-import com.jcraft.jogg.Packet
-import com.jcraft.jogg.Page
-import com.jcraft.jogg.StreamState
-import com.jcraft.jogg.SyncState
-import com.jcraft.jorbis.Block
-import com.jcraft.jorbis.Comment
-import com.jcraft.jorbis.DspState
-import com.jcraft.jorbis.Info
-import kotlin.math.roundToInt
+import android.content.res.AssetFileDescriptor
+import android.media.MediaCodec
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
-/** Decodes an Ogg Vorbis file to 16-bit mono PCM. Stereo input is averaged. */
-fun decodeVorbisPcm(bytes: ByteArray): PcmBuffer {
-    require(bytes.isNotEmpty()) { "Vorbis file is empty" }
-    val sync = SyncState()
-    val stream = StreamState()
-    val page = Page()
-    val packet = Packet()
-    val info = Info()
-    val comment = Comment()
-    val dsp = DspState()
-    val block = Block(dsp)
-    sync.init()
+/** Decode packaged samples with Android's codec; no bundled third-party decoder. */
+fun decodeVorbisPcm(descriptor: AssetFileDescriptor): PcmBuffer {
+    val extractor = MediaExtractor()
+    var codec: MediaCodec? = null
+    var started = false
     try {
-        val offset = sync.buffer(bytes.size)
-        System.arraycopy(bytes, 0, sync.data, offset, bytes.size)
-        sync.wrote(bytes.size)
-
-        check(sync.pageout(page) == 1) { "Not an Ogg Vorbis file" }
-        stream.init(page.serialno())
-        info.init()
-        comment.init()
-        check(stream.pagein(page) >= 0) { "Bad first Ogg page" }
-        check(stream.packetout(packet) == 1) { "Missing Vorbis identification header" }
-        check(info.synthesis_headerin(comment, packet) >= 0) { "Not a Vorbis stream" }
-
-        var headersLeft = 2
-        while (headersLeft > 0) {
-            check(sync.pageout(page) == 1) { "Truncated Vorbis headers" }
-            stream.pagein(page)
-            while (headersLeft > 0) {
-                when (stream.packetout(packet)) {
-                    0 -> break
-                    -1 -> error("Corrupt Vorbis header")
-                    else -> {
-                        check(info.synthesis_headerin(comment, packet) >= 0) {
-                            "Bad Vorbis header"
-                        }
-                        headersLeft--
+        extractor.setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
+        val track = (0 until extractor.trackCount).first { index ->
+            extractor.getTrackFormat(index).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
+        }
+        extractor.selectTrack(track)
+        val format = extractor.getTrackFormat(track)
+        val decoder = MediaCodec.createDecoderByType(checkNotNull(format.getString(MediaFormat.KEY_MIME)))
+        codec = decoder
+        decoder.configure(format, null, null, 0)
+        decoder.start()
+        started = true
+        var rate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+        var channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+        var inputFinished = false
+        var outputFinished = false
+        val info = MediaCodec.BufferInfo()
+        val bytes = ByteArrayOutputStream()
+        // A broken decoder must not occupy the audio worker indefinitely.
+        val deadline = System.nanoTime() + 10_000_000_000L
+        while (!outputFinished) {
+            check(System.nanoTime() < deadline) { "Audio decoder timed out" }
+            if (!inputFinished) {
+                val index = decoder.dequeueInputBuffer(10_000)
+                if (index >= 0) {
+                    val input = checkNotNull(decoder.getInputBuffer(index))
+                    val size = extractor.readSampleData(input, 0)
+                    if (size < 0) {
+                        decoder.queueInputBuffer(index, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                        inputFinished = true
+                    } else {
+                        decoder.queueInputBuffer(index, 0, size, extractor.sampleTime, 0)
+                        extractor.advance()
                     }
                 }
             }
-        }
-
-        val channels = info.channels
-        val rate = info.rate
-        check(channels == 1 || channels == 2) { "Unsupported channel count: $channels" }
-        check(rate > 0) { "Vorbis sample rate is missing" }
-        dsp.synthesis_init(info)
-        block.init(dsp)
-
-        val output = PcmBuilder()
-        @Suppress("UNCHECKED_CAST")
-        val pcmHolder = arrayOfNulls<Array<FloatArray>>(1) as Array<Array<FloatArray>>
-        val pcmIndex = IntArray(channels)
-        while (true) {
-            val pageResult = sync.pageout(page)
-            if (pageResult == 0) break
-            if (pageResult < 0) continue
-            stream.pagein(page)
-            while (true) {
-                val packetResult = stream.packetout(packet)
-                if (packetResult == 0) break
-                if (packetResult < 0) continue
-                if (block.synthesis(packet) == 0) {
-                    dsp.synthesis_blockin(block)
+            val index = decoder.dequeueOutputBuffer(info, 10_000)
+            if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                val output = decoder.outputFormat
+                rate = output.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                channels = output.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                if (output.containsKey(MediaFormat.KEY_PCM_ENCODING)) {
+                    check(output.getInteger(MediaFormat.KEY_PCM_ENCODING) == android.media.AudioFormat.ENCODING_PCM_16BIT)
                 }
-                var count = dsp.synthesis_pcmout(pcmHolder, pcmIndex)
-                while (count > 0) {
-                    val pcm = pcmHolder[0]
-                    for (frame in 0 until count) {
-                        val sample = if (channels == 1) {
-                            pcm[0][pcmIndex[0] + frame]
-                        } else {
-                            (pcm[0][pcmIndex[0] + frame] + pcm[1][pcmIndex[1] + frame]) * 0.5f
-                        }
-                        output.add(sample)
+            } else if (index >= 0) {
+                try {
+                    if (info.size > 0 && info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
+                        val output = checkNotNull(decoder.getOutputBuffer(index))
+                        output.position(info.offset)
+                        output.limit(info.offset + info.size)
+                        val chunk = ByteArray(info.size)
+                        output.get(chunk)
+                        bytes.write(chunk)
                     }
-                    dsp.synthesis_read(count)
-                    count = dsp.synthesis_pcmout(pcmHolder, pcmIndex)
+                    outputFinished = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
+                } finally {
+                    decoder.releaseOutputBuffer(index, false)
                 }
             }
         }
-        val samples = output.toArray()
-        check(samples.isNotEmpty()) { "Vorbis file has no samples" }
+        check(channels > 0)
+        val pcm = ByteBuffer.wrap(bytes.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+        val samples = ShortArray(pcm.remaining() / channels) {
+            var sum = 0
+            repeat(channels) { sum += pcm.get().toInt() }
+            (sum / channels).toShort()
+        }
+        check(samples.isNotEmpty()) { "Audio sample is empty" }
         return PcmBuffer(rate, samples)
     } finally {
-        runCatching { stream.clear() }
-        runCatching { block.clear() }
-        runCatching { dsp.clear() }
-        runCatching { info.clear() }
-        runCatching { sync.clear() }
+        if (started) runCatching { codec?.stop() }
+        codec?.release()
+        extractor.release()
     }
-}
-
-private class PcmBuilder {
-    private var data = ShortArray(4_096)
-    private var size = 0
-
-    fun add(sample: Float) {
-        if (size == data.size) data = data.copyOf(size * 2)
-        data[size++] = (sample * 32_767f).roundToInt()
-            .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
-            .toShort()
-    }
-
-    fun toArray(): ShortArray = data.copyOf(size)
 }

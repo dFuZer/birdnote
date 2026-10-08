@@ -1,0 +1,138 @@
+BirdNote - asset credits and licenses
+
+These notices apply to the named assets, including their BirdNote versions.
+Source creators do not endorse BirdNote. Creative Commons assets are supplied
+without warranties; see the linked legal codes for the applicable disclaimers.
+
+Quarter note - note.svg
+Source title: Quarter note with upwards stem.svg
+Credits: Lachaume and Cdang (original vector artwork); PianistHere and Luca Ghio
+(contributors recorded in the source file history).
+Source: https://commons.wikimedia.org/wiki/File:Quarter_note_with_upwards_stem.svg
+License: Creative Commons Attribution-ShareAlike 4.0 International.
+License and legal code: https://creativecommons.org/licenses/by-sa/4.0/
+https://creativecommons.org/licenses/by-sa/4.0/legalcode
+BirdNote changes: SVG re-exported with app-specific dimensions, path coordinates,
+fill and stroke settings. Source history records removal of opacity and cropping.
+The modified note.svg is distributed under CC BY-SA 4.0.
+
+C clef - key-ut.svg
+Source title: CClef.svg
+Creator: っ (Wikimedia Commons user).
+Source: https://commons.wikimedia.org/wiki/File:CClef.svg
+License selected from the source's alternatives: Creative Commons
+Attribution-ShareAlike 3.0 Unported.
+License and legal code: https://creativecommons.org/licenses/by-sa/3.0/
+https://creativecommons.org/licenses/by-sa/3.0/legalcode
+BirdNote changes: SVG simplified/re-exported; dimensions and presentation adapted
+for rendering in the app. The modified key-ut.svg is distributed under CC BY-SA 3.0.
+
+Eighth note - croche.svg
+Source title: Dotted eighth note stem up.svg
+Credits: JLTB34 (original upload/vector version); PianistHere (later contributor
+credited on the source page).
+Source: https://commons.wikimedia.org/wiki/File:Dotted_eighth_note_stem_up.svg
+License: Creative Commons Attribution-ShareAlike 4.0 International.
+License and legal code: https://creativecommons.org/licenses/by-sa/4.0/
+https://creativecommons.org/licenses/by-sa/4.0/legalcode
+BirdNote changes: dot removed; SVG transformed, cropped and recolored for app use.
+The modified croche.svg is distributed under CC BY-SA 4.0.
+
+Public-domain artwork - sources retained as provenance
+
+Treble clef - key-sol.svg
+Source title: G-clef.svg
+Creator: Rémi Cormier (Luccas).
+Source: https://commons.wikimedia.org/wiki/File:G-clef.svg
+Source page identifies the artwork as public domain (common-property symbol).
+BirdNote version adapted for app rendering.
+
+Bass clef - key-fa.svg
+Source title: Bass Clef (34502) - The Noun Project.svg
+Creator: Jeffri Natasastra / The Noun Project.
+Source: https://commons.wikimedia.org/wiki/File:Bass_Clef_(34502)_-_The_Noun_Project.svg
+Original source: https://thenounproject.com/icon/34502
+CC0 1.0 Universal Public Domain Dedication:
+https://creativecommons.org/publicdomain/zero/1.0/
+BirdNote version adapted for app rendering.
+
+Sharp - diese.svg
+Source title: Dièse.svg
+Creator: unknown; uploaded by Coyau.
+Source: https://commons.wikimedia.org/wiki/File:Di%C3%A8se.svg
+Source page identifies the artwork as public domain (simple geometry).
+BirdNote changes: fill uses currentColor.
+
+Flat - bemol.svg
+Source title: Bémol.svg
+Creator: Coyau.
+Source: https://commons.wikimedia.org/wiki/File:B%C3%A9mol.svg
+Source page identifies the artwork as public domain (common-property symbol).
+BirdNote changes: fill uses currentColor.
+
+Natural - becarre.svg
+Source title: Bécarre.svg
+Creator: Coyau.
+Source: https://commons.wikimedia.org/wiki/File:B%C3%A9carre.svg
+Source page identifies the artwork as public domain (common-property symbol).
+BirdNote changes: fill uses currentColor.
+
+Piano samples — notes/*.ogg (29 natural notes, C2 through C6)
+Salamander Grand Piano v3 by Alexander Holm; recorded Yamaha C5 grand piano.
+Source: https://github.com/sfzinstruments/SalamanderGrandPiano
+Original distribution: https://archive.org/details/SalamanderGrandPianoV3
+Source revision: 3382bf9496bba2486f5ab0de55a264d1dfc38404
+Source distribution/FLAC remapping: kinwie and the sfzinstruments contributors.
+License: Creative Commons Attribution 3.0 Unported (CC BY 3.0).
+https://creativecommons.org/licenses/by/3.0/
+Full legal code is bundled in licenses/SALAMANDER-CC-BY-3.0.txt and displayed below.
+BirdNote changes: selected velocity layer 8; downmixed lossless FLAC recordings to
+mono; trimmed leading silence; shifted nearest recorded pitches by at most one
+semitone to provide every natural note; resampled to 44.1 kHz; applied common gain;
+shortened to 2.5 seconds with a 0.25-second fade; encoded as OGG Vorbis quality 4.
+No endorsement by the source creators is implied.
+
+Piano background — bg-piano.svg
+Music design yellow illustration by studiogstock.
+Designed by Magnific
+https://www.magnific.com/
+Creator: https://www.magnific.com/author/studiogstock
+Source: https://www.magnific.com/free-vector/music-design-yellow-illustration_4801089.htm
+License: Magnific Free license; attribution required.
+License and attribution guidance:
+https://www.magnific.com/ai/docs/licenses-attribution
+Terms: https://www.magnific.com/legal/terms-of-use
+BirdNote version adapted and recolored for use as an in-app background.
+Copyright remains with the original rights holder. Not licensed under Creative Commons.
+
+Sheet-music background — bg-score.svg
+Music notes on wave lines sheet by juicy_fish.
+Designed by Magnific
+https://www.magnific.com/
+Creator: https://www.magnific.com/author/juicy-fish
+Source: https://www.magnific.com/free-vector/music-notes-wave-lines-sheet_290241273.htm
+License: Magnific Free license; attribution required.
+License and attribution guidance:
+https://www.magnific.com/ai/docs/licenses-attribution
+Terms: https://www.magnific.com/legal/terms-of-use
+BirdNote changes: removed the white background, recolored the artwork blue, and
+cropped empty margins for use as a transparent in-app decoration.
+Copyright remains with the original rights holder. Not licensed under Creative Commons.
+
+Original BirdNote artwork — bg-note.svg
+Created by the BirdNote developers; no third-party artwork attribution required.
+
+Original BirdNote artwork — low-poly-bird.svg
+Created by the BirdNote developers. Replaces the former icon.svg.
+
+Wrong-answer sound — notes/wrong.mp3 (source credit)
+Source video: 8-bit error game sound effects - wrong invalid denied unauthorized sounds
+Uploader: Sound4effects | Free Sound effects for editting.
+Source: https://www.youtube.com/watch?v=Rk7QGp46eg4
+Channel: https://www.youtube.com/@sound4effects
+This source credit does not declare a Creative Commons or public-domain license.
+
+Amaranth Regular and Bold — amaranth_regular.ttf / amaranth_bold.ttf
+Copyright (c) 2011 Amaranth by Gesine Todt (www.gesine-todt.de). All rights reserved.
+SIL Open Font License 1.1. The complete notice and license follow below and are
+also bundled in licenses/AMARANTH-OFL.txt.

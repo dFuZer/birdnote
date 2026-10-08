@@ -4,6 +4,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,16 +43,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dfuzer.birdnote.BirdNoteApplication
 import com.dfuzer.birdnote.R
 import com.dfuzer.birdnote.audio.AnswerFeedback
-import com.dfuzer.birdnote.audio.QuizSounds
 import com.dfuzer.birdnote.domain.CHORD_VISIBLE_SLOTS
 import com.dfuzer.birdnote.domain.ChordConfig
 import com.dfuzer.birdnote.domain.ChordQuality
@@ -82,12 +91,16 @@ fun QuizRoute(
     noteNaming: NoteNaming,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuizViewModel<StaffNote, NoteName> = viewModel(factory = QuizViewModel.factory { QuizViewModel.notes(config) }),
+    soundEnabled: Boolean = true,
+    viewModel: QuizViewModel<StaffNote, NoteName> = viewModel(factory = QuizViewModel.factory { QuizViewModel.notes(config, savedState = it) }),
 ) {
+    QuizLifecycle(viewModel)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    QuizEffects(state.finished, state.score, state.answerFeedback, onFinished)
+    val playFeedback = rememberAnswerPlayer(soundEnabled)
+    QuizEffects(state.finished, state.score, onFinished)
     QuizScaffold(
         questions = state.questions,
+        questionDescription = staffDescription(listOf(state.questions.first())),
         toChord = { it.asChord() },
         score = state.score,
         remainingMillis = viewModel.remainingMillis,
@@ -98,7 +111,9 @@ fun QuizRoute(
         onStop = viewModel::stop,
         modifier = modifier,
     ) {
-        AnswerRow(state.finished, noteNaming, state.answerFeedback, viewModel::onAnswer)
+        AnswerRow(state.finished || state.paused, noteNaming, state.answerFeedback) { name ->
+            playFeedback(viewModel.onAnswer(name))
+        }
     }
 }
 
@@ -107,12 +122,16 @@ fun IntervalQuizRoute(
     config: IntervalConfig,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuizViewModel<StaffInterval, IntervalName> = viewModel(factory = QuizViewModel.factory { QuizViewModel.intervals(config) }),
+    soundEnabled: Boolean = true,
+    viewModel: QuizViewModel<StaffInterval, IntervalName> = viewModel(factory = QuizViewModel.factory { QuizViewModel.intervals(config, savedState = it) }),
 ) {
+    QuizLifecycle(viewModel)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    QuizEffects(state.finished, state.score, state.answerFeedback, onFinished)
+    val playFeedback = rememberAnswerPlayer(soundEnabled)
+    QuizEffects(state.finished, state.score, onFinished)
     QuizScaffold(
         questions = state.questions,
+        questionDescription = staffDescription(state.questions.first().notes),
         toChord = { it.asChord() },
         score = state.score,
         remainingMillis = viewModel.remainingMillis,
@@ -123,7 +142,9 @@ fun IntervalQuizRoute(
         onStop = viewModel::stop,
         modifier = modifier,
     ) {
-        IntervalAnswerGrid(config.difficulty, state.finished, state.answerFeedback, viewModel::onAnswer)
+        IntervalAnswerGrid(config.difficulty, state.finished || state.paused, state.answerFeedback) { name ->
+            playFeedback(viewModel.onAnswer(name))
+        }
     }
 }
 
@@ -132,12 +153,16 @@ fun ChordQuizRoute(
     config: ChordConfig,
     onFinished: (score: Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuizViewModel<PracticeChord, ChordQuality> = viewModel(factory = QuizViewModel.factory { QuizViewModel.chords(config) }),
+    soundEnabled: Boolean = true,
+    viewModel: QuizViewModel<PracticeChord, ChordQuality> = viewModel(factory = QuizViewModel.factory { QuizViewModel.chords(config, savedState = it) }),
 ) {
+    QuizLifecycle(viewModel)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    QuizEffects(state.finished, state.score, state.answerFeedback, onFinished)
+    val playFeedback = rememberAnswerPlayer(soundEnabled)
+    QuizEffects(state.finished, state.score, onFinished)
     QuizScaffold(
         questions = state.questions,
+        questionDescription = staffDescription(state.questions.first().notes),
         toChord = { it.asChord() },
         score = state.score,
         remainingMillis = viewModel.remainingMillis,
@@ -148,7 +173,9 @@ fun ChordQuizRoute(
         onStop = viewModel::stop,
         modifier = modifier,
     ) {
-        ChordAnswerGrid(config.difficulty, state.finished, state.answerFeedback, viewModel::onAnswer)
+        ChordAnswerGrid(config.difficulty, state.finished || state.paused, state.answerFeedback) { quality ->
+            playFeedback(viewModel.onAnswer(quality))
+        }
     }
 }
 
@@ -156,10 +183,8 @@ fun ChordQuizRoute(
 private fun QuizEffects(
     finished: Boolean,
     score: Int,
-    feedback: AnswerFeedback?,
     onFinished: (Int) -> Unit,
 ) {
-    val sounds = rememberQuizSounds()
     var didNavigate by remember { mutableStateOf(false) }
     LaunchedEffect(finished) {
         if (finished && !didNavigate) {
@@ -167,14 +192,24 @@ private fun QuizEffects(
             onFinished(score)
         }
     }
-    LaunchedEffect(feedback?.id) {
-        feedback?.let(sounds::play)
+}
+
+@Composable
+private fun rememberAnswerPlayer(soundEnabled: Boolean): (AnswerFeedback?) -> Unit {
+    val context = LocalContext.current
+    return remember(soundEnabled, context) {
+        { feedback ->
+            if (soundEnabled && feedback != null) {
+                (context.applicationContext as? BirdNoteApplication)?.quizSounds()?.play(feedback)
+            }
+        }
     }
 }
 
 @Composable
 private fun <Question> QuizScaffold(
     questions: List<Question>,
+    questionDescription: String,
     toChord: (Question) -> StaffChord,
     score: Int,
     remainingMillis: StateFlow<Long>,
@@ -209,7 +244,8 @@ private fun <Question> QuizScaffold(
             colors = CardDefaults.cardColors(containerColor = Neutral),
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .weight(1f)
+                .semantics { contentDescription = questionDescription },
         ) {
             StaffSurface(
                 notes = questions,
@@ -253,7 +289,7 @@ private fun QuizTopBar(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                 horizontal = tuning.stopButtonHorizontalPadding,
             ),
-            modifier = Modifier.height(tuning.stopButtonHeight),
+            modifier = Modifier.heightIn(min = 48.dp),
         ) {
             Text(
                 text = stringResource(R.string.stop),
@@ -261,6 +297,7 @@ private fun QuizTopBar(
             )
         }
         val timeRemainingLabel = stringResource(R.string.time_remaining)
+        val timeValue = stringResource(R.string.seconds_remaining, ((remaining + 999) / 1000).toInt())
         val remainingFraction = if (durationMillis <= 0L) {
             0f
         } else {
@@ -273,7 +310,11 @@ private fun QuizTopBar(
                 .height(tuning.progressBarHeight)
                 .clip(RoundedCornerShape(percent = 50))
                 .background(Neutral)
-                .semantics { contentDescription = timeRemainingLabel },
+                .semantics {
+                    contentDescription = timeRemainingLabel
+                    stateDescription = timeValue
+                    progressBarRangeInfo = ProgressBarRangeInfo(remainingFraction, 0f..1f)
+                },
         ) {
             Box(
                 modifier = Modifier
@@ -330,32 +371,17 @@ private fun AnswerRow(
     answerFeedback: AnswerFeedback?,
     onAnswer: (NoteName) -> Unit,
 ) {
-    val tuning = LayoutTuning.Quiz
-    var tapped by remember { mutableStateOf<NoteName?>(null) }
-    val shaken = rememberShakenButton(answerFeedback, tapped)
-    // Do stays on the left when the rest of the screen is right-to-left.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            NoteName.entries.forEach { name ->
-                QuizAnswerButton(
-                    text = name.label(noteNaming),
-                    textStyle = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                    answersLocked = answersLocked,
-                    shakeToken = shakeToken(shaken, name),
-                    onClick = {
-                        tapped = name
-                        onAnswer(name)
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = tuning.answerHorizontalMargin)
-                        .height(tuning.answerButtonHeight),
-                )
-            }
-        }
+        AnswerGrid(
+            answers = NoteName.entries,
+            columns = NoteName.entries.size,
+            label = { it.label(noteNaming) },
+            textStyle = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            answersLocked = answersLocked,
+            answerFeedback = answerFeedback,
+            onAnswer = onAnswer,
+        )
     }
 }
 
@@ -412,11 +438,14 @@ private fun <Answer> AnswerGrid(
     val tuning = LayoutTuning.Quiz
     var tapped by remember { mutableStateOf<Answer?>(null) }
     val shaken = rememberShakenButton(answerFeedback, tapped)
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+    val fontScale = LocalDensity.current.fontScale
+    val actualColumns = minOf(columns, (maxWidth / (72.dp * fontScale)).toInt().coerceAtLeast(1))
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(tuning.answerRowGap),
     ) {
-        answers.chunked(columns).forEach { rowItems ->
+        answers.chunked(actualColumns).forEach { rowItems ->
             Row(modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { name ->
                     QuizAnswerButton(
@@ -432,10 +461,10 @@ private fun <Answer> AnswerGrid(
                         modifier = Modifier
                             .weight(1f)
                             .padding(horizontal = tuning.answerHorizontalMargin)
-                            .height(tuning.answerButtonHeight),
+                            .heightIn(min = tuning.answerButtonHeight),
                     )
                 }
-                repeat(columns - rowItems.size) {
+                repeat(actualColumns - rowItems.size) {
                     Spacer(
                         modifier = Modifier
                             .weight(1f)
@@ -445,17 +474,8 @@ private fun <Answer> AnswerGrid(
             }
         }
     }
-}
-@Composable
-private fun rememberQuizSounds(): QuizSounds {
-    val context = LocalContext.current
-    val sounds = remember(context) { QuizSounds(context.assets) }
-    DisposableEffect(sounds) {
-        onDispose { sounds.release() }
     }
-    return sounds
 }
-
 @Composable
 private fun QuizAnswerButton(
     text: String,
@@ -533,3 +553,24 @@ private fun chordAnswerColumns(count: Int): Int {
 private const val SCORE_POP_UP_MILLIS = 90
 private const val SCORE_POP_DOWN_MILLIS = 160
 private const val SHAKE_STEP_MILLIS = 42
+
+@Composable
+private fun QuizLifecycle(viewModel: QuizViewModel<*, *>) {
+    val owner = LocalLifecycleOwner.current
+    DisposableEffect(owner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> viewModel.resume()
+                Lifecycle.Event.ON_PAUSE -> viewModel.pause()
+                else -> Unit
+            }
+        }
+        owner.lifecycle.addObserver(observer)
+        if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.resume()
+        else viewModel.pause()
+        onDispose {
+            owner.lifecycle.removeObserver(observer)
+            viewModel.pause()
+        }
+    }
+}

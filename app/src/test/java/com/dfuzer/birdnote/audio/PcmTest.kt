@@ -1,11 +1,15 @@
 package com.dfuzer.birdnote.audio
 
+import com.dfuzer.birdnote.domain.Accidental
 import com.dfuzer.birdnote.domain.Pitch
+import com.dfuzer.birdnote.domain.chromaticSemitone
 import com.dfuzer.birdnote.domain.pianoAssetPath
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -27,21 +31,6 @@ class PcmTest {
             assertEquals("OggS", header.decodeToString(0, 4))
             assertTrue(String(header, Charsets.ISO_8859_1).contains("vorbis"))
             assertTrue("${file.name} is ${file.length()} bytes", file.length() < 64 * 1024)
-        }
-    }
-
-    @Test
-    fun decodeVorbisPcmReadsEveryQuizNote() {
-        val root = listOf(
-            java.io.File("assets"),
-            java.io.File("../assets"),
-        ).first { it.isDirectory }
-        for (step in 14..42) {
-            val file = java.io.File(root, Pitch(step).pianoAssetPath())
-            val pcm = decodeVorbisPcm(file.readBytes())
-            assertEquals(44_100, pcm.sampleRate)
-            assertTrue(pcm.samples.size > 44_100 / 4)
-            assertTrue(pcm.samples.any { sample -> sample != 0.toShort() })
         }
     }
 
@@ -100,5 +89,37 @@ class PcmTest {
         val flat = pitchShift(samples, -1)
         assertTrue(sharp.size < samples.size)
         assertTrue(flat.size > samples.size)
+    }
+
+    @Test
+    fun bSharpReusesTheCNaturalBuffer() {
+        val b = shortArrayOf(1)
+        val c = shortArrayOf(2)
+        val d = shortArrayOf(3)
+        val notes = mutableMapOf(
+            chromaticSemitone(Pitch(27)) to b,
+            chromaticSemitone(Pitch(28)) to c,
+            chromaticSemitone(Pitch(29)) to d,
+        )
+        fillMissingChromatics(notes)
+        assertSame(c, notes[chromaticSemitone(Pitch(27), Accidental.SHARP)])
+        assertSame(c, notes[chromaticSemitone(Pitch(28))])
+    }
+
+    @Test
+    fun cSharpAndDFlatShareOneShiftedBuffer() {
+        val c = ShortArray(24) { 4 }
+        val d = ShortArray(24) { 8 }
+        val notes = mutableMapOf(
+            chromaticSemitone(Pitch(28)) to c,
+            chromaticSemitone(Pitch(29)) to d,
+        )
+        fillMissingChromatics(notes)
+        val cSharp = notes[chromaticSemitone(Pitch(28), Accidental.SHARP)]
+        val dFlat = notes[chromaticSemitone(Pitch(29), Accidental.FLAT)]
+        assertSame(cSharp, dFlat)
+        assertNotSame(c, cSharp)
+        assertNotSame(d, cSharp)
+        assertEquals(1, notes.keys.count { it !in listOf(chromaticSemitone(Pitch(28)), chromaticSemitone(Pitch(29))) })
     }
 }

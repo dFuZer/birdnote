@@ -11,7 +11,7 @@
     <string name="chords">Acordes</string>
     <string name="back">Voltar</string>
     <string name="score_best">Recorde</string>
-    <string name="score_empty">—</string>
+    <string name="score_empty">-</string>
     <string name="difficulty">Dificuldade</string>
     <string name="clef">Clave</string>
     <string name="clefs">Claves</string>
@@ -24,6 +24,12 @@
     <string name="welcome_message">Vamos aprender a ler música juntos.</string>
     <string name="welcome_clefs">Escolha as claves que você quer praticar.</string>
     <string name="preferred_clefs_hint">Você pode mudar essa escolha quando quiser nas configurações.</string>
+    <string name="welcome_promise_title">Que bom ter você aqui.</string>
+    <string name="welcome_promise_body">A gente ama quem usa o app. O BirdNote é grátis, sem anúncios, e sempre será.</string>
+    <string name="welcome_promise_free">Grátis</string>
+    <string name="welcome_promise_no_ads">Sem anúncios</string>
+    <string name="welcome_promise_forever">Para sempre</string>
+    <string name="welcome_promise_continue">Obrigado!</string>
     <string name="continue_action">Vamos lá!</string>
     <string name="lets_go">Vamos lá!</string>
     <string name="stop">Parar</string>
@@ -66,4 +72,17 @@
     <string name="chord_minor_7">7ª menor</string>
     <string name="chord_half_diminished_7">7ª meio-diminuta</string>
     <string name="chord_diminished_7">7ª diminuta</string>
+    <string name="sound_enabled">Som</string>
+    <string name="how_to_play">Como jogar</string>
+    <string name="help_body">Leia o elemento destacado e escolha seu nome. Notas: identifique a nota. Intervalos: conte a distância incluindo ambas as notas. Acordes: identifique o tipo de acorde. Cada rodada dura 45 segundos; um erro custa 3 segundos. A rodada pausa ao sair do aplicativo.</string>
+    <string name="seconds_remaining">%1$d segundos restantes</string>
+    <string name="staff_line">Linha %1$d de baixo para cima</string>
+    <string name="staff_space">Espaço %1$d de baixo para cima</string>
+    <string name="staff_above">%1$d posições acima da linha superior</string>
+    <string name="staff_below">%1$d posições abaixo da linha inferior</string>
+    <string name="accidental_sharp">Sustenido</string>
+    <string name="accidental_flat">Bemol</string>
+    <string name="accidental_natural">Bequadro</string>
+    <string name="licenses">Licenças de código aberto</string>
+    <string name="close">Fechar</string>
 </resources>

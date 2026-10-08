@@ -11,8 +11,8 @@ Write the smallest amount of clear code that solves the current need. Follow Kot
 
 Keep a flat, boring layout until a second real use appears:
 
-- `domain/` — pure Kotlin (notes, clefs, quizzes). No Android, no Compose.
-- `ui/` — screens, staff drawing, theme. Composables take state in and events out.
+- `domain/` - pure Kotlin (notes, clefs, quizzes). No Android, no Compose.
+- `ui/` - screens, staff drawing, theme. Composables take state in and events out.
 - One `ViewModel` per screen that owns state. Skip it for static UI.
 
 Do not introduce UseCases, Repositories, interfaces, DI frameworks, mappers, or extra modules until there are two real implementations or a real persistence/network boundary.
@@ -28,12 +28,12 @@ Do not introduce UseCases, Repositories, interfaces, DI frameworks, mappers, or 
 - Names describe what the code does (`pitchAt`, `QuizScreen`), not patterns (`NoteManager`, `QuizFactoryProvider`).
 
 ```kotlin
-// ❌ BAD — layers with one implementation
+// ❌ BAD - layers with one implementation
 class IdentifyNoteUseCase(private val repo: NoteRepository) {
     operator fun invoke() = repo.nextNote()
 }
 
-// ✅ GOOD — domain function, ViewModel calls it
+// ✅ GOOD - domain function, ViewModel calls it
 fun nextQuestion(clef: Clef): StaffQuestion
 class QuizViewModel : ViewModel() {
     var question by mutableStateOf(nextQuestion(Clef.Treble))

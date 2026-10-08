@@ -64,6 +64,7 @@ class StoreCompatibilityTest {
 
     @Test
     fun audioCanBeReleasedTwiceDuringLoadingAndIgnoresLatePlayback() {
+        val before = quizSoundThreads()
         instrumentation.runOnMainSync {
             val sounds = QuizSounds(context.assets)
             sounds.play(AnswerFeedback(1, true, listOf(SoundTone(28))))
@@ -71,9 +72,27 @@ class StoreCompatibilityTest {
             sounds.release()
             sounds.play(AnswerFeedback(2, false, emptyList()))
         }
-        val deadline = android.os.SystemClock.uptimeMillis() + 5_000
-        while (Thread.getAllStackTraces().keys.any { it.isAlive && it.name == "QuizSounds" } &&
+        val deadline = android.os.SystemClock.uptimeMillis() + 10_000
+        while (quizSoundThreads().any { it !in before } &&
             android.os.SystemClock.uptimeMillis() < deadline) Thread.sleep(20)
-        assertTrue("Audio worker leaked after release", Thread.getAllStackTraces().keys.none { it.isAlive && it.name == "QuizSounds" })
+        assertTrue(
+            "Audio worker leaked after release",
+            quizSoundThreads().none { it !in before },
+        )
     }
+
+    @Test
+    fun playDuringLoadDoesNotBlockTheCaller() {
+        val sounds = QuizSounds(context.assets)
+        val started = android.os.SystemClock.uptimeMillis()
+        sounds.play(AnswerFeedback(1, true, listOf(SoundTone(28))))
+        val elapsed = android.os.SystemClock.uptimeMillis() - started
+        sounds.release()
+        assertTrue("play() blocked the caller for ${elapsed}ms", elapsed < 200)
+    }
+
+    private fun quizSoundThreads(): Set<Thread> =
+        Thread.getAllStackTraces().keys.filter { thread ->
+            thread.isAlive && thread.name.startsWith("QuizSounds")
+        }.toSet()
 }

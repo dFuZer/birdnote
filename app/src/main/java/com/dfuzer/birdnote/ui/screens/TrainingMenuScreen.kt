@@ -1,5 +1,7 @@
 package com.dfuzer.birdnote.ui.screens
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,16 +27,10 @@ fun TrainingMenuScreen(
 ) {
     val tuning = LayoutTuning.Common
     DecoratedScreen(modifier = modifier) {
-        BackButton(
-            label = stringResource(R.string.back),
-            onClick = onBackClick,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(tuning.backButtonMargin),
-        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(
                     horizontal = tuning.screenHorizontalPadding,
                     vertical = tuning.screenVerticalPadding,
@@ -57,5 +53,13 @@ fun TrainingMenuScreen(
                 MenuButton(text = stringResource(R.string.chords), onClick = onChordsClick)
             }
         }
+        // Above the scrolling column, so this corner stays tappable when the title overlaps it.
+        BackButton(
+            label = stringResource(R.string.back),
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(tuning.backButtonMargin),
+        )
     }
 }

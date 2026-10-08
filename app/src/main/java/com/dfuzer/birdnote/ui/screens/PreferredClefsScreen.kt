@@ -514,7 +514,7 @@ private fun WelcomeBird(
             contentAlignment = Alignment.Center,
         ) {
             AsyncImage(
-                model = "${ASSET_ROOT}icon.svg",
+                model = "${ASSET_ROOT}low-poly-bird.svg",
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier

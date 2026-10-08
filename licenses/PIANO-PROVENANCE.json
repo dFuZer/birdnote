@@ -1,0 +1,312 @@
+{
+  "repository": "https://github.com/sfzinstruments/SalamanderGrandPiano",
+  "commit": "3382bf9496bba2486f5ab0de55a264d1dfc38404",
+  "samples": [
+    {
+      "file": "C2v8.flac",
+      "bytes": 2561685,
+      "sha256": "2fae21e19a214aeecd527a2235b106f66030df6ff51cfa789a5b4c6feb3d7357"
+    },
+    {
+      "file": "D#2v8.flac",
+      "bytes": 2577675,
+      "sha256": "662b21ad6ee7634777fe8b5952c70db1795a23bfc8557ecb35844ce8d12eba70"
+    },
+    {
+      "file": "F#2v8.flac",
+      "bytes": 2331259,
+      "sha256": "05c649a7114f0845ee09716831242af9726b2429dad92eb170fc84e92f92a8e1"
+    },
+    {
+      "file": "A2v8.flac",
+      "bytes": 1901758,
+      "sha256": "31dcdb3c1dea91943c4cccbb9f804dde2953ae1f16cb3990fe7def7acf60f944"
+    },
+    {
+      "file": "C3v8.flac",
+      "bytes": 1741485,
+      "sha256": "b9200830cdef54fe0eb92db928dea161cd26d1faf31c7a08a4f51c97549e05bf"
+    },
+    {
+      "file": "D#3v8.flac",
+      "bytes": 1770977,
+      "sha256": "900ad0d774e6cefd44c1081b66d50556b3121bf1d3f255c5329a9117447b9cff"
+    },
+    {
+      "file": "F#3v8.flac",
+      "bytes": 1805025,
+      "sha256": "116a760f8552491d361cae27ac06f4e46d226f9a50e5ea58f6c385fac7efca68"
+    },
+    {
+      "file": "A3v8.flac",
+      "bytes": 1787465,
+      "sha256": "b02ed7c37d6b902552274c92d66911751ee52aac20b28618387e1388b1653ed4"
+    },
+    {
+      "file": "C4v8.flac",
+      "bytes": 1774472,
+      "sha256": "36fb0535a1f21fe1dfc367c361dedda73710144e8c4940b40e97e6e5f8a3c694"
+    },
+    {
+      "file": "D#4v8.flac",
+      "bytes": 1652067,
+      "sha256": "295179461449c598c44ad712977d47b41c0c25d9c782d349094e748dc06c0dfa"
+    },
+    {
+      "file": "F#4v8.flac",
+      "bytes": 1495175,
+      "sha256": "be2dc339e8cec5f2f1da4ff583672dbc518bf5319547a08901b094617ac6998e"
+    },
+    {
+      "file": "A4v8.flac",
+      "bytes": 1382828,
+      "sha256": "59529694455698d7fd212cde8eec4029eaae8e5e6d454bb48bf36428eaa8009b"
+    },
+    {
+      "file": "C5v8.flac",
+      "bytes": 1516971,
+      "sha256": "f663242a552aad54113f186a6dd90c907c81d1f6374887a23179814544f78d79"
+    },
+    {
+      "file": "D#5v8.flac",
+      "bytes": 1276573,
+      "sha256": "f841ad0506994313f4202fbe3f07d917e60eeb10fb3461df3eae4fb9cd58432a"
+    },
+    {
+      "file": "F#5v8.flac",
+      "bytes": 1164441,
+      "sha256": "7757ef988e874313432a3b4ed586f0407fd4a9933b7ccc613b8ff96a2f83bc87"
+    },
+    {
+      "file": "A5v8.flac",
+      "bytes": 1109347,
+      "sha256": "c71f80ecee2dfc37519769ab97e2e92732bfce9314f6562ba884a737cfa018a9"
+    },
+    {
+      "file": "C6v8.flac",
+      "bytes": 695617,
+      "sha256": "e5d5db275007d4b0e35ce94b00e0b53f6c659707517ee1326bd77eeba119693b"
+    }
+  ],
+  "processing": {
+    "velocity_layer": 8,
+    "sample_rate_hz": 44100,
+    "channels": 1,
+    "duration_seconds": 2.5,
+    "fade_out_seconds": 0.25,
+    "trim_leading_silence_db": -60,
+    "gain": 1.2,
+    "pitch_shift": "nearest minor-third recording, at most one semitone",
+    "resampler": "FFmpeg soxr",
+    "codec": "OGG Vorbis",
+    "vorbis_quality": 4,
+    "ffmpeg_version": "ffmpeg version 8.1.3 Copyright (c) 2000-2026 the FFmpeg developers",
+    "max_total_bytes": 1000000,
+    "total_bytes": 566331
+  },
+  "outputs": [
+    {
+      "file": "2C.ogg",
+      "source": "C2v8.flac",
+      "semitone_shift": 0,
+      "bytes": 19181,
+      "sha256": "fc9d6147bbe42d420e7c4a533f25c6cb98c98be32b2830992633c02291593d0c"
+    },
+    {
+      "file": "2D.ogg",
+      "source": "D#2v8.flac",
+      "semitone_shift": -1,
+      "bytes": 16891,
+      "sha256": "f40381f371c9f2c68687acf06387342e0f53e69c1ae2dddb7892fcff2ceeb9f6"
+    },
+    {
+      "file": "2E.ogg",
+      "source": "D#2v8.flac",
+      "semitone_shift": 1,
+      "bytes": 17451,
+      "sha256": "82d8944de0aa16b66bfd15452fcf5c4aaba5715d91ef066e96992546ae9a5f91"
+    },
+    {
+      "file": "2F.ogg",
+      "source": "F#2v8.flac",
+      "semitone_shift": -1,
+      "bytes": 15871,
+      "sha256": "d443e02d1b90fa49ddf6f6a4bde843d3bed6d719e8e8e281e81dce32476286fa"
+    },
+    {
+      "file": "2G.ogg",
+      "source": "F#2v8.flac",
+      "semitone_shift": 1,
+      "bytes": 17153,
+      "sha256": "141b362da1b28675e9898b1eea05c15ba07470b3fc23f02adcc34e3ca6d219fa"
+    },
+    {
+      "file": "2A.ogg",
+      "source": "A2v8.flac",
+      "semitone_shift": 0,
+      "bytes": 17707,
+      "sha256": "0add49345a856afdfecdbff5648e1dd2e177417f6013ee9cf7cba01eef7dc5b4"
+    },
+    {
+      "file": "2B.ogg",
+      "source": "C3v8.flac",
+      "semitone_shift": -1,
+      "bytes": 18790,
+      "sha256": "f8bd5e5ca6f10c8cafc0979e9f0e26721266470441a44ec41701d24109c58800"
+    },
+    {
+      "file": "3C.ogg",
+      "source": "C3v8.flac",
+      "semitone_shift": 0,
+      "bytes": 18885,
+      "sha256": "aa4bbd45251fcc9a66f35949bd1dd052b3c6c653aaa7b8efc41bf59f0d12baf4"
+    },
+    {
+      "file": "3D.ogg",
+      "source": "D#3v8.flac",
+      "semitone_shift": -1,
+      "bytes": 18923,
+      "sha256": "1c7671e840d49d18ba351fc5a444973ef3200cee3921229e32ad85da491bad6e"
+    },
+    {
+      "file": "3E.ogg",
+      "source": "D#3v8.flac",
+      "semitone_shift": 1,
+      "bytes": 19717,
+      "sha256": "c7f798862f51090c58f9490d413f919af85b293d4fbcda778bea9bfb21d07961"
+    },
+    {
+      "file": "3F.ogg",
+      "source": "F#3v8.flac",
+      "semitone_shift": -1,
+      "bytes": 20164,
+      "sha256": "b528571ae33440a6fa42961e938907e23627c3ce4f99bfd2a139f76aae43a488"
+    },
+    {
+      "file": "3G.ogg",
+      "source": "F#3v8.flac",
+      "semitone_shift": 1,
+      "bytes": 21078,
+      "sha256": "8be29eab79aebab1b1f064925b65511055b6ac81656837c6d4a861de81808de8"
+    },
+    {
+      "file": "3A.ogg",
+      "source": "A3v8.flac",
+      "semitone_shift": 0,
+      "bytes": 20442,
+      "sha256": "057ad3c4bd21fd8e885ee1e3c154b90f16f0a0782406752a17e9a2ac1922aa15"
+    },
+    {
+      "file": "3B.ogg",
+      "source": "C4v8.flac",
+      "semitone_shift": -1,
+      "bytes": 20032,
+      "sha256": "4c987003f04c6c7952ddaf7e91106e5d182834749bbd01df7423e659bdc9573c"
+    },
+    {
+      "file": "4C.ogg",
+      "source": "C4v8.flac",
+      "semitone_shift": 0,
+      "bytes": 20512,
+      "sha256": "59ee005c4d5ca4a2aaf4a2308d00f968c4da6601db4540acca5821469c77c4b8"
+    },
+    {
+      "file": "4D.ogg",
+      "source": "D#4v8.flac",
+      "semitone_shift": -1,
+      "bytes": 19105,
+      "sha256": "f809d713714f4cf29a46f3d65e7ae7852f441af291150aa828ff332d3f6ddbb6"
+    },
+    {
+      "file": "4E.ogg",
+      "source": "D#4v8.flac",
+      "semitone_shift": 1,
+      "bytes": 20209,
+      "sha256": "964d1f3d6631396441c25f0aa5bc248782a172d5360fca8c42abcfb89ee39dc8"
+    },
+    {
+      "file": "4F.ogg",
+      "source": "F#4v8.flac",
+      "semitone_shift": -1,
+      "bytes": 18665,
+      "sha256": "a4ff98b0233103364a0a72358895a9a0fcdd3068110e53907ea4c3d0c03f4bb9"
+    },
+    {
+      "file": "4G.ogg",
+      "source": "F#4v8.flac",
+      "semitone_shift": 1,
+      "bytes": 19548,
+      "sha256": "91e5b93f3a1e021a7f759c7e75fcec4c9a8e96007a66ca40043e90727690df9f"
+    },
+    {
+      "file": "4A.ogg",
+      "source": "A4v8.flac",
+      "semitone_shift": 0,
+      "bytes": 21812,
+      "sha256": "7ee0394aa250005d830ba9f58536ca273ca812d3504f3e79c4d2a18dfba291bc"
+    },
+    {
+      "file": "4B.ogg",
+      "source": "C5v8.flac",
+      "semitone_shift": -1,
+      "bytes": 20593,
+      "sha256": "aaff5dac29b1b003525b861279880c39fba53dc8623ea8856b1d7d1ae659cdd5"
+    },
+    {
+      "file": "5C.ogg",
+      "source": "C5v8.flac",
+      "semitone_shift": 0,
+      "bytes": 21026,
+      "sha256": "d07348d59adde5713834b36459987005c9078bb3c7a490e4b91f5dc58f15f214"
+    },
+    {
+      "file": "5D.ogg",
+      "source": "D#5v8.flac",
+      "semitone_shift": -1,
+      "bytes": 18672,
+      "sha256": "70e9aa0b96916501e147a207ae86ef5070551e1434b1c1a6384fdead15550cb3"
+    },
+    {
+      "file": "5E.ogg",
+      "source": "D#5v8.flac",
+      "semitone_shift": 1,
+      "bytes": 19478,
+      "sha256": "ca78a04fb88c9fd76a32f49a120be5f1b3264d4865430c8f484af32dd52c1253"
+    },
+    {
+      "file": "5F.ogg",
+      "source": "F#5v8.flac",
+      "semitone_shift": -1,
+      "bytes": 19377,
+      "sha256": "deb0658d667602fc4b2e8adfcee26d8cb19cb3e86891b699368cbaba70aff35e"
+    },
+    {
+      "file": "5G.ogg",
+      "source": "F#5v8.flac",
+      "semitone_shift": 1,
+      "bytes": 19836,
+      "sha256": "e8248c56b6693941fa655bca066e789f91853b62c62ee17411ac73807742646e"
+    },
+    {
+      "file": "5A.ogg",
+      "source": "A5v8.flac",
+      "semitone_shift": 0,
+      "bytes": 20287,
+      "sha256": "436dda9bac111bd24819594617153702a2f580974b0bb22e498a73094bc2e0da"
+    },
+    {
+      "file": "5B.ogg",
+      "source": "C6v8.flac",
+      "semitone_shift": -1,
+      "bytes": 22243,
+      "sha256": "85bc607ba4b6e110e9f216fce311e34ee31c8691d459974991e87b87277f403b"
+    },
+    {
+      "file": "6C.ogg",
+      "source": "C6v8.flac",
+      "semitone_shift": 0,
+      "bytes": 22683,
+      "sha256": "54b00f914fb2801b91aaf6f34ede79f2022f0f758322f5439fe41eea59c73030"
+    }
+  ]
+}
