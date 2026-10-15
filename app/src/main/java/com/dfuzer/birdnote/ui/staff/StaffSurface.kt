@@ -29,6 +29,7 @@ import com.dfuzer.birdnote.domain.Accidental
 import com.dfuzer.birdnote.domain.Clef
 import com.dfuzer.birdnote.domain.ClefMode
 import com.dfuzer.birdnote.ui.LayoutTuning
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -81,12 +82,15 @@ fun <T> StaffSurface(
                 val thread = HandlerThread("StaffRender")
                 thread.start()
                 val handler = Handler(thread.looper)
-                val renderer = StaffRenderer(appContext, mailbox, toChords, handler, thread)
+                val renderer = StaffRenderer(appContext, surface, mailbox, toChords, handler, thread)
                 renderer.resize(width, height)
-                handler.post { renderer.loop(surface) }
+                handler.post { renderer.loop() }
                 surface.onChanged { changedWidth, changedHeight ->
                     renderer.resize(changedWidth, changedHeight)
                 }
+                // SurfaceHolder.Callback.surfaceDestroyed contract: nothing may touch the surface
+                // after this callback returns, because the SurfaceView then disconnects its buffer
+                // queue. stop() blocks until the render thread and HWUI are done with it.
                 surface.onDestroyed { renderer.stop() }
                 kotlinx.coroutines.suspendCancellableCoroutine<Unit> { continuation ->
                     continuation.invokeOnCancellation { renderer.stop() }
@@ -98,12 +102,15 @@ fun <T> StaffSurface(
 
 private class StaffRenderer<T>(
     context: Context,
+    private val surface: Surface,
     private val mailbox: StaffMailbox<T>,
     private val toChords: (List<T>) -> List<StaffChord>,
     private val handler: Handler,
     private val thread: HandlerThread,
 ) {
     private val alive = AtomicBoolean(true)
+    private val stopped = CountDownLatch(1)
+    private var frameCallback: Choreographer.FrameCallback? = null
     @Volatile private var size = IntSize.Zero
     private val belt = StaffBelt<T>()
     private val pendingUpdates = ArrayList<StaffUpdate<T>>()
@@ -129,7 +136,8 @@ private class StaffRenderer<T>(
         size = IntSize(nextWidth, nextHeight)
     }
 
-    fun loop(surface: Surface) {
+    fun loop() {
+        if (!alive.get()) return
         fillSurface(surface)
         val choreographer = Choreographer.getInstance()
         val callback = object : Choreographer.FrameCallback {
@@ -143,13 +151,53 @@ private class StaffRenderer<T>(
                 if (alive.get()) choreographer.postFrameCallback(this)
             }
         }
+        frameCallback = callback
         choreographer.postFrameCallback(callback)
     }
 
+    /**
+     * Stops rendering and returns only when neither the render thread nor HWUI can touch the
+     * surface any more. Called on the main thread from `surfaceDestroyed` and from cancellation.
+     *
+     * `unlockCanvasAndPost` returns once HWUI has synced the frame, but HWUI's RenderThread then
+     * still dequeues, draws and swaps a buffer of this surface. If the SurfaceView disconnects its
+     * BLAST queue meanwhile, that swap fails and HWUI destroys its EGL surface on a half-dequeued
+     * buffer (the SIGSEGV in `Surface::hook_cancelBuffer`). So the stop message, which the handler
+     * runs only after the current frame, calls [Surface.release]: it destroys the surface's HWUI
+     * context synchronously on HWUI's RenderThread, after the queued frame has finished and while
+     * the queue is still connected. Bitmaps are recycled after that, once no frame can read them.
+     */
     fun stop() {
-        if (!alive.compareAndSet(true, false)) return
-        handler.post { release() }
-        thread.quitSafely()
+        if (alive.compareAndSet(true, false)) {
+            val posted = handler.post {
+                try {
+                    frameCallback?.let(Choreographer.getInstance()::removeFrameCallback)
+                    surface.release()
+                    release()
+                } finally {
+                    thread.quit()
+                    stopped.countDown()
+                }
+            }
+            if (!posted) {
+                surface.release()
+                stopped.countDown()
+            }
+        }
+        awaitStopped()
+    }
+
+    private fun awaitStopped() {
+        var interrupted = false
+        while (true) {
+            try {
+                stopped.await()
+                break
+            } catch (_: InterruptedException) {
+                interrupted = true
+            }
+        }
+        if (interrupted) Thread.currentThread().interrupt()
     }
 
     private fun draw(surface: Surface, frameTimeNanos: Long) {

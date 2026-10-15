@@ -1,5 +1,0 @@
-{
-  "setup-worktree-unix": [
-    "cp \"$ROOT_WORKTREE_PATH/local.properties\" local.properties"
-  ]
-}
