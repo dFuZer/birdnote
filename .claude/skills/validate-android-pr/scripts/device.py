@@ -287,6 +287,114 @@ def cmd_locale(args: argparse.Namespace) -> None:
     print(run(["shell", "cmd", "locale", "get-device-locale"]).strip())
 
 
+TRACE_CONFIG = """
+buffers {{ size_kb: 131072 fill_policy: RING_BUFFER }}
+data_sources {{ config {{ name: "android.surfaceflinger.frametimeline" }} }}
+data_sources {{ config {{ name: "linux.process_stats" target_buffer: 0 }} }}
+data_sources {{
+  config {{
+    name: "linux.ftrace"
+    ftrace_config {{
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "power/cpu_frequency"
+      atrace_categories: "gfx"
+      atrace_categories: "view"
+      atrace_categories: "dalvik"
+      atrace_categories: "sched"
+      atrace_categories: "freq"
+      atrace_categories: "audio"
+      atrace_apps: "{package}"
+    }}
+  }}
+}}
+duration_ms: {duration_ms}
+"""
+
+
+def cmd_trace(args: argparse.Namespace) -> None:
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    remote = "/data/misc/perfetto-traces/birdnote.perfetto-trace"
+    config = TRACE_CONFIG.format(package=args.package, duration_ms=args.seconds * 1000)
+    print(f"recording {args.seconds}s: play the quiz now", flush=True)
+    recorded = subprocess.run(
+        [adb_bin(), "shell", "perfetto", "--txt", "-c", "-", "-o", remote],
+        input=config.encode(),
+        capture_output=True,
+        timeout=args.seconds + 60,
+    )
+    if recorded.returncode != 0:
+        sys.stderr.write(recorded.stderr.decode(errors="replace"))
+        raise SystemExit(recorded.returncode)
+    run(["pull", remote, str(out)], timeout=120)
+    print(f"trace\t{out}\t{out.stat().st_size}")
+    analyze_trace(out, args.package)
+
+
+def analyze_trace(path: Path, package: str) -> None:
+    """Report frame-timeline jank per layer of the package, then what its threads did on each."""
+    try:
+        from perfetto.trace_processor import TraceProcessor
+    except ImportError:
+        print("analysis skipped: `pip install perfetto` (or open the trace in ui.perfetto.dev)")
+        return
+    tp = TraceProcessor(trace=str(path))
+    query = lambda sql: list(tp.query(sql))
+    frames = f"""
+        SELECT a.ts, a.dur, a.layer_name, a.jank_type, a.present_type, a.on_time_finish
+        FROM actual_frame_timeline_slice a JOIN process p USING (upid)
+        WHERE p.name LIKE '{package}%'
+    """
+    print("\nlayer\tframes\tjanky")
+    for row in query(f"""
+        SELECT layer_name, COUNT(*) AS n, SUM(jank_type != 'None') AS janky
+        FROM ({frames}) GROUP BY layer_name ORDER BY n DESC
+    """):
+        print(f"{row.layer_name}\t{row.n}\t{row.janky}")
+
+    staff = query(f"SELECT * FROM ({frames}) WHERE layer_name LIKE '%SurfaceView%' ORDER BY ts")
+    if not staff:
+        print("no SurfaceView frames: was a quiz round playing?")
+        return
+    # Present cadence while the belt moves: a gap of 1.5+ vsyncs between consecutive presents
+    # (the next one following within 100 ms) is a frame shown twice, whatever its jank label.
+    presents = [f.ts + f.dur for f in staff]
+    gaps = [b - a for a, b in zip(presents, presents[1:])]
+    moving = sorted(g for g in gaps if g < 100_000_000)
+    vsync = moving[len(moving) // 2] if moving else 0
+    repeats = [(presents[i], g) for i, g in enumerate(gaps) if vsync and 1.5 * vsync < g < 100_000_000]
+    print(f"\nstaff vsync≈{vsync / 1e6:.2f}ms  frames={len(staff)}  repeats={len(repeats)}")
+    janky = [f for f in staff if f.jank_type != "None"]
+    print("janky staff frames by type:")
+    by_type: dict[str, int] = {}
+    for f in janky:
+        by_type[f.jank_type] = by_type.get(f.jank_type, 0) + 1
+    for kind, count in sorted(by_type.items(), key=lambda item: -item[1]):
+        print(f"  {count}\t{kind}")
+
+    start = staff[0].ts
+    events = [(f.ts, f"JANK {f.jank_type} ({f.present_type}, {f.dur / 1e6:.1f}ms)") for f in janky]
+    events += [(ts - gap, f"REPEAT gap {gap / 1e6:.1f}ms") for ts, gap in repeats]
+    for ts, label in sorted(events)[: args_limit()]:
+        print(f"\n+{(ts - start) / 1e9:.3f}s {label}")
+        window_start = ts - 2 * max(vsync, 11_000_000)
+        window_end = ts + 2 * max(vsync, 11_000_000)
+        for row in query(f"""
+            SELECT t.name AS thread, s.name, s.dur, s.ts
+            FROM slice s JOIN thread_track tt ON s.track_id = tt.id
+            JOIN thread t USING (utid) JOIN process p USING (upid)
+            WHERE p.name LIKE '{package}%' AND s.dur > 2000000
+              AND s.ts < {window_end} AND s.ts + s.dur > {window_start}
+            ORDER BY s.dur DESC LIMIT 6
+        """):
+            print(f"  {row.thread[:16]:16} {row.dur / 1e6:6.1f}ms  {row.name[:90]}")
+    tp.close()
+
+
+def args_limit() -> int:
+    return int(os.environ.get("TRACE_EVENTS", "25"))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Drive the booted Android emulator")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -361,6 +469,17 @@ def main() -> None:
     locale = sub.add_parser("locale")
     locale.add_argument("tag", nargs="?", help="BCP 47 tag to set, for example en-US")
     locale.set_defaults(func=cmd_locale)
+
+    trace = sub.add_parser("trace", help="record Perfetto while you play, report staff jank")
+    trace.add_argument("--seconds", type=int, default=20)
+    trace.add_argument("--out", default="build/traces/quiz.perfetto-trace")
+    trace.add_argument("--package", default=DEFAULT_PACKAGE)
+    trace.set_defaults(func=cmd_trace)
+
+    analyze = sub.add_parser("analyze", help="report staff jank in a recorded trace")
+    analyze.add_argument("path")
+    analyze.add_argument("--package", default=DEFAULT_PACKAGE)
+    analyze.set_defaults(func=lambda args: analyze_trace(Path(args.path), args.package))
 
     args = parser.parse_args()
     args.func(args)

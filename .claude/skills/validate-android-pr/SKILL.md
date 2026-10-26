@@ -30,9 +30,17 @@ Run every `D`, `adb`, emulator, and Gradle command **with the sandbox disabled**
 | `D shot /tmp/birdnote-x/name.png` | Saves a screenshot (read it with the Read tool) |
 | `D key BACK`, `D swipe x1 y1 x2 y2` | Key press and swipe |
 | `D crashes` | Shows Java and native crashes of the app since the last `launch --fresh`, with the first 40 lines for each crashed process, and exits 1. If there are none it prints `no crashes for …`. It ignores system noise such as `uwb-service`. |
+| `D trace [--seconds 20] [--out PATH]` | Records Perfetto while someone plays, pulls the trace (default `build/traces/quiz.perfetto-trace`), then runs `analyze`. |
+| `D analyze PATH` | Frame-timeline jank per app layer, plus the app's longest slices around each janky or repeated staff frame. Needs the `perfetto` pip package (run `D` from a venv that has it); without it, open the trace in ui.perfetto.dev. |
 | `D locale [tag]`, `D clear PKG`, `D resolve PKG`, `D start COMPONENT` | Lower-level helpers. `launch` covers the usual case. |
 
 `launch`, `tap`, and `wait` already print the next screen, so **don't call `dump` after them**. Every step is one call. Take tap coordinates only from the dump, never from a screenshot, because screenshots are scaled when shown. Look at a screenshot only when what you're checking is visual (staff drawing, layout, colors).
+
+### Measuring animation smoothness
+
+- Judge performance on a **physical device with a release build**. Emulator timing is unreliable, and debug builds run Compose several times slower. To get a release build onto a device that has the debug build, keeping its data: `./gradlew :app:assembleRelease`, then `zipalign -f -p 4` and `apksigner sign` it with `~/.android/debug.keystore` (pass and key pass `android`, alias `androiddebugkey`; both tools are in the SDK's `build-tools/`), then `adb install -r`. To compile it like a Play install, broadcast `androidx.profileinstaller.action.INSTALL_PROFILE` to `com.dfuzer.birdnote/androidx.profileinstaller.ProfileInstallReceiver`, force-stop the app, and run `adb shell cmd package compile -m speed-profile -f com.dfuzer.birdnote`.
+- The quiz staff renders with its own GL context, so its frames don't appear in the frame timeline or in `gfxinfo`. Measure the `StaffRender` thread's `animation` slices instead: any slice over one vsync (11.1 ms at 90 Hz) is a dropped frame. Thread states (`Running`, `R`/`R+`, `S`) show whether a late frame was working, waiting for a CPU, or blocked.
+- Some phones (Xiaomi/MIUI) reject `input tap` from adb, so a person has to play while `D trace` records.
 
 mobile-mcp is set up in `.mcp.json` and is optional. Use `device.py` instead; it's about 5× faster per read and prints only the app's own labels. If you do use mobile-mcp:
 - The device id is `Medium_Phone`.
