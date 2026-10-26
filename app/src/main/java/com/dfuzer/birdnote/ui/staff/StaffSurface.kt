@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Process
 import android.view.Choreographer
 import android.view.Surface
 import androidx.compose.foundation.AndroidExternalSurface
@@ -32,22 +33,23 @@ import com.dfuzer.birdnote.ui.LayoutTuning
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 
 /**
  * Quiz staff drawn on a [Surface] whose buffers are posted from a render thread.
  *
- * The composable publishes ordered note and configuration updates.
- * [android.view.Surface.lockHardwareCanvas] and [android.view.Surface.unlockCanvasAndPost] run on
- * that thread, so a busy main thread does not hold the next staff frame. The surface sits in the
- * card's inner padding, which matches the card corner radius, so the rectangular buffer stays
- * inside the rounded card.
+ * The composable publishes ordered note and configuration updates. The render thread draws them
+ * with its own GL context ([StaffGl]), so neither a busy main thread nor HWUI's RenderThread, which
+ * Compose frames hold, delays the next staff frame. The surface sits in the card's inner padding,
+ * which matches the card corner radius, so the rectangular buffer stays inside the rounded card.
  *
- * Hardware canvases present through the BufferQueue, not HWUI layers. Cached plate/glyph bitmaps
- * keep CPU painting off the present path. The first buffer is the card color, posted before any
- * sprite work. An opaque surface with no buffer is black, and a recycled buffer can still hold
- * the previous exercise.
+ * The plate (staff lines and clefs) and each distinct chord are painted on the CPU once and
+ * uploaded as textures. An answer paints only the chord that enters the belt, and a sliding frame
+ * is a few GPU quads. The first
+ * buffer is the card color, posted before any sprite work. An opaque surface with no buffer is
+ * black, and a recycled buffer can still hold the previous exercise.
  */
 @Composable
 fun <T> StaffSurface(
@@ -78,8 +80,8 @@ fun <T> StaffSurface(
         zOrder = AndroidExternalSurfaceZOrder.Behind,
         onInit = {
             onSurface { surface, width, height ->
-                fillSurface(surface)
-                val thread = HandlerThread("StaffRender")
+                // The priority HWUI gives its RenderThread, so a busy core does not delay a frame.
+                val thread = HandlerThread("StaffRender", Process.THREAD_PRIORITY_URGENT_DISPLAY)
                 thread.start()
                 val handler = Handler(thread.looper)
                 val renderer = StaffRenderer(appContext, surface, mailbox, toChords, handler, thread)
@@ -90,7 +92,7 @@ fun <T> StaffSurface(
                 }
                 // SurfaceHolder.Callback.surfaceDestroyed contract: nothing may touch the surface
                 // after this callback returns, because the SurfaceView then disconnects its buffer
-                // queue. stop() blocks until the render thread and HWUI are done with it.
+                // queue. stop() blocks until the render thread has destroyed its GL surface.
                 surface.onDestroyed { renderer.stop() }
                 kotlinx.coroutines.suspendCancellableCoroutine<Unit> { continuation ->
                     continuation.invokeOnCancellation { renderer.stop() }
@@ -119,14 +121,15 @@ private class StaffRenderer<T>(
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-    private val highlightRect = RectF()
     private val destRect = RectF()
 
+    private var gl: StaffGl? = null
     private var lastFrameNanos = 0L
     private var geometry: StaffGeometry? = null
     private var glyphs: StaffGlyphs? = null
-    private var plate: Bitmap? = null
-    private var strip: Bitmap? = null
+    private var plate: StaffTexture? = null
+    private val chordSprites = HashMap<StaffChord, ChordSprite>()
+    private var placements: List<ChordPlacement> = emptyList()
     private var highlights: List<HighlightRect> = emptyList()
     private var geometryKey: StaffGeometryKey? = null
     private var contentKey: StaffContentKey<T>? = null
@@ -139,7 +142,10 @@ private class StaffRenderer<T>(
 
     fun loop() {
         if (!alive.get()) return
-        fillSurface(surface)
+        val output = StaffGl.create(surface) ?: return
+        gl = output
+        output.begin(size.width, size.height, STAFF_BACKGROUND)
+        output.swap()
         val choreographer = Choreographer.getInstance()
         val callback = object : Choreographer.FrameCallback {
             override fun doFrame(frameTimeNanos: Long) {
@@ -157,22 +163,22 @@ private class StaffRenderer<T>(
     }
 
     /**
-     * Stops rendering and returns only when neither the render thread nor HWUI can touch the
-     * surface any more. Called on the main thread from `surfaceDestroyed` and from cancellation.
+     * Stops rendering and returns only when the render thread can no longer touch the surface.
+     * Called on the main thread from `surfaceDestroyed` and from cancellation.
      *
-     * `unlockCanvasAndPost` returns once HWUI has synced the frame, but HWUI's RenderThread then
-     * still dequeues, draws and swaps a buffer of this surface. If the SurfaceView disconnects its
-     * BLAST queue meanwhile, that swap fails and HWUI destroys its EGL surface on a half-dequeued
-     * buffer (the SIGSEGV in `Surface::hook_cancelBuffer`). So the stop message, which the handler
-     * runs only after the current frame, calls [Surface.release]: it destroys the surface's HWUI
-     * context synchronously on HWUI's RenderThread, after the queued frame has finished and while
-     * the queue is still connected. Bitmaps are recycled after that, once no frame can read them.
+     * If the SurfaceView disconnects its BLAST queue while a producer still holds a dequeued
+     * buffer, tearing that producer down later crashes (the SIGSEGV in `Surface::hook_cancelBuffer`
+     * seen with HWUI). So the stop message, which the handler runs only after the current frame and
+     * its swap, destroys the GL surface and context on the render thread while the queue is still
+     * connected, then releases the [Surface]. Bitmaps are recycled after that.
      */
     fun stop() {
         if (alive.compareAndSet(true, false)) {
             val posted = handler.post {
                 try {
                     frameCallback?.let(Choreographer.getInstance()::removeFrameCallback)
+                    gl?.release()
+                    gl = null
                     surface.release()
                     release()
                 } finally {
@@ -228,46 +234,35 @@ private class StaffRenderer<T>(
         val surfaceWidth = surfaceSize.width
         val surfaceHeight = surfaceSize.height
         if (surfaceWidth <= 0 || surfaceHeight <= 0 || !needsFrame) return
-        ensureCaches(surfaceWidth, surfaceHeight, config)
-        val plateBitmap = plate ?: return
-        val stripBitmap = strip ?: return
+        val output = gl ?: return
+        ensureCaches(output, surfaceWidth, surfaceHeight, config)
         val staff = geometry ?: return
-        val canvas = lockPostedCanvas(surface) ?: return
-        try {
-            canvas.drawColor(STAFF_BACKGROUND)
-            val offset = -slideOffsetSlots(belt.shift, belt.origin) * staff.slotWidth
-            val clipLeft = staffClipLeft(staff.clefRight)
-            canvas.save()
-            canvas.clipRect(clipLeft, 0f, surfaceWidth.toFloat(), surfaceHeight.toFloat())
-            canvas.translate(offset, 0f)
-            fillPaint.color = LIGHT_BLUE
-            for (highlight in highlights) {
-                highlightRect.set(
-                    highlight.topLeft.x,
-                    highlight.topLeft.y,
-                    highlight.topLeft.x + highlight.size.width,
-                    highlight.topLeft.y + highlight.size.height,
-                )
-                canvas.drawRoundRect(highlightRect, highlight.radius, highlight.radius, fillPaint)
-            }
-            canvas.restore()
-            canvas.drawBitmap(plateBitmap, 0f, 0f, bitmapPaint)
-            canvas.save()
-            canvas.clipRect(clipLeft, 0f, surfaceWidth.toFloat(), surfaceHeight.toFloat())
-            canvas.translate(offset, 0f)
-            canvas.drawBitmap(stripBitmap, 0f, 0f, bitmapPaint)
-            canvas.restore()
-        } finally {
-            try {
-                surface.unlockCanvasAndPost(canvas)
-                drawnSize = surfaceSize
-            } catch (_: RuntimeException) {
-                // The surface was destroyed while this buffer was locked.
-            }
+        val plateTexture = plate ?: return
+        val offset = -slideOffsetSlots(belt.shift, belt.origin) * staff.slotWidth
+        val clipLeft = staffClipLeft(staff.clefRight).toInt()
+        output.begin(surfaceWidth, surfaceHeight, STAFF_BACKGROUND)
+        output.clipLeft(clipLeft)
+        for (highlight in highlights) {
+            output.drawRoundRect(
+                highlight.topLeft.x + offset,
+                highlight.topLeft.y,
+                highlight.size.width,
+                highlight.size.height,
+                highlight.radius,
+                LIGHT_BLUE,
+            )
         }
+        output.clipLeft(null)
+        output.drawTexture(plateTexture, 0f, 0f)
+        output.clipLeft(clipLeft)
+        for (placement in placements) {
+            val sprite = placement.sprite
+            output.drawTexture(sprite.texture, placement.centerX + sprite.leftFromCenter + offset, sprite.top)
+        }
+        if (output.swap()) drawnSize = surfaceSize
     }
 
-    private fun ensureCaches(surfaceWidth: Int, surfaceHeight: Int, config: StaffRenderConfig) {
+    private fun ensureCaches(output: StaffGl, surfaceWidth: Int, surfaceHeight: Int, config: StaffRenderConfig) {
         val nextGeometryKey = StaffGeometryKey(
             surfaceWidth, surfaceHeight, config.clefMode, config.difficulty, config.visibleCount,
         )
@@ -284,19 +279,23 @@ private class StaffRenderer<T>(
                 compactVertical = false,
             )
             val nextGlyphs = sprites.rasterize(nextGeometry)
-            val nextPlate = drawPlate(nextGeometry, nextGlyphs, surfaceWidth, surfaceHeight)
+            val plateBitmap = drawPlate(nextGeometry, nextGlyphs, surfaceWidth, surfaceHeight)
             geometry = nextGeometry
             recycleGlyphs(glyphs)
             glyphs = nextGlyphs
-            plate?.recycle()
-            plate = nextPlate
+            plate?.let(output::deleteTexture)
+            plate = output.createTexture(plateBitmap)
+            plateBitmap.recycle()
+            chordSprites.values.forEach { output.deleteTexture(it.texture) }
+            chordSprites.clear()
+            placements = emptyList()
             geometryKey = nextGeometryKey
             contentKey = null
         }
         val staff = geometry ?: return
         val drawnGlyphs = glyphs ?: return
         val nextContentKey = StaffContentKey(belt.notes, belt.highlightIndex)
-        if (contentKey == nextContentKey && strip != null) return
+        if (contentKey == nextContentKey) return
         val chords = toChords(belt.notes)
         val chordDraws = cacheChordDraws(
             StaffRenderModel(config.clefMode, chords, config.difficulty),
@@ -307,15 +306,19 @@ private class StaffRenderer<T>(
             chordDraws,
             staff.lineSpacing,
         )
-        strip = drawStrip(
-            staff = staff,
-            drawnGlyphs = drawnGlyphs,
-            chordDraws = chordDraws,
-            noteCount = belt.notes.size,
-            surfaceWidth = surfaceWidth,
-            surfaceHeight = surfaceHeight,
-            previous = strip,
-        )
+        val drawsByIndex = chordDraws.groupBy { it.index }
+        placements = chords.mapIndexedNotNull { index, chord ->
+            val draws = drawsByIndex[index] ?: return@mapIndexedNotNull null
+            val centerX = staff.slotCenterX(index)
+            val sprite = chordSprites.getOrPut(chord) {
+                paintChordSprite(output, staff, drawnGlyphs, draws, centerX, surfaceHeight)
+            }
+            ChordPlacement(centerX, sprite)
+        }
+        val shown = chords.toHashSet()
+        chordSprites.entries.removeAll { (chord, sprite) ->
+            (chord !in shown).also { gone -> if (gone) output.deleteTexture(sprite.texture) }
+        }
         contentKey = nextContentKey
     }
 
@@ -349,24 +352,36 @@ private class StaffRenderer<T>(
         return bitmap
     }
 
-    private fun drawStrip(
+    /**
+     * Paints one chord, all of its staves, into a texture cropped to its bounds. A chord's layout
+     * only moves with its slot center, so the sprite is reused wherever the chord sits on the belt.
+     */
+    private fun paintChordSprite(
+        output: StaffGl,
         staff: StaffGeometry,
         drawnGlyphs: StaffGlyphs,
-        chordDraws: List<CachedChordDraw>,
-        noteCount: Int,
-        surfaceWidth: Int,
+        draws: List<CachedChordDraw>,
+        centerX: Float,
         surfaceHeight: Int,
-        previous: Bitmap?,
-    ): Bitmap {
-        val contentWidth = staff.notesStartX + (noteCount + 1) * staff.slotWidth
-        val bitmapWidth = ceil(maxOf(surfaceWidth.toFloat(), contentWidth)).toInt().coerceAtLeast(1)
-        val bitmapHeight = surfaceHeight.coerceAtLeast(1)
-        val bitmap = reusableBitmap(previous, bitmapWidth, bitmapHeight)
+    ): ChordSprite {
+        val margin = staff.lineSpacing
+        val left = floor(draws.minOf { it.layout.bounds.left } - margin)
+        val right = ceil(draws.maxOf { it.layout.bounds.right } + margin)
+        val top = floor(draws.minOf { it.layout.bounds.top } - margin).coerceAtLeast(0f)
+        val bottom = ceil(draws.maxOf { it.layout.bounds.bottom } + margin).coerceAtMost(surfaceHeight.toFloat())
+        val bitmap = Bitmap.createBitmap(
+            (right - left).toInt().coerceAtLeast(1),
+            (bottom - top).toInt().coerceAtLeast(1),
+            Bitmap.Config.ARGB_8888,
+        )
         val canvas = Canvas(bitmap)
-        for (chordDraw in chordDraws) {
+        canvas.translate(-left, -top)
+        for (chordDraw in draws) {
             drawChord(canvas, chordDraw, staff.lineSpacing, drawnGlyphs)
         }
-        return bitmap
+        val texture = output.createTexture(bitmap)
+        bitmap.recycle()
+        return ChordSprite(texture, left - centerX, top)
     }
 
     private fun drawStaffLines(
@@ -508,11 +523,11 @@ private class StaffRenderer<T>(
         if (released) return
         released = true
         alive.set(false)
-        plate?.recycle()
-        strip?.recycle()
+        // GL textures went with the context in StaffGl.release().
         recycleGlyphs(glyphs)
         plate = null
-        strip = null
+        chordSprites.clear()
+        placements = emptyList()
         glyphs = null
     }
 
@@ -537,36 +552,9 @@ private class StaffRenderer<T>(
 
 private const val STAFF_BACKGROUND = 0xFFF6F6F6.toInt()
 
-private fun lockPostedCanvas(surface: Surface): Canvas? {
-    if (!surface.isValid) return null
-    return try {
-        surface.lockHardwareCanvas()
-    } catch (_: RuntimeException) {
-        null
-    }
-}
+private class ChordSprite(val texture: StaffTexture, val leftFromCenter: Float, val top: Float)
 
-private fun fillSurface(surface: Surface) {
-    val canvas = lockPostedCanvas(surface) ?: return
-    try {
-        canvas.drawColor(STAFF_BACKGROUND)
-    } finally {
-        try {
-            surface.unlockCanvasAndPost(canvas)
-        } catch (_: RuntimeException) {
-            // The surface was destroyed while this buffer was locked.
-        }
-    }
-}
-
-private fun reusableBitmap(previous: Bitmap?, width: Int, height: Int): Bitmap {
-    if (previous != null && !previous.isRecycled && previous.width == width && previous.height == height) {
-        previous.eraseColor(0)
-        return previous
-    }
-    previous?.recycle()
-    return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-}
+private class ChordPlacement(val centerX: Float, val sprite: ChordSprite)
 
 private class StaffGlyphs(
     val note: Bitmap,
