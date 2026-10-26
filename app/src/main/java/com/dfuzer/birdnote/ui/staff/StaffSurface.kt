@@ -131,6 +131,7 @@ private class StaffRenderer<T>(
     private var geometryKey: StaffGeometryKey? = null
     private var contentKey: StaffContentKey<T>? = null
     private var released = false
+    private var drawnSize = IntSize.Zero
 
     fun resize(nextWidth: Int, nextHeight: Int) {
         size = IntSize(nextWidth, nextHeight)
@@ -216,6 +217,8 @@ private class StaffRenderer<T>(
             belt.offer(incoming.notes, incoming.config.visibleCount, nowSeconds, frameSeconds)
         }
         val config = config ?: return
+        // An idle belt shows the same frame, which the surface keeps without a new buffer.
+        val needsFrame = pendingUpdates.isNotEmpty() || belt.isMoving || size != drawnSize
         belt.advance(
             nowSeconds,
             config.followTimeMillis.coerceAtLeast(1) / 1_000f,
@@ -224,7 +227,7 @@ private class StaffRenderer<T>(
         val surfaceSize = size
         val surfaceWidth = surfaceSize.width
         val surfaceHeight = surfaceSize.height
-        if (surfaceWidth <= 0 || surfaceHeight <= 0) return
+        if (surfaceWidth <= 0 || surfaceHeight <= 0 || !needsFrame) return
         ensureCaches(surfaceWidth, surfaceHeight, config)
         val plateBitmap = plate ?: return
         val stripBitmap = strip ?: return
@@ -257,6 +260,7 @@ private class StaffRenderer<T>(
         } finally {
             try {
                 surface.unlockCanvasAndPost(canvas)
+                drawnSize = surfaceSize
             } catch (_: RuntimeException) {
                 // The surface was destroyed while this buffer was locked.
             }

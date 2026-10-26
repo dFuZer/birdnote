@@ -77,6 +77,7 @@ internal class StaffBelt<T> {
         private set
     var shift: Float = 0f
         private set
+    val isMoving: Boolean get() = moving
 
     fun offer(incoming: List<T>, visibleCount: Int, nowSeconds: Double, frameSeconds: Double) {
         if (incoming == previous) return
