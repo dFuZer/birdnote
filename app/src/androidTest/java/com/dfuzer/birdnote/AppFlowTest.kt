@@ -24,6 +24,7 @@ import com.dfuzer.birdnote.domain.defaultNoteNaming
 import com.dfuzer.birdnote.domain.label
 import com.dfuzer.birdnote.domain.resolveAppLanguage
 import com.dfuzer.birdnote.domain.scalePreview
+import com.dfuzer.birdnote.ui.SHOW_WELCOME_PROMISE
 import com.dfuzer.birdnote.ui.screens.labelRes
 import java.util.Locale
 import org.junit.Assert.assertSame
@@ -276,8 +277,10 @@ class AppFlowTest {
     private fun continueFromClefChoice() {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.continue_action))
             .performClick()
-        composeRule.onNodeWithText(composeRule.activity.getString(R.string.welcome_promise_continue))
-            .performClick()
+        if (SHOW_WELCOME_PROMISE) {
+            composeRule.onNodeWithText(composeRule.activity.getString(R.string.welcome_promise_continue))
+                .performClick()
+        }
     }
 
     private fun unsetNoteNaming(): NoteNaming =

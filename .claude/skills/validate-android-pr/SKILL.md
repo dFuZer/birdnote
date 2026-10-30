@@ -53,7 +53,7 @@ mobile-mcp is set up in `.mcp.json` and is optional. Use `device.py` instead; it
 
 en-US, landscape 2400x1080. Labels are exact.
 
-1. **Fresh install only** (after `--fresh`): the welcome screen with clef cards, then `Let's go!`, then `Thank you!`. `Treble` and `Bass` start out selected, and tapping a card toggles it. The dump **does not show which cards are selected**. Check the `Clefs: …` line in Settings instead, or take a screenshot.
+1. **Fresh install only** (after `--fresh`): the welcome screen with clef cards, then `Let's go!`. `Treble` and `Bass` start out selected, and tapping a card toggles it. The dump **does not show which cards are selected**. Check the `Clefs: …` line in Settings instead, or take a screenshot.
 2. **Home**: `Practice`, `My scores`, `Settings`.
 3. **Practice**: `Notes`, `Intervals`, `Chords`, and `Back`.
 4. **Setup**: difficulty chips `1` to `4` and `Let's go!`. Notes and Chords also have a `Clef` selector; Intervals has none. Positions differ between modes, so always tap by label.
@@ -70,7 +70,7 @@ Five calls in total, each with the sandbox disabled:
 
 ```
 1. cd /home/dfuzer/Desktop/birdnote && ./gradlew -q :app:assembleDebug && D boot && D launch --fresh --apk
-2. D tap "Let's go!" "Thank you!" Practice Notes "Let's go!"     → ends in the quiz
+2. D tap "Let's go!" Practice Notes "Let's go!"                  → ends in the quiz
 3. D tap <right answer> --settle 0.3                             → score goes up by 1
 4. D tap <wrong answer> --settle 0.3                             → score stays the same
 5. D wait "Try again" --timeout 60 && D crashes                  → result screen, no crashes

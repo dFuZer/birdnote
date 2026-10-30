@@ -35,6 +35,9 @@ import com.dfuzer.birdnote.ui.screens.WelcomePromiseScreen
 import com.dfuzer.birdnote.ui.theme.LightBlue
 import com.dfuzer.birdnote.withLocale
 
+/** Whether first-run setup ends on [WelcomePromiseScreen] (free, no ads, open source). */
+const val SHOW_WELCOME_PROMISE = false
+
 @Composable
 fun BirdNoteApp() {
     val navController = rememberNavController()
@@ -90,7 +93,13 @@ fun BirdNoteApp() {
                         PreferredClefsScreen(
                             selected = preferredClefs,
                             onToggle = settingsStore::togglePreferredClef,
-                            onContinue = { showPromise = true },
+                            onContinue = {
+                                if (SHOW_WELCOME_PROMISE) {
+                                    showPromise = true
+                                } else {
+                                    settingsStore.confirmPreferredClefs()
+                                }
+                            },
                         )
                     }
                 }
