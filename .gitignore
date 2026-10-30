@@ -19,3 +19,16 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# Generated files
+.kotlin/
+__pycache__/
+
+# Machine-specific IDE state
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+
+# Secrets
+.env*
+*.pem
+*.p12
